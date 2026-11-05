@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WGPU Matching · initialisation DIC</title>
+  <style>
+    :root { color-scheme: light; font: 16px/1.45 system-ui, sans-serif; background: #f2f5f7; color: #15212b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { padding: 1.25rem max(1rem, calc((100vw - 1280px) / 2)); background: #123047; color: white; }
+    header h1 { margin: 0; font-size: clamp(1.4rem, 3vw, 2rem); }
+    header p { margin: .35rem 0 0; max-width: 82ch; color: #cfe0ec; }
+    main { max-width: 1280px; margin: 1.25rem auto; padding: 0 1rem 2rem; display: grid; gap: 1rem; }
+    section { background: white; border: 1px solid #d5dee4; border-radius: .75rem; padding: 1rem; box-shadow: 0 2px 10px #1630470a; }
+    h2 { margin: 0 0 .75rem; font-size: 1.15rem; }
+    .inputs, .settings, .actions { display: flex; gap: .8rem; flex-wrap: wrap; align-items: end; }
+    .inputs label { flex: 1 1 260px; }
+    label { display: grid; gap: .25rem; color: #334b5c; font-size: .9rem; }
+    input, select, button { font: inherit; }
+    input[type=file], input[type=number], select { width: 100%; min-height: 2.5rem; border: 1px solid #aabac5; border-radius: .4rem; padding: .35rem .5rem; background: white; color: #15212b; }
+    .settings label { flex: 1 1 165px; }
+    .settings .seed-field { flex: 1 1 100%; }
+    textarea { width: 100%; min-height: 5.5rem; resize: vertical; border: 1px solid #aabac5; border-radius: .4rem; padding: .5rem; font: inherit; }
+    button { min-height: 2.6rem; border: 0; border-radius: .45rem; padding: .45rem .9rem; background: #176b91; color: white; font-weight: 650; cursor: pointer; }
+    button.secondary { background: #e4edf2; color: #17394f; border: 1px solid #c4d3dc; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .hint, #status { margin: .6rem 0 0; color: #496171; font-size: .9rem; }
+    #status { min-height: 1.5rem; font-weight: 600; }
+    #status.error { color: #a3331c; }
+    .canvas-wrap { overflow: auto; max-height: 72vh; border: 1px solid #cbd6de; border-radius: .5rem; background: #edf1f3; }
+    canvas { display: block; max-width: 100%; height: auto; }
+    .legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .85rem; color: #496171; margin-top: .5rem; }
+    .dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .3rem; background: #00a978; }
+    .dot.bad { background: #ef6949; }
+    details { color: #334b5c; }
+    summary { cursor: pointer; font-weight: 650; }
+    a { color: #075d88; }
+    @media (max-width: 600px) { main { margin-top: .75rem; } section { padding: .8rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>WGPU Matching · initialisation DIC</h1>
+    <p>Comparaison du pipeline hiérarchique DeepMatching d’INRIA réimplémenté en WebGPU et de HORG pour initialiser la DIC.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Images</h2>
+      <div class="inputs">
+        <label>Image de référence<input id="reference-file" type="file" accept="image/*"></label>
+        <label>Image déformée<input id="target-file" type="file" accept="image/*"></label>
+      </div>
+      <p class="hint">Les images doivent avoir les mêmes dimensions. Le navigateur les convertit en niveaux de gris ; les descripteurs et recherches sont calculés sur le GPU.</p>
+    </section>
+    <section>
+      <h2>Paramètres</h2>
+      <div class="settings">
+        <label>Méthode
+          <select id="algorithm">
+            <option value="deepmatching" selected>DeepMatching · pyramide INRIA</option>
+            <option value="horg">HORG · SIFT et affine locale</option>
+          </select>
+        </label>
+        <label>Fenêtre DIC (px)<input id="patch-size" type="number" min="8" max="128" step="4" value="32"></label>
+        <label id="root-patch-control">Échelle racine DeepMatching (px)
+          <select id="root-patch-size">
+            <option value="32">32</option>
+            <option value="64">64</option>
+            <option value="128">128</option>
+            <option value="256">256</option>
+            <option value="512" selected>512</option>
+            <option value="1024">1024</option>
+            <option value="2048">2048</option>
+          </select>
+        </label>
+        <label>Pas de la grille (px)<input id="grid-stride" type="number" min="4" max="2048" step="4" value="256"></label>
+        <label>Rayon de recherche (px)<input id="search-radius" type="number" min="0" max="4096" step="16" value="256"></label>
+        <label>Réduction des images
+          <select id="downscale-levels">
+            <option value="0">Aucune</option>
+            <option value="1">×2</option>
+            <option value="2" selected>×4</option>
+            <option value="3">×8</option>
+          </select>
+        </label>
+      </div>
+      <div class="settings">
+        <label class="seed-field">Seeds source (centre x ; centre y, px ; une seed par ligne)
+          <textarea id="seed-points" rows="4" placeholder="Vide = grille automatique&#10;63,5 ; 63,5&#10;575,5 ; 63,5"></textarea>
+        </label>
+      </div>
+      <p class="hint">La fenêtre DIC règle le support de l’initialisation ; l’échelle racine règle la taille maximale du patch dans la pyramide INRIA (512 px par défaut, comme sa configuration CPU pour les images UHD). Toute la grille de racines à cette échelle est calculée pour que la réciprocité soit globale ; les seeds choisissent les bins affichés et exportés. Le rayon limite le déplacement testé ; 0 signifie une carte complète. Les seeds manuelles sont des centres source en pixels, projetés sur la grille atomique INRIA ; le CSV indique le centre apparié.</p>
+      <div class="settings" id="horg-settings" hidden>
+        <label>Pré-réduction HORG
+          <select id="horg-reduction">
+            <option value="1">×1</option>
+            <option value="2">×2</option>
+            <option value="4" selected>×4</option>
+          </select>
+        </label>
+        <label>Maximum de descripteurs par image
+          <select id="horg-max-features">
+            <option value="512">512</option>
+            <option value="1024" selected>1024</option>
+            <option value="2048">2048</option>
+            <option value="8192">8192</option>
+          </select>
+        </label>
+      </div>
+      <p class="hint" id="deepmatching-hint">La taille racine réduite doit contenir 1, 2, 4, 8… cellules atomiques de 4 px par côté. Le score suit la hiérarchie ; seules les correspondances réciproques sont marquées utilisables. La grille automatique est limitée à 512 seeds ; commencez avec la réduction ×4 et un rayon limité.</p>
+      <p class="hint" id="horg-hint" hidden>HORG calcule sur WebGPU la pyramide DoG, l’orientation dominante, le descripteur 64D et les deux voisins exacts. Le nombre de points-clés comparés est plafonné par image. L’affine locale RANSAC est ajustée en JavaScript ; l’IC-GN et le raffinement sous-pixel de SIFT ne sont pas inclus.</p>
+      <div class="actions"><button id="run" disabled>Lancer DeepMatching INRIA · WebGPU</button><button id="export" class="secondary" disabled>Exporter les graines CSV</button></div>
+      <p id="status" role="status" aria-live="polite">Recherche d’un adaptateur WebGPU…</p>
+    </section>
+    <section>
+      <h2>Graines de l’image de référence vers l’image déformée</h2>
+      <div class="canvas-wrap"><canvas id="preview" aria-label="Image cible et vecteurs de déplacement calculés"></canvas></div>
+      <div class="legend"><span><i class="dot"></i><span id="usable-legend">Correspondance INRIA réciproque</span></span><span><i class="dot bad"></i><span id="reject-legend">Pas de correspondance réciproque</span></span></div>
+      <p id="field-summary" class="hint">Aucune graine calculée.</p>
+    </section>
+    <section>
+      <details>
+        <summary>Portée et limites de l’implémentation</summary>
+        <p>Le descripteur pixelwise suit maintenant la configuration CPU par défaut d’INRIA : pré-lissage gaussien, gradient fini, huit projections orientées positives, lissages HOG, sigmoïde, neuvième composante constante, puis average-pooling des descripteurs. Le pré-lissage conserve la précision 8 bits de la référence ; le HOG intermédiaire est calculé en float32 et les descripteurs réduits sont stockés en float16. Les calculs pleine résolution sont découpés en tuiles pour borner la mémoire de travail.</p>
+        <p>Le matching suit les étapes CPU INRIA : patchs atomiques HOG L2-normalisés, cartes de corrélation locales, max-pooling 3×3 et sous-échantillonnage 2, convolution sparse pondérée des quatre enfants, offsets par carte, correction des bords de l’agrégation, puissance 1,4, parcours descendant d’argmax 3×3, accumulation des scores et intersection réciproque. Le HOG et les cartes de réponse sont calculés sur WebGPU.</p>
+        <p>Le mode de comparaison évalue toutes les racines de la grille INRIA à l’échelle sélectionnée, agrège globalement les meilleurs candidats source et cible, puis applique l’intersection réciproque. La grille par défaut est non chevauchante, avec un pas égal à la taille de la racine, comme dans la configuration CPU d’INRIA. Les seeds servent à extraire les bins demandés du champ calculé. Les variantes d’échelle et de rotation ainsi qu’EpicFlow ne sont pas inclus.</p>
+        <p>Les centres manuels sont projetés sur la grille atomique source INRIA, de pas 4 pixels après réduction. La sortie reste quantifiée à cette grille, comme dans le code CPU. Les patchs cibles incomplets au bord sont écartés ; la rectification `rectify_conv` des cartes atomiques n’est pas encore portée. Aucun seuil de score ou de marge n’est appliqué : le critère usable est l’intersection réciproque globale sur les racines calculées. Le PDF CPM présent dans ce dossier porte sur PatchMatch et n’est pas l’article DeepMatching. <a href="https://arxiv.org/abs/1506.07656" target="_blank" rel="noreferrer">Article DeepMatching</a> · <a href="https://thoth.inrialpes.fr/src/deepmatching.html" target="_blank" rel="noreferrer">Page et code officiels</a>.</p>
+      </details>
+    </section>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
