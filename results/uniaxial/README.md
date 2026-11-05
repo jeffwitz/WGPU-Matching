@@ -1,6 +1,6 @@
 # Comparaison des initialisations sur l’essai uniaxial UHD
 
-> **Résultats historiques :** ces mesures proviennent de versions antérieures du matcher. La comparaison actuelle des déplacements avec les sorties INRIA exactes est dans [le rapport hiérarchique](inria_webgpu_hierarchy_comparison.md) et [son CSV seed par seed](inria_webgpu_hierarchy_comparison.csv).
+> **Résultats historiques :** ces mesures proviennent de versions antérieures du matcher. Le bilan actuel de précision et de temps entre DeepMatching et HORG est dans [le rapport courant](deepmatching_horg_current_comparison.md) et [son CSV de mesures](deepmatching_horg_current_comparison.csv). La comparaison actuelle des déplacements DeepMatching avec les sorties INRIA exactes est dans [le rapport hiérarchique](inria_webgpu_hierarchy_comparison.md) et [son CSV seed par seed](inria_webgpu_hierarchy_comparison.csv).
 
 L’ancienne corrélation directe du patch complet est documentée dans [son rapport archivé](inria_webgpu_patch_comparison.md) et [son CSV associé](inria_webgpu_patch_comparison.csv). Les fichiers historiques frame par frame ci-dessous restent conservés pour provenance.
 

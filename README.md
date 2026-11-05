@@ -38,6 +38,8 @@ Le compte rendu de performance et le diagnostic sur l’ROI masquée sont dans [
 
 Une comparaison avec les sorties denses INRIA est disponible pour les images de traction uniaxiale UHD de Live-DIC : [rapport de la hiérarchie WebGPU](results/uniaxial/inria_webgpu_hierarchy_comparison.md) et [CSV seed par seed](results/uniaxial/inria_webgpu_hierarchy_comparison.csv). L’ancien essai de corrélation directe reste archivé dans [son rapport](results/uniaxial/inria_webgpu_patch_comparison.md). Les images source dans `tests_gpuio` sont lues sans modification.
 
+Le [bilan actuel DeepMatching–HORG](results/uniaxial/deepmatching_horg_current_comparison.md) compare l’erreur analytique et le temps de calcul sur les mêmes trois frames Live-DIC ; les durées brutes sont dans son CSV associé.
+
 ## Références et provenance
 
 - Article : [DeepMatching: Hierarchical Deformable Dense Matching](https://arxiv.org/abs/1506.07656), Revaud, Weinzaepfel, Harchaoui et Schmid.
