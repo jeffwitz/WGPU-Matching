@@ -48,3 +48,20 @@ jobs:
           python -c "import importlib.resources as r, wgpu_matching; assert r.files('wgpu_matching').joinpath('shaders/horg-ransac.wgsl').is_file(); print(wgpu_matching.__version__)"
       - name: Unit tests
         run: pytest -q
+
+  cpm-webgpu-smoke:
+    name: CPM browser WebGPU smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: browser-actions/setup-chrome@v1
+      - name: Install software Vulkan runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan1 mesa-vulkan-drivers
+      - name: Run deterministic CPM translation test
+        run: node tests/run_cpm_browser_smoke.mjs

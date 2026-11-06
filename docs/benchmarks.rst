@@ -78,6 +78,8 @@ The series contains six UHD snapshots generated from the Live-DIC setup up to 60
 
 The additional three-method browser run on frame 199 evaluates DeepMatching, HORG, and the experimental CPM-WGPU path on the same 16 visible seeds. CPM currently accepts none, and its rejected-vector error is reported separately from accepted-match metrics. The report includes three-repeat timings under a common Chromium/Vulkan protocol; its adapter and prototype limitations are explicit.
 
+The progressive comparison on the original Live-DIC frames 040, 100, and 199 gives CPM 32/32, 2/28, and 0/28 accepted seeds respectively. At frame 199, 13 of 28 unfiltered CPM proposals are within 5 px, but none has enough reciprocal local support to be accepted. The analytic-oracle study separates search failure from the rigid-patch HOG cost limitation across matching supports. Both reports retain per-seed browser results and document that adapter identity was not exposed.
+
 A separate experiment preconditions DeepMatching with affine RANSAC and WGSL ECC, then rematches the warped image. At 60%, it accepts 16/16 points, all within 2 px, with 0.000854 px RMSE. This uses the synthetic dataset's exact global affine image field; it does not establish the same precision on heterogeneous deformation. Its time is 4.107 s, compared with 4.112 s in an earlier CPU/OpenCV measurement of the full pipeline: no speed gain is established.
 
 Sparse DeepMatching for selected windows
@@ -102,4 +104,6 @@ The native Python benchmark measures HORG and DeepMatching separately on Live-DI
 * :doc:`60% synthetic-series provenance and limitations <_generated_results/uniaxial/tensile_60pct/README>`
 * :doc:`Matcher results through 60% strain <_generated_results/uniaxial/tensile_60pct/matcher_comparison.csv>`
 * :doc:`Three-method 60% comparison <_generated_results/uniaxial/tensile_60pct/three_method_browser_60>` with :doc:`summary data <_generated_results/uniaxial/tensile_60pct/three_method_browser_60.csv>` and :doc:`per-seed raw data <_generated_results/uniaxial/tensile_60pct/three_method_browser_60.json>`
+* :doc:`CPM progressive three-method qualification <_generated_results/cpm/progressive_tensile_040_100_199>` and :doc:`per-seed raw data <_generated_results/cpm/three_method_progressive_040_100_199.json>`
+* :doc:`CPM analytic-oracle and matching-support diagnosis <_generated_results/cpm/oracle_diagnostics_60>` and :doc:`raw support sweep <_generated_results/cpm/oracle_support_study_60.json>`
 * :doc:`Affine RANSAC/ECC preconditioning report <_generated_results/uniaxial/tensile_60pct/affine_preconditioning>`

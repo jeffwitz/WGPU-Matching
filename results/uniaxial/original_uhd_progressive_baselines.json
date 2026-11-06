@@ -1,0 +1,1960 @@
+{
+  "case": "Original UHD Live-DIC synthetic tensile frames 040, 100, 199",
+  "sourceManifest": {
+    "schema_version": 1,
+    "description": "Original native-UHD virtual tensile-test PNGs, copied byte for byte; no tiling, resizing, or codec decoding.",
+    "width": 3840,
+    "height": 2160,
+    "mode": "L",
+    "source_repository": "/home/jeff/CNRS/Code/DIC_CODEC/DIC_FROM_H264",
+    "source_revision_at_import": "77267f92920ea8984533371cc6a62fef149ff6e2",
+    "source_directory": "experiments/tensile_extensometer_4k",
+    "seed": 20261012,
+    "coordinate_convention": "Zero-based pixel centres at integer coordinates; generator stretch centre is (1920, 1080).",
+    "forward_map": "x_target = 1920 + stretch_x * (x_reference - 1920); y_target = 1080 + stretch_y * (y_reference - 1080)",
+    "rendering": "OpenCV INTER_LINEAR inverse remapping of the archived speckle image with BORDER_REFLECT_101; uint8 PNGs saved before encoding. No additional sensor noise in this dataset.",
+    "truth_file": "machine_truth.csv",
+    "images": [
+      {
+        "file": "reference.png",
+        "source_file": "inputs/anchor_preview.png",
+        "frame": 0,
+        "sha256": "7cadf6032d7c5ac2de74ae542573a3b38069dc8c1c075ef9576641601996aeec"
+      },
+      {
+        "file": "frame_040.png",
+        "source_file": "inputs/frame_040_preview.png",
+        "frame": 40,
+        "sha256": "7477178b00acb669b34aeb2084b895076cf74475f472bc25f3af2696b2719e30"
+      },
+      {
+        "file": "frame_100.png",
+        "source_file": "inputs/frame_100_preview.png",
+        "frame": 100,
+        "sha256": "ad09928a04c3a8cff6d0085f5166cda5cd8f3aabc347b521db7ec4d064d1e712"
+      },
+      {
+        "file": "frame_199.png",
+        "source_file": "inputs/frame_199_preview.png",
+        "frame": 199,
+        "sha256": "8a3c61b6575b8a3b1808c2fb961edd03823f1c23f0f571d14949a3e58aa3e3ad"
+      }
+    ],
+    "provenance_files": {
+      "machine_truth.csv": "42975895cb8f6eea7200b2c2fd94c84c893e6029befd505f1fb461559cede814",
+      "provenance/source_manifest.json": "cda184dd675955701f12a43d4600627efb040fb68cb6574348a39ec7fc9800a2",
+      "provenance/generate.py": "f5558da9fd711bb0a640418c305a0d2b922f559f8bb975d7046cecd1a1f04073"
+    },
+    "regression_limits": {
+      "interior_margin_px": 32,
+      "identity_minimum_accepted_fraction": 0.95,
+      "identity_displacement_rmse_px": 0.005,
+      "affine_frame_040_minimum_accepted_fraction": 0.9,
+      "affine_frame_040_displacement_rmse_px": 0.05,
+      "affine_frame_040_displacement_p95_px": 0.1,
+      "affine_frame_040_median_gradient_rmse_per_component": 0.002
+    }
+  },
+  "adapter": "Vulkan (Intel(R) Graphics (LNL))",
+  "timingBoundary": "Three full matcher calls per method/frame; decoded NumPy arrays and WebGPU device already available. Includes matcher-side preprocessing, matching, synchronization and readback.",
+  "results": [
+    {
+      "frame": 40,
+      "engineeringAxial": 0.0011196739864576635,
+      "stretchX": 1.0011196739864576,
+      "stretchY": 0.999664342060021,
+      "method": "HORG",
+      "requestedVisibleSeeds": 32,
+      "acceptedCount": 32,
+      "acceptedWithin5Px": 32,
+      "acceptedWithin2Px": 32,
+      "acceptedRmsePx": 0.08908665760444194,
+      "acceptedMedianPx": 0.03985256948696356,
+      "acceptedP95Px": 0.18883161650859212,
+      "rejectedProposalRmsePx": null,
+      "runtimeRunsS": [
+        0.31403866806067526,
+        0.0899510569870472,
+        0.08682848198805004
+      ],
+      "medianRuntimeS": 0.0899510569870472,
+      "perSeed": [
+        {
+          "requestedX": 63.5,
+          "requestedY": 63.5,
+          "x": 63.5,
+          "y": 63.5,
+          "dx": -2.1820945739746094,
+          "dy": 0.25923919677734375,
+          "errorPx": 0.1319569054285883,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 575.5,
+          "y": 63.5,
+          "dx": -1.5205078125,
+          "dy": 0.33138275146484375,
+          "errorPx": 0.01801391275003942,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1087.5,
+          "y": 63.5,
+          "dx": -0.9403076171875,
+          "dy": 0.3474922180175781,
+          "errorPx": 0.010321582193546779,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1599.5,
+          "y": 63.5,
+          "dx": -0.3609619140625,
+          "dy": 0.3517799377441406,
+          "errorPx": 0.010791218637287032,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2111.5,
+          "y": 63.5,
+          "dx": 0.19189453125,
+          "dy": 0.3749542236328125,
+          "errorPx": 0.04058182945094403,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2623.5,
+          "y": 63.5,
+          "dx": 0.681884765625,
+          "dy": 0.35074615478515625,
+          "errorPx": 0.10623598665177571,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3135.5,
+          "y": 63.5,
+          "dx": 1.173828125,
+          "dy": 0.3159446716308594,
+          "errorPx": 0.18883161650859212,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3647.5,
+          "y": 63.5,
+          "dx": 1.637451171875,
+          "dy": 0.2793006896972656,
+          "errorPx": 0.30317120910213863,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 575.5,
+          "x": 63.5,
+          "y": 575.5,
+          "dx": -2.167377471923828,
+          "dy": 0.11322021484375,
+          "errorPx": 0.10496446173754106,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 575.5,
+          "y": 575.5,
+          "dx": -1.5484619140625,
+          "dy": 0.14739990234375,
+          "errorPx": 0.048327291578937275,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1087.5,
+          "y": 575.5,
+          "dx": -0.9197998046875,
+          "dy": 0.15289306640625,
+          "errorPx": 0.02055436543113607,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1599.5,
+          "y": 575.5,
+          "dx": -0.3480224609375,
+          "dy": 0.165283203125,
+          "errorPx": 0.011567540443539434,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2111.5,
+          "y": 575.5,
+          "dx": 0.224609375,
+          "dy": 0.15972900390625,
+          "errorPx": 0.014008326993893481,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2623.5,
+          "y": 575.5,
+          "dx": 0.751220703125,
+          "dy": 0.171630859375,
+          "errorPx": 0.03654186136344457,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3135.5,
+          "y": 575.5,
+          "dx": 1.271240234375,
+          "dy": 0.1744384765625,
+          "errorPx": 0.08986827044315966,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3647.5,
+          "y": 575.5,
+          "dx": 1.797119140625,
+          "dy": 0.169189453125,
+          "errorPx": 0.13711775300233237,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 1087.5,
+          "x": 63.5,
+          "y": 1087.5,
+          "dx": -2.1856918334960938,
+          "dy": -0.0604248046875,
+          "errorPx": 0.12167957274059148,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 575.5,
+          "y": 1087.5,
+          "dx": -1.54449462890625,
+          "dy": -0.0009765625,
+          "errorPx": 0.039123309522983075,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1087.5,
+          "y": 1087.5,
+          "dx": -0.9476318359375,
+          "dy": -0.0096435546875,
+          "errorPx": 0.01706259380298289,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1599.5,
+          "y": 1087.5,
+          "dx": -0.3536376953125,
+          "dy": -0.0299072265625,
+          "errorPx": 0.027882365831561756,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2111.5,
+          "y": 1087.5,
+          "dx": 0.2138671875,
+          "dy": -0.0286865234375,
+          "errorPx": 0.02617487597587612,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2623.5,
+          "y": 1087.5,
+          "dx": 0.7587890625,
+          "dy": 0.010498046875,
+          "errorPx": 0.03169707378094726,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3135.5,
+          "y": 1087.5,
+          "dx": 1.3154296875,
+          "dy": 0.0103759765625,
+          "errorPx": 0.047324297412762284,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3647.5,
+          "y": 1087.5,
+          "dx": 1.89794921875,
+          "dy": 0.0244140625,
+          "errorPx": 0.04518954446103325,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 1599.5,
+          "x": 63.5,
+          "y": 1599.5,
+          "dx": -2.1822967529296875,
+          "dy": -0.2440185546875,
+          "errorPx": 0.1248512735745141,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 575.5,
+          "y": 1599.5,
+          "dx": -1.5760498046875,
+          "dy": -0.16845703125,
+          "errorPx": 0.07089550285463202,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1087.5,
+          "y": 1599.5,
+          "dx": -0.9725341796875,
+          "dy": -0.1534423828125,
+          "errorPx": 0.045505565884468864,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1599.5,
+          "y": 1599.5,
+          "dx": -0.36279296875,
+          "dy": -0.1956787109375,
+          "errorPx": 0.021665213905356893,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2111.5,
+          "y": 1599.5,
+          "dx": 0.216552734375,
+          "dy": -0.172607421875,
+          "errorPx": 0.002771424071092007,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2623.5,
+          "y": 1599.5,
+          "dx": 0.7763671875,
+          "dy": -0.1722412109375,
+          "errorPx": 0.011522623799700982,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3135.5,
+          "y": 1599.5,
+          "dx": 1.371826171875,
+          "dy": -0.1402587890625,
+          "errorPx": 0.03580308235273594,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3647.5,
+          "y": 1599.5,
+          "dx": 1.97216796875,
+          "dy": -0.11279296875,
+          "errorPx": 0.07232588069674545,
+          "usable": true
+        }
+      ]
+    },
+    {
+      "frame": 40,
+      "engineeringAxial": 0.0011196739864576635,
+      "stretchX": 1.0011196739864576,
+      "stretchY": 0.999664342060021,
+      "method": "DeepMatching-INRIA",
+      "requestedVisibleSeeds": 32,
+      "acceptedCount": 32,
+      "acceptedWithin5Px": 32,
+      "acceptedWithin2Px": 30,
+      "acceptedRmsePx": 1.3138416541860511,
+      "acceptedMedianPx": 1.176964764339271,
+      "acceptedP95Px": 2.074160743292884,
+      "rejectedProposalRmsePx": null,
+      "runtimeRunsS": [
+        1.6611593149136752,
+        1.6535985289374366,
+        1.6719890449894592
+      ],
+      "medianRuntimeS": 1.6611593149136752,
+      "perSeed": [
+        {
+          "requestedX": 63.5,
+          "requestedY": 63.5,
+          "x": 56,
+          "y": 56,
+          "dx": -4,
+          "dy": 0,
+          "errorPx": 1.9435615433613673,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 568,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.5523296158911921,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1080,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.0013633530377306,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1592,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.503004914679315,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2104,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.40072855466840634,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2616,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.8517258102301596,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3128,
+          "y": 56,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.3955552257249875,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3640,
+          "y": 56,
+          "dx": 4,
+          "dy": 0,
+          "errorPx": 2.1024466503523933,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 575.5,
+          "x": 56,
+          "y": 568,
+          "dx": -4,
+          "dy": 0,
+          "errorPx": 1.9206319601664155,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 568,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.523523183267115,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1080,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.956098435510923,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1592,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.40547453405980094,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2104,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.26828907563689136,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2616,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.7980178628274491,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3128,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.3634405163511125,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3640,
+          "y": 568,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.9334920803598845,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 1087.5,
+          "x": 56,
+          "y": 1080,
+          "dx": -4,
+          "dy": 0,
+          "errorPx": 1.912927689242986,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 568,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.5137992296907097,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1080,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.9405261486244054,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1592,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.36725306755810116,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2104,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.2060200135082031,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2616,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.7792930945745074,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3128,
+          "y": 1080,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.3525661756408116,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3640,
+          "y": 1080,
+          "dx": 4,
+          "dy": 0,
+          "errorPx": 2.074160743292884,
+          "usable": true
+        },
+        {
+          "requestedX": 63.5,
+          "requestedY": 1599.5,
+          "x": 56,
+          "y": 1592,
+          "dx": -4,
+          "dy": 0,
+          "errorPx": 1.9206319601664155,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 568,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.523523183267115,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1080,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.956098435510923,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1592,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.40547453405980094,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2104,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.26828907563689136,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2616,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 0.7980178628274491,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3128,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.3634405163511125,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3640,
+          "y": 1592,
+          "dx": 0,
+          "dy": 0,
+          "errorPx": 1.9334920803598845,
+          "usable": true
+        }
+      ]
+    },
+    {
+      "frame": 100,
+      "engineeringAxial": 0.03843300455760572,
+      "stretchX": 1.0384330045576058,
+      "stretchY": 0.9817227188104968,
+      "method": "HORG",
+      "requestedVisibleSeeds": 28,
+      "acceptedCount": 28,
+      "acceptedWithin5Px": 28,
+      "acceptedWithin2Px": 28,
+      "acceptedRmsePx": 0.20394817910438462,
+      "acceptedMedianPx": 0.12119732591352375,
+      "acceptedP95Px": 0.40887932582561304,
+      "rejectedProposalRmsePx": null,
+      "runtimeRunsS": [
+        0.08767292799893767,
+        0.08121664298232645,
+        0.08115983998868614
+      ],
+      "medianRuntimeS": 0.08121664298232645,
+      "perSeed": [
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 575.5,
+          "y": 63.5,
+          "dx": -51.6314697265625,
+          "dy": 18.535179138183594,
+          "errorPx": 0.06039036171395131,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1087.5,
+          "y": 63.5,
+          "dx": -32.0877685546875,
+          "dy": 18.551467895507812,
+          "errorPx": 0.096270388183038,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1599.5,
+          "y": 63.5,
+          "dx": -12.400146484375,
+          "dy": 18.482345581054688,
+          "errorPx": 0.12688143356841614,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2111.5,
+          "y": 63.5,
+          "dx": 7.182861328125,
+          "dy": 18.60235595703125,
+          "errorPx": 0.17861169560297918,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2623.5,
+          "y": 63.5,
+          "dx": 26.895751953125,
+          "dy": 18.467269897460938,
+          "errorPx": 0.18049295659984896,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3135.5,
+          "y": 63.5,
+          "dx": 46.439208984375,
+          "dy": 18.27728271484375,
+          "errorPx": 0.40887932582561304,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3647.5,
+          "y": 63.5,
+          "dx": 66.060791015625,
+          "dy": 17.92608642578125,
+          "errorPx": 0.7324490224763881,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 575.5,
+          "y": 575.5,
+          "dx": -51.546142578125,
+          "dy": 9.35986328125,
+          "errorPx": 0.18828481172656095,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1087.5,
+          "y": 575.5,
+          "dx": -31.8990478515625,
+          "dy": 9.260498046875,
+          "errorPx": 0.10424668741439813,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1599.5,
+          "y": 575.5,
+          "dx": -12.2537841796875,
+          "dy": 9.21307373046875,
+          "errorPx": 0.06446915887645494,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2111.5,
+          "y": 575.5,
+          "dx": 7.388916015625,
+          "dy": 9.2353515625,
+          "errorPx": 0.03240264692033773,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2623.5,
+          "y": 575.5,
+          "dx": 27.00732421875,
+          "dy": 9.123291015625,
+          "errorPx": 0.10219098602063352,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3135.5,
+          "y": 575.5,
+          "dx": 46.7236328125,
+          "dy": 9.14251708984375,
+          "errorPx": 0.07881121797284933,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3647.5,
+          "y": 575.5,
+          "dx": 66.365478515625,
+          "dy": 9.0992431640625,
+          "errorPx": 0.12472302212782051,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 575.5,
+          "y": 1087.5,
+          "dx": -51.5682373046875,
+          "dy": -0.0338134765625,
+          "errorPx": 0.14722681771190807,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1087.5,
+          "y": 1087.5,
+          "dx": -31.8939208984375,
+          "dy": -0.1322021484375,
+          "errorPx": 0.10167245463070822,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1599.5,
+          "y": 1087.5,
+          "dx": -12.2078857421875,
+          "dy": -0.164794921875,
+          "errorPx": 0.1133333060688848,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2111.5,
+          "y": 1087.5,
+          "dx": 7.446533203125,
+          "dy": -0.183349609375,
+          "errorPx": 0.09819722665176556,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2623.5,
+          "y": 1087.5,
+          "dx": 27.10888671875,
+          "dy": -0.1822509765625,
+          "errorPx": 0.0843776158505302,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3135.5,
+          "y": 1087.5,
+          "dx": 46.822265625,
+          "dy": -0.1861572265625,
+          "errorPx": 0.11767162969922698,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3647.5,
+          "y": 1087.5,
+          "dx": 66.561279296875,
+          "dy": -0.2156982421875,
+          "errorPx": 0.18572462810736856,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 575.5,
+          "y": 1599.5,
+          "dx": -51.61676025390625,
+          "dy": -9.4388427734375,
+          "errorPx": 0.07963392254934012,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1087.5,
+          "y": 1599.5,
+          "dx": -31.90185546875,
+          "dy": -9.534912109375,
+          "errorPx": 0.10175480246747948,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1599.5,
+          "y": 1599.5,
+          "dx": -12.2138671875,
+          "dy": -9.591552734375,
+          "errorPx": 0.1418121786267283,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2111.5,
+          "y": 1599.5,
+          "dx": 7.50830078125,
+          "dy": -9.583740234375,
+          "errorPx": 0.17286738536098947,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2623.5,
+          "y": 1599.5,
+          "dx": 27.167236328125,
+          "dy": -9.5634765625,
+          "errorPx": 0.14657166786538287,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3135.5,
+          "y": 1599.5,
+          "dx": 46.88818359375,
+          "dy": -9.53369140625,
+          "errorPx": 0.17713325760820423,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3647.5,
+          "y": 1599.5,
+          "dx": 66.619384765625,
+          "dy": -9.5499267578125,
+          "errorPx": 0.23292665407936883,
+          "usable": true
+        }
+      ]
+    },
+    {
+      "frame": 100,
+      "engineeringAxial": 0.03843300455760572,
+      "stretchX": 1.0384330045576058,
+      "stretchY": 0.9817227188104968,
+      "method": "DeepMatching-INRIA",
+      "requestedVisibleSeeds": 28,
+      "acceptedCount": 28,
+      "acceptedWithin5Px": 28,
+      "acceptedWithin2Px": 22,
+      "acceptedRmsePx": 1.625263694013908,
+      "acceptedMedianPx": 1.5299946523680665,
+      "acceptedP95Px": 2.331519236180075,
+      "rejectedProposalRmsePx": null,
+      "runtimeRunsS": [
+        1.656710089999251,
+        1.6526790229836479,
+        1.6570263670291752
+      ],
+      "medianRuntimeS": 1.656710089999251,
+      "perSeed": [
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 568,
+          "y": 56,
+          "dx": -52,
+          "dy": 20,
+          "errorPx": 1.2846434387727859,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1080,
+          "y": 56,
+          "dx": -32,
+          "dy": 20,
+          "errorPx": 1.3150360169911008,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1592,
+          "y": 56,
+          "dx": -12,
+          "dy": 20,
+          "errorPx": 1.419889930822299,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2104,
+          "y": 56,
+          "dx": 8,
+          "dy": 20,
+          "errorPx": 1.584491033039368,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2616,
+          "y": 56,
+          "dx": 28,
+          "dy": 20,
+          "errorPx": 1.7924544569886995,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3128,
+          "y": 56,
+          "dx": 48,
+          "dy": 20,
+          "errorPx": 2.0305001490864294,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3640,
+          "y": 56,
+          "dx": 64,
+          "dy": 20,
+          "errorPx": 2.4655360819955416,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 568,
+          "y": 568,
+          "dx": -52,
+          "dy": 8,
+          "errorPx": 1.3585158278406004,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1080,
+          "y": 568,
+          "dx": -32,
+          "dy": 8,
+          "errorPx": 1.3872909628824381,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1592,
+          "y": 568,
+          "dx": -12,
+          "dy": 8,
+          "errorPx": 1.487058810323928,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2104,
+          "y": 568,
+          "dx": 8,
+          "dy": 8,
+          "errorPx": 1.64495237727225,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2616,
+          "y": 568,
+          "dx": 28,
+          "dy": 8,
+          "errorPx": 1.8461174041999922,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3128,
+          "y": 568,
+          "dx": 48,
+          "dy": 8,
+          "errorPx": 2.0780248663457987,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3640,
+          "y": 568,
+          "dx": 68,
+          "dy": 8,
+          "errorPx": 2.331519236180075,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 568,
+          "y": 1080,
+          "dx": -52,
+          "dy": 0,
+          "errorPx": 0.03857783811697857,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1080,
+          "y": 1080,
+          "dx": -32,
+          "dy": 0,
+          "errorPx": 0.2837238283888581,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1592,
+          "y": 1080,
+          "dx": -12,
+          "dy": 0,
+          "errorPx": 0.6060254948946984,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2104,
+          "y": 1080,
+          "dx": 8,
+          "dy": 0,
+          "errorPx": 0.9283271614005351,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2616,
+          "y": 1080,
+          "dx": 28,
+          "dy": 0,
+          "errorPx": 1.2506288279063718,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3128,
+          "y": 1080,
+          "dx": 48,
+          "dy": 0,
+          "errorPx": 1.572930494412205,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3640,
+          "y": 1080,
+          "dx": 68,
+          "dy": 0,
+          "errorPx": 1.8952321609180416,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 568,
+          "y": 1592,
+          "dx": -52,
+          "dy": -8,
+          "errorPx": 1.3585158278406004,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1080,
+          "y": 1592,
+          "dx": -32,
+          "dy": -8,
+          "errorPx": 1.3872909628824381,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1592,
+          "y": 1592,
+          "dx": -12,
+          "dy": -8,
+          "errorPx": 1.487058810323928,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2104,
+          "y": 1592,
+          "dx": 8,
+          "dy": -8,
+          "errorPx": 1.64495237727225,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2616,
+          "y": 1592,
+          "dx": 28,
+          "dy": -8,
+          "errorPx": 1.8461174041999922,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3128,
+          "y": 1592,
+          "dx": 48,
+          "dy": -8,
+          "errorPx": 2.0780248663457987,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3640,
+          "y": 1592,
+          "dx": 68,
+          "dy": -8,
+          "errorPx": 2.331519236180075,
+          "usable": true
+        }
+      ]
+    },
+    {
+      "frame": 199,
+      "engineeringAxial": 0.1,
+      "stretchX": 1.1,
+      "stretchY": 0.9539017454387002,
+      "method": "HORG",
+      "requestedVisibleSeeds": 28,
+      "acceptedCount": 23,
+      "acceptedWithin5Px": 23,
+      "acceptedWithin2Px": 21,
+      "acceptedRmsePx": 1.0478563859941883,
+      "acceptedMedianPx": 0.36512601424063423,
+      "acceptedP95Px": 2.5237410856394358,
+      "rejectedProposalRmsePx": 2002.2480848391228,
+      "runtimeRunsS": [
+        0.08478385594207793,
+        0.0797195469494909,
+        0.07551228103693575
+      ],
+      "medianRuntimeS": 0.0797195469494909,
+      "perSeed": [
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 575.5,
+          "y": 63.5,
+          "dx": -534.204833984375,
+          "dy": 1744.9622802734375,
+          "errorPx": 1744.5225993688646,
+          "usable": false
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1087.5,
+          "y": 63.5,
+          "dx": -83.562255859375,
+          "dy": 47.04877471923828,
+          "errorPx": 0.3654659161136691,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1599.5,
+          "y": 63.5,
+          "dx": -34.07861328125,
+          "dy": 45.3575439453125,
+          "errorPx": 2.5237410856394358,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2111.5,
+          "y": 63.5,
+          "dx": 18.867919921875,
+          "dy": 45.969688415527344,
+          "errorPx": 0.9328576026499507,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2623.5,
+          "y": 63.5,
+          "dx": 69.21875,
+          "dy": 46.668540954589844,
+          "errorPx": 1.1471503394259122,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3135.5,
+          "y": 63.5,
+          "dx": -1520.19091796875,
+          "dy": 2982.9443359375,
+          "errorPx": 3363.9130593981513,
+          "usable": false
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3647.5,
+          "y": 63.5,
+          "dx": 1254.46533203125,
+          "dy": 1345.9417724609375,
+          "errorPx": 1690.4805328806124,
+          "usable": false
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 575.5,
+          "y": 575.5,
+          "dx": -134.6268310546875,
+          "dy": 23.12017822265625,
+          "errorPx": 0.22331991021703257,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1087.5,
+          "y": 575.5,
+          "dx": -83.24163818359375,
+          "dy": 22.89947509765625,
+          "errorPx": 0.3571922163687243,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1599.5,
+          "y": 575.5,
+          "dx": -31.8980712890625,
+          "dy": 22.6771240234375,
+          "errorPx": 0.5990319757422172,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2111.5,
+          "y": 575.5,
+          "dx": 19.080322265625,
+          "dy": 23.017822265625,
+          "errorPx": 0.24870704320279755,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2623.5,
+          "y": 575.5,
+          "dx": 69.90185546875,
+          "dy": 23.1351318359375,
+          "errorPx": 0.4643065896713211,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3135.5,
+          "y": 575.5,
+          "dx": 121.84814453125,
+          "dy": 23.46734619140625,
+          "errorPx": 0.36512601424063423,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3647.5,
+          "y": 575.5,
+          "dx": 929.734375,
+          "dy": 1402.067626953125,
+          "errorPx": 1572.9415997908902,
+          "usable": false
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 575.5,
+          "y": 1087.5,
+          "dx": -134.59683227539062,
+          "dy": -0.2381591796875,
+          "errorPx": 0.1820238582865224,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1087.5,
+          "y": 1087.5,
+          "dx": -83.1617431640625,
+          "dy": -0.6636962890625,
+          "errorPx": 0.3299809635813219,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1599.5,
+          "y": 1087.5,
+          "dx": -31.8984375,
+          "dy": -0.6195068359375,
+          "errorPx": 0.3129235756327353,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2111.5,
+          "y": 1087.5,
+          "dx": 19.345947265625,
+          "dy": -0.609619140625,
+          "errorPx": 0.3286779015428331,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2623.5,
+          "y": 1087.5,
+          "dx": 70.36962890625,
+          "dy": -0.4891357421875,
+          "errorPx": 0.1447360330392878,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3135.5,
+          "y": 1087.5,
+          "dx": 121.8623046875,
+          "dy": -0.1123046875,
+          "errorPx": 0.3899036034287867,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3647.5,
+          "y": 1087.5,
+          "dx": -394.171875,
+          "dy": -180.475341796875,
+          "errorPx": 594.8504744139507,
+          "usable": false
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 575.5,
+          "y": 1599.5,
+          "dx": -134.77627563476562,
+          "dy": -23.820556640625,
+          "errorPx": 0.35029790754940443,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1087.5,
+          "y": 1599.5,
+          "dx": -83.1278076171875,
+          "dy": -24.2259521484375,
+          "errorPx": 0.3035857988315993,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1599.5,
+          "y": 1599.5,
+          "dx": -31.85986328125,
+          "dy": -24.1910400390625,
+          "errorPx": 0.308544022691074,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2111.5,
+          "y": 1599.5,
+          "dx": 19.8876953125,
+          "dy": -24.26123046875,
+          "errorPx": 0.8014241145973912,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2623.5,
+          "y": 1599.5,
+          "dx": 70.75439453125,
+          "dy": -24.1634521484375,
+          "errorPx": 0.4581876610728166,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3135.5,
+          "y": 1599.5,
+          "dx": 122.3544921875,
+          "dy": -24.2022705078125,
+          "errorPx": 0.843705624676815,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3647.5,
+          "y": 1599.5,
+          "dx": 176.01904296875,
+          "dy": -22.35546875,
+          "errorPx": 3.6363354427731456,
+          "usable": true
+        }
+      ]
+    },
+    {
+      "frame": 199,
+      "engineeringAxial": 0.1,
+      "stretchX": 1.1,
+      "stretchY": 0.9539017454387002,
+      "method": "DeepMatching-INRIA",
+      "requestedVisibleSeeds": 28,
+      "acceptedCount": 28,
+      "acceptedWithin5Px": 28,
+      "acceptedWithin2Px": 27,
+      "acceptedRmsePx": 1.165006599256761,
+      "acceptedMedianPx": 0.8933981480138391,
+      "acceptedP95Px": 1.7867962960276909,
+      "rejectedProposalRmsePx": null,
+      "runtimeRunsS": [
+        1.6471841789316386,
+        1.6496842389460653,
+        1.6596311250468716
+      ],
+      "medianRuntimeS": 1.6496842389460653,
+      "perSeed": [
+        {
+          "requestedX": 575.5,
+          "requestedY": 63.5,
+          "x": 568,
+          "y": 56,
+          "dx": -136,
+          "dy": 48,
+          "errorPx": 1.1281139142382106,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 63.5,
+          "x": 1080,
+          "y": 56,
+          "dx": -84,
+          "dy": 48,
+          "errorPx": 0.7953873292290154,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 63.5,
+          "x": 1592,
+          "y": 56,
+          "dx": -32,
+          "dy": 48,
+          "errorPx": 1.1281139142383216,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 63.5,
+          "x": 2104,
+          "y": 56,
+          "dx": 20,
+          "dy": 48,
+          "errorPx": 1.7867962960276176,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 63.5,
+          "x": 2616,
+          "y": 56,
+          "dx": 68,
+          "dy": 48,
+          "errorPx": 1.7867962960276909,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 63.5,
+          "x": 3128,
+          "y": 56,
+          "dx": 120,
+          "dy": 48,
+          "errorPx": 1.128113914238382,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 63.5,
+          "x": 3640,
+          "y": 56,
+          "dx": 172,
+          "dy": 48,
+          "errorPx": 0.7953873292290154,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 575.5,
+          "x": 568,
+          "y": 568,
+          "dx": -136,
+          "dy": 24,
+          "errorPx": 0.8933981480136991,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 575.5,
+          "x": 1080,
+          "y": 568,
+          "dx": -84,
+          "dy": 24,
+          "errorPx": 0.3976936646145077,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 575.5,
+          "x": 1592,
+          "y": 568,
+          "dx": -32,
+          "dy": 24,
+          "errorPx": 0.8933981480138391,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 575.5,
+          "x": 2104,
+          "y": 568,
+          "dx": 16,
+          "dy": 24,
+          "errorPx": 2.4327269166255787,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 575.5,
+          "x": 2616,
+          "y": 568,
+          "dx": 68,
+          "dy": 24,
+          "errorPx": 1.6486844000216432,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 575.5,
+          "x": 3128,
+          "y": 568,
+          "dx": 120,
+          "dy": 24,
+          "errorPx": 0.8933981480139154,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 575.5,
+          "x": 3640,
+          "y": 568,
+          "dx": 172,
+          "dy": 24,
+          "errorPx": 0.3976936646145077,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1087.5,
+          "x": 568,
+          "y": 1080,
+          "dx": -136,
+          "dy": 0,
+          "errorPx": 0.7999999999998693,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1087.5,
+          "x": 1080,
+          "y": 1080,
+          "dx": -84,
+          "dy": 0,
+          "errorPx": 7.105427357601002e-14,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1087.5,
+          "x": 1592,
+          "y": 1080,
+          "dx": -32,
+          "dy": 0,
+          "errorPx": 0.8000000000000256,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1087.5,
+          "x": 2104,
+          "y": 1080,
+          "dx": 20,
+          "dy": 0,
+          "errorPx": 1.5999999999999837,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1087.5,
+          "x": 2616,
+          "y": 1080,
+          "dx": 68,
+          "dy": 0,
+          "errorPx": 1.6000000000000654,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1087.5,
+          "x": 3128,
+          "y": 1080,
+          "dx": 120,
+          "dy": 0,
+          "errorPx": 0.8000000000001108,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1087.5,
+          "x": 3640,
+          "y": 1080,
+          "dx": 172,
+          "dy": 0,
+          "errorPx": 1.4210854715202004e-13,
+          "usable": true
+        },
+        {
+          "requestedX": 575.5,
+          "requestedY": 1599.5,
+          "x": 568,
+          "y": 1592,
+          "dx": -136,
+          "dy": -24,
+          "errorPx": 0.8933981480136991,
+          "usable": true
+        },
+        {
+          "requestedX": 1087.5,
+          "requestedY": 1599.5,
+          "x": 1080,
+          "y": 1592,
+          "dx": -84,
+          "dy": -24,
+          "errorPx": 0.3976936646145077,
+          "usable": true
+        },
+        {
+          "requestedX": 1599.5,
+          "requestedY": 1599.5,
+          "x": 1592,
+          "y": 1592,
+          "dx": -32,
+          "dy": -24,
+          "errorPx": 0.8933981480138391,
+          "usable": true
+        },
+        {
+          "requestedX": 2111.5,
+          "requestedY": 1599.5,
+          "x": 2104,
+          "y": 1592,
+          "dx": 20,
+          "dy": -24,
+          "errorPx": 1.648684400021564,
+          "usable": true
+        },
+        {
+          "requestedX": 2623.5,
+          "requestedY": 1599.5,
+          "x": 2616,
+          "y": 1592,
+          "dx": 68,
+          "dy": -24,
+          "errorPx": 1.6486844000216432,
+          "usable": true
+        },
+        {
+          "requestedX": 3135.5,
+          "requestedY": 1599.5,
+          "x": 3128,
+          "y": 1592,
+          "dx": 120,
+          "dy": -24,
+          "errorPx": 0.8933981480139154,
+          "usable": true
+        },
+        {
+          "requestedX": 3647.5,
+          "requestedY": 1599.5,
+          "x": 3640,
+          "y": 1592,
+          "dx": 172,
+          "dy": -24,
+          "errorPx": 0.3976936646145077,
+          "usable": true
+        }
+      ]
+    }
+  ]
+}

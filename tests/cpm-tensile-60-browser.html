@@ -9,6 +9,7 @@ const result = document.querySelector("#result");
 const DATA = "../results/uniaxial/tensile_60pct/";
 const WIDTH = 3840, HEIGHT = 2160;
 const STRETCH_X = 1.6, STRETCH_Y = 0.7910265877644076;
+const matchingSupportPx = Number(new URLSearchParams(location.search).get("support") || 32);
 
 async function loadGray(path) {
   const response = await fetch(path);
@@ -55,6 +56,10 @@ try {
   const start = performance.now();
   const field = await computeCPM(device, reference, target, WIDTH, HEIGHT, {
     patchSize: 128, stride: 512, downscaleLevels: 2, searchRadiusPx: 1024,
+    cpmMatchingPatchSizePx: matchingSupportPx,
+    cpmInitialHypotheses: 16,
+    cpmOracleAffine: [STRETCH_X, 0, 1920 * (1 - STRETCH_X),
+      0, STRETCH_Y, 1080 * (1 - STRETCH_Y)],
     seedPoints: seeds,
     cpmGridStride: 32, cpmLevels: 4, cpmPropagationIterations: 6,
     cpmRandomTrials: 16, cpmLocalSearchRadiusPx: 64,
@@ -76,6 +81,7 @@ try {
     requestedCount: seeds.length,
     acceptedCount: accepted.length,
     accurateAcceptedCount: accepted.filter(match => match.errorPx <= 2).length,
+    repairableAcceptedCountLt5Px: accepted.filter(match => match.errorPx < 5).length,
     accurateCoverageVisiblePercent: 100 * accepted.filter(match => match.errorPx <= 2).length / seeds.length,
     acceptedRmsePx: rmse,
     acceptedMedianPx: errors.length ? errors[Math.floor(errors.length / 2)] : null,
@@ -85,9 +91,13 @@ try {
     descriptorMs: field.descriptorMs,
     pyramidMs: field.pyramidMs,
     matchingMs: field.matchingMs,
-    settings: { patchSizePx: 128, seedStridePx: 512, workGridStridePx: 32,
+    workGridReciprocalCount: field.workGridReciprocalCount,
+    workGridUsableCount: field.workGridUsableCount,
+    settings: { dicWindowPx: 128, matchingSupportPx, seedStridePx: 512, workGridStridePx: 32,
       searchRadiusPx: 1024, levels: field.levels, propagationIterations: 6,
-      randomTrials: 16, localSearchRadiusPx: 64, seed: 17, reciprocalThresholdPx: 8 },
+      initialHypotheses: 16, randomTrials: 16, localSearchRadiusPx: 64,
+      affineRadiusPx: field.affineRadiusPx, seed: 17, reciprocalThresholdPx: 8 },
+    oracleDiagnostics: field.oracleDiagnostics,
     perSeed,
   };
   globalThis.cpm60Report = summary;

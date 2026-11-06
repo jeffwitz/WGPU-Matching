@@ -11,7 +11,7 @@ struct Params {
     random_trials: u32,
     initialize: u32,
     scale_previous: u32,
-    padding_1: u32,
+    initial_hypotheses: u32,
     padding_2: u32,
     padding_3: u32,
 }
@@ -39,6 +39,16 @@ fn random_signed(key: u32, radius: u32) -> i32 {
     if radius == 0u { return 0; }
     let span = radius * 2u + 1u;
     return i32(hash32(key) % span) - i32(radius);
+}
+
+fn stratified_signed(key: u32, radius: u32, trial: u32, trial_count: u32, axis: u32) -> i32 {
+    let span = radius * 2u + 1u;
+    let side = u32(ceil(sqrt(f32(trial_count))));
+    let cell = select(trial / side, trial % side, axis == 1u);
+    let first = (cell * span) / side;
+    let last = ((cell + 1u) * span) / side;
+    let cell_span = max(1u, last - first);
+    return i32(first + hash32(key ^ (axis * 0x9e3779b9u)) % cell_span) - i32(radius);
 }
 
 fn evaluate(index: u32, dx: i32, dy: i32) -> State {
@@ -116,13 +126,30 @@ fn patchmatch_step(@builtin(global_invocation_id) id: vec3<u32>) {
     }
 
     let current_radius = select(params.random_radius, u32(max(params.radius, 0)), params.initialize != 0u);
-    for (var trial = 0u; trial < params.random_trials; trial = trial + 1u) {
+    let trial_count = select(params.random_trials, params.initial_hypotheses, params.initialize != 0u);
+    for (var trial = 0u; trial < trial_count; trial = trial + 1u) {
         key = hash32(key + trial + params.seed + 0x9e3779b9u);
-        let base = select(vec2<i32>(best.dx, best.dy), vec2<i32>(0), params.initialize != 0u);
-        let candidate = base + vec2<i32>(
-            random_signed(key, current_radius),
-            random_signed(hash32(key ^ 0xa511e9b3u), current_radius));
-        best = consider(best, evaluate(index, candidate.x, candidate.y));
+        if params.initialize != 0u {
+            let candidate = vec2<i32>(
+                stratified_signed(key, current_radius, trial, trial_count, 0u),
+                stratified_signed(hash32(key ^ 0xa511e9b3u), current_radius, trial,
+                    trial_count, 1u));
+            best = consider(best, evaluate(index, candidate.x, candidate.y));
+        } else {
+            let candidate = vec2<i32>(best.dx, best.dy) + vec2<i32>(
+                random_signed(key, current_radius),
+                random_signed(hash32(key ^ 0xa511e9b3u), current_radius));
+            best = consider(best, evaluate(index, candidate.x, candidate.y));
+        }
     }
     next_states.values[index] = best;
+}
+
+@compute @workgroup_size(64)
+fn evaluate_oracle(@builtin(global_invocation_id) id: vec3<u32>) {
+    let index = id.x;
+    let count = params.grid_width * params.grid_height;
+    if index >= count { return; }
+    let candidate = previous_states.values[index];
+    next_states.values[index] = evaluate(index, candidate.dx, candidate.dy);
 }

@@ -1,0 +1,187 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CPM progressive tensile validation</title>
+<pre id="result">loading original Live-DIC UHD tensile frames</pre>
+<script type="module">
+import { computeDeepMatching } from "../deepmatching.js";
+import { computeHorg } from "../horg.js";
+import { computeCPM } from "../cpm.js";
+
+const result = document.querySelector("#result");
+const ROOT = "/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile/";
+const WIDTH = 3840, HEIGHT = 2160;
+const FRAMES = [40, 100, 199];
+const PATCH = 128, SEED_STRIDE = 512;
+const affineRadiusPx = Number(new URLSearchParams(location.search).get("affineRadius") || 64);
+const CPM_SETTINGS = {
+  cpmMatchingPatchSizePx: 32,
+  cpmGridStride: 32,
+  cpmLevels: 4,
+  cpmPropagationIterations: 6,
+  cpmRandomTrials: 16,
+  cpmInitialHypotheses: 16,
+  cpmAffineRadiusPx: affineRadiusPx,
+  cpmLocalSearchRadiusPx: 64,
+  cpmSeed: 17,
+  cpmReciprocalThresholdPx: 8,
+};
+
+async function loadGray(path) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error("Could not load " + path + " (" + response.status + ")");
+  const bitmap = await createImageBitmap(await response.blob());
+  try {
+    if (bitmap.width !== WIDTH || bitmap.height !== HEIGHT) throw new Error("Unexpected image dimensions.");
+    const canvas = new OffscreenCanvas(WIDTH, HEIGHT);
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0);
+    const rgba = context.getImageData(0, 0, WIDTH, HEIGHT).data;
+    const pixels = new Uint8Array(WIDTH * HEIGHT);
+    for (let index = 0; index < pixels.length; index++) {
+      pixels[index] = Math.floor((2126 * rgba[index * 4] + 7152 * rgba[index * 4 + 1]
+        + 722 * rgba[index * 4 + 2] + 5000) / 10000);
+    }
+    return pixels;
+  } finally {
+    bitmap.close();
+  }
+}
+
+function truthMap(csv, frame) {
+  const lines = csv.trim().split(/\r?\n/);
+  const headers = lines[0].split(",");
+  const row = lines.slice(1).map(line => line.split(","))
+    .find(values => Number(values[headers.indexOf("frame")]) === frame);
+  if (!row) throw new Error("Missing analytic truth for frame " + frame);
+  return Object.fromEntries(headers.map((name, index) => [name, Number(row[index])]));
+}
+
+function seedsFor(stretchX, stretchY) {
+  const seeds = [];
+  for (let row = 0; row < 4; row++) for (let column = 0; column < 8; column++) {
+    const x = column * SEED_STRIDE + (PATCH - 1) / 2;
+    const y = row * SEED_STRIDE + (PATCH - 1) / 2;
+    const targetX = 1920 + stretchX * (x - 1920);
+    const targetY = 1080 + stretchY * (y - 1080);
+    if (targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT) seeds.push({ x, y });
+  }
+  return seeds;
+}
+
+function summarize(name, field, truth, frame, runtimeRunsMs) {
+  const visibleMatches = field.matches.filter(match => {
+    const sourceX = match.requestedX ?? match.seedX ?? match.x;
+    const sourceY = match.requestedY ?? match.seedY ?? match.y;
+    const targetX = 1920 + truth.stretch_x * (sourceX - 1920);
+    const targetY = 1080 + truth.stretch_y * (sourceY - 1080);
+    return targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT;
+  });
+  const perSeed = visibleMatches.map(match => {
+    const trueDx = (truth.stretch_x - 1) * (match.x - 1920);
+    const trueDy = (truth.stretch_y - 1) * (match.y - 1080);
+    return { ...match, trueDx, trueDy, errorPx: Math.hypot(match.dx - trueDx, match.dy - trueDy) };
+  });
+  const accepted = perSeed.filter(match => match.usable);
+  const errors = accepted.map(match => match.errorPx).sort((a, b) => a - b);
+  const rmse = errors.length ? Math.sqrt(errors.reduce((sum, value) => sum + value * value, 0) / errors.length) : null;
+  return {
+    frame,
+    engineeringAxial: truth.engineering_axial,
+    stretchX: truth.stretch_x,
+    stretchY: truth.stretch_y,
+    method: name,
+    requestedVisibleSeeds: visibleMatches.length,
+    acceptedCount: accepted.length,
+    acceptedWithin5Px: accepted.filter(match => match.errorPx < 5).length,
+    acceptedWithin2Px: accepted.filter(match => match.errorPx <= 2).length,
+    acceptedRmsePx: rmse,
+    acceptedMedianPx: errors.length ? errors[Math.floor(errors.length / 2)] : null,
+    acceptedP95Px: errors.length ? errors[Math.min(errors.length - 1, Math.ceil(0.95 * errors.length) - 1)] : null,
+    rejectedProposalRmsePx: (() => {
+      const rejected = perSeed.filter(match => !match.usable);
+      return rejected.length ? Math.sqrt(rejected.reduce((sum, value) => sum + value.errorPx ** 2, 0) / rejected.length) : null;
+    })(),
+    medianElapsedMs: runtimeRunsMs.slice().sort((a, b) => a - b)[Math.floor(runtimeRunsMs.length / 2)],
+    runtimeRunsMs,
+    descriptorMs: field.descriptorMs ?? null,
+    pyramidMs: field.pyramidMs ?? null,
+    matchingMs: field.matchingMs ?? null,
+    levels: field.levels ?? null,
+    workGridReciprocalCount: field.workGridReciprocalCount ?? null,
+    workGridUsableCount: field.workGridUsableCount ?? null,
+    settings: { dicWindowPx: PATCH, seedStridePx: SEED_STRIDE,
+      ...(name === "CPM-WGPU" ? CPM_SETTINGS : {}) },
+    oracleDiagnostics: field.oracleDiagnostics ?? null,
+    perSeed,
+  };
+}
+
+try {
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  if (!adapter) throw new Error("No WebGPU adapter available.");
+  const requiredFeatures = adapter.features.has("texture-formats-tier1") ? ["texture-formats-tier1"] : [];
+  const device = await adapter.requestDevice({ requiredFeatures });
+  const [reference, truthCsv, manifest] = await Promise.all([
+    loadGray(ROOT + "reference.png"),
+    fetch(ROOT + "machine_truth.csv").then(response => response.text()),
+    fetch(ROOT + "manifest.json").then(response => response.json()),
+  ]);
+  const reports = [];
+  for (const frame of FRAMES) {
+    result.textContent = "running three matchers on frame " + frame;
+    const truth = truthMap(truthCsv, frame);
+    const target = await loadGray(ROOT + "frame_" + String(frame).padStart(3, "0") + ".png");
+    const seeds = seedsFor(truth.stretch_x, truth.stretch_y);
+    const affine = [truth.stretch_x, 0, 1920 * (1 - truth.stretch_x),
+      0, truth.stretch_y, 1080 * (1 - truth.stretch_y)];
+    const common = { patchSize: PATCH, stride: SEED_STRIDE, seedPoints: seeds };
+    const methods = [];
+    for (const name of ["DeepMatching-INRIA", "HORG", "CPM-WGPU"]) {
+      let field = null;
+      const runtimeRunsMs = [];
+      for (let repeat = 0; repeat < 3; repeat++) {
+        result.textContent = "frame " + frame + " · " + name + " · repeat " + (repeat + 1) + "/3";
+        const start = performance.now();
+        if (name === "DeepMatching-INRIA") {
+          field = await computeDeepMatching(device, reference, target, WIDTH, HEIGHT,
+            { ...common, rootPatchSize: 512, downscaleLevels: 2, searchRadiusPx: 256 });
+        } else if (name === "HORG") {
+          field = await computeHorg(device, reference, target, WIDTH, HEIGHT,
+            { ...common, horgReduction: 4, horgMaxFeatures: 1024 });
+        } else {
+          field = await computeCPM(device, reference, target, WIDTH, HEIGHT, {
+            ...common, downscaleLevels: 2, searchRadiusPx: 256,
+            cpmOracleAffine: affine, ...CPM_SETTINGS,
+          }, message => { result.textContent = "frame " + frame + " · " + message; });
+        }
+        runtimeRunsMs.push(performance.now() - start);
+      }
+      methods.push(summarize(name, field, truth, frame, runtimeRunsMs));
+    }
+    reports.push({ frame, engineeringAxial: truth.engineering_axial,
+      stretchX: truth.stretch_x, stretchY: truth.stretch_y,
+      requestedVisibleSeeds: seeds.length, methods });
+  }
+  const output = {
+    case: "Original Live-DIC UHD tensile frames 040, 100, 199; three-method progressive qualification",
+    source: ROOT,
+    sourceManifest: manifest,
+    browser: navigator.userAgent,
+    adapter: adapter.info?.description || adapter.info?.device || "not exposed by this browser",
+    timingBoundary: "Three full calls per method/frame with images and device already loaded. Includes per-call descriptor preparation, GPU matching, synchronization and output readback. CPM also runs oracle diagnostics, which are not included in its matchingMs field.",
+    settings: { dicWindowPx: PATCH, seedStridePx: SEED_STRIDE,
+      DeepMatching: { rootPatchSizePx: 512, downscale: 4, searchRadiusPx: 256 },
+      HORG: { reduction: 4, maxFeatures: 1024 },
+      CPM: { downscale: 4, searchRadiusPx: 256, ...CPM_SETTINGS } },
+    reports,
+  };
+  globalThis.cpmProgressiveReport = output;
+  result.textContent = JSON.stringify(output);
+  document.title = "CPM_PROGRESSIVE_RESULT";
+  device.destroy();
+} catch (error) {
+  globalThis.cpmProgressiveError = error.stack || error.message || String(error);
+  result.textContent = "ERROR: " + globalThis.cpmProgressiveError;
+  document.title = "CPM_PROGRESSIVE_ERROR";
+}
+</script>

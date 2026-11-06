@@ -110,9 +110,11 @@ function selectedSettings() {
   const horgReduction = Number($("horg-reduction").value);
   const horgMaxFeatures = Number($("horg-max-features").value);
   const cpmGridStride = Number($("cpm-grid-stride").value);
+  const cpmMatchingPatchSizePx = Number($("cpm-matching-support").value);
   const cpmLevels = Number($("cpm-levels").value);
   const cpmPropagationIterations = Number($("cpm-propagation-iterations").value);
   const cpmRandomTrials = Number($("cpm-random-trials").value);
+  const cpmInitialHypotheses = Number($("cpm-initial-hypotheses").value);
   const cpmLocalSearchRadiusPx = Number($("cpm-local-radius").value);
   const cpmSeed = Number($("cpm-seed").value);
   const cpmReciprocalThresholdPx = Number($("cpm-reciprocal-threshold").value);
@@ -155,9 +157,16 @@ function selectedSettings() {
       return { x, y };
     });
   }
+  if (!Number.isInteger(cpmMatchingPatchSizePx) || cpmMatchingPatchSizePx < 8 || cpmMatchingPatchSizePx > 128) {
+    throw new Error("Le support de matching CPM doit mesurer de 8 à 128 px.");
+  }
+  if (!Number.isInteger(cpmInitialHypotheses) || cpmInitialHypotheses < 1 || cpmInitialHypotheses > 64) {
+    throw new Error("Le nombre d’hypothèses initiales CPM doit être compris entre 1 et 64.");
+  }
   return { algorithm, patchSize, rootPatchSize, stride, downscaleLevels, searchRadiusPx, seedPoints,
     horgReduction, horgMaxFeatures, cpmGridStride, cpmLevels, cpmPropagationIterations,
-    cpmRandomTrials, cpmLocalSearchRadiusPx, cpmSeed, cpmReciprocalThresholdPx };
+    cpmMatchingPatchSizePx, cpmInitialHypotheses, cpmRandomTrials, cpmLocalSearchRadiusPx,
+    cpmSeed, cpmReciprocalThresholdPx };
 }
 
 function renderFieldSummary(field, elapsedMs) {
@@ -235,14 +244,17 @@ function exportCsv() {
     ] : state.field.algorithm === "CPM-WebGPU" ? [
       "# search_radius_px=" + state.field.searchRadiusPx,
       "# work_grid_stride_px=" + state.field.workGridStridePx,
+      "# matching_support_px=" + state.field.matchingSupportPx,
       "# pyramid_levels_requested=" + state.field.requestedLevels,
       "# pyramid_levels_effective=" + state.field.levels,
       "# random_trials=" + state.field.randomTrials,
+      "# initial_hypotheses=" + state.field.initialHypotheses,
       "# propagation_iterations_per_phase=" + state.field.propagationIterations,
       "# local_search_radius_px=" + state.field.localSearchRadiusPx,
+      "# local_affine_radius_px=" + state.field.affineRadiusPx,
       "# seed=" + state.field.seed,
       "# method_variant=" + clean(state.field.methodVariant),
-      "requested_x_px,requested_y_px,measured_x_px,measured_y_px,dx_px,dy_px,target_x_px,target_y_px,similarity,reciprocal_error_px,grid_distance_px,directly_evaluated,reciprocal,usable",
+      "requested_x_px,requested_y_px,measured_x_px,measured_y_px,dx_px,dy_px,target_x_px,target_y_px,similarity,reciprocal_error_px,grid_distance_px,projection_method,directly_evaluated,affine_support_count,affine_candidate_count,affine_fit_rmse_px,affine_a0,affine_a1,affine_a2,affine_b0,affine_b1,affine_b2,reciprocal,usable",
     ] : [
       "# matcher_mode=" + clean(state.field.matcherMode),
       "# search_radius_px=" + state.field.searchRadiusPx,
@@ -265,12 +277,18 @@ function exportCsv() {
       match.localConsistencyNeighbors,
       match.usable ? "1" : "0",
     ].join(",") : state.field.algorithm === "CPM-WebGPU" ? [
-      match.requestedX.toFixed(3), match.requestedY.toFixed(3), match.x.toFixed(3), match.y.toFixed(3),
+      match.requestedX.toFixed(3), match.requestedY.toFixed(3), match.measuredX.toFixed(3), match.measuredY.toFixed(3),
       match.dx.toFixed(3), match.dy.toFixed(3),
       Number.isFinite(match.targetX) ? match.targetX.toFixed(3) : "",
       Number.isFinite(match.targetY) ? match.targetY.toFixed(3) : "",
-      match.score.toFixed(6), match.reciprocalErrorPx.toFixed(4), match.gridDistancePx.toFixed(4),
-      match.directlyEvaluated ? "1" : "0", match.reciprocal ? "1" : "0", match.usable ? "1" : "0",
+      Number.isFinite(match.score) ? match.score.toFixed(6) : "",
+      Number.isFinite(match.reciprocalErrorPx) ? match.reciprocalErrorPx.toFixed(4) : "",
+      match.gridDistancePx.toFixed(4), match.projectionMethod,
+      match.directlyEvaluated ? "1" : "0",
+      match.affineSupportCount, match.affineCandidateCount,
+      Number.isFinite(match.affineFitRmsePx) ? match.affineFitRmsePx.toFixed(4) : "",
+      ...(match.localAffine?.parameters.map(value => value.toFixed(6)) ?? ["", "", "", "", "", ""]),
+      match.reciprocal ? "1" : "0", match.usable ? "1" : "0",
     ].join(",") : [
       match.seedX.toFixed(2),
       match.seedY.toFixed(2),
@@ -405,7 +423,8 @@ $("run").addEventListener("click", async () => {
 
 $("export").addEventListener("click", exportCsv);
 for (const id of ["patch-size", "root-patch-size", "grid-stride", "search-radius", "seed-points", "downscale-levels",
-  "horg-reduction", "horg-max-features", "cpm-grid-stride", "cpm-levels",
+  "horg-reduction", "horg-max-features", "cpm-grid-stride", "cpm-matching-support", "cpm-levels",
+  "cpm-initial-hypotheses",
   "cpm-propagation-iterations", "cpm-random-trials", "cpm-local-radius", "cpm-seed", "cpm-reciprocal-threshold"]) {
   $(id).addEventListener("change", () => {
     state.field = null;

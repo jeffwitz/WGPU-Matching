@@ -74,6 +74,7 @@ function metrics(name, field, elapsedRunsMs, seeds) {
   const acceptedErrors = perSeed.filter(match => match.usable).map(match => match.errorPx).sort((a, b) => a - b);
   const allErrors = perSeed.map(match => match.errorPx).sort((a, b) => a - b);
   const accurate = acceptedErrors.filter(error => error <= 2).length;
+  const repairable = acceptedErrors.filter(error => error < 5).length;
   return {
     method: name,
     requestedCount: seeds.length,
@@ -81,8 +82,11 @@ function metrics(name, field, elapsedRunsMs, seeds) {
     visibleReturnedCount: visibleMatches.length,
     acceptedCount: acceptedErrors.length,
     accurateAcceptedCount: accurate,
+    repairableAcceptedCountLt5Px: repairable,
     acceptedCoverageVisiblePercent: 100 * acceptedErrors.length / seeds.length,
     accurateCoverageVisiblePercent: 100 * accurate / seeds.length,
+    repairableCoverageVisiblePercent: 100 * repairable / seeds.length,
+    repairablePrecisionAmongAcceptedPercent: acceptedErrors.length ? 100 * repairable / acceptedErrors.length : null,
     acceptedRmsePx: acceptedErrors.length
       ? Math.sqrt(acceptedErrors.reduce((sum, error) => sum + error * error, 0) / acceptedErrors.length) : null,
     acceptedMedianPx: median(acceptedErrors),
@@ -93,6 +97,8 @@ function metrics(name, field, elapsedRunsMs, seeds) {
       ? Math.sqrt(allErrors.reduce((sum, error) => sum + error * error, 0) / allErrors.length) : null,
     medianElapsedMs: median(elapsedRunsMs),
     elapsedRunsMs,
+    workGridReciprocalCount: field.workGridReciprocalCount ?? null,
+    workGridUsableCount: field.workGridUsableCount ?? null,
     perSeed,
   };
 }
@@ -136,6 +142,7 @@ try {
   methods.push(await repeat("CPM-WGPU", () => computeCPM(
     device, reference, target, WIDTH, HEIGHT,
     { ...common, downscaleLevels: 2, searchRadiusPx: 1024,
+      cpmMatchingPatchSizePx: 32, cpmInitialHypotheses: 16, cpmAffineRadiusPx: 64,
       cpmGridStride: 32, cpmLevels: 4, cpmPropagationIterations: 6,
       cpmRandomTrials: 16, cpmLocalSearchRadiusPx: 64,
       cpmSeed: 17, cpmReciprocalThresholdPx: 8 },
@@ -152,7 +159,8 @@ try {
       common: { patchSizePx: 128, seedStridePx: 512, requestedSeeds: seeds.length },
       "DeepMatching-INRIA": { rootPatchSizePx: 512, downscaleLevels: 2, searchRadiusPx: 256 },
       HORG: { reduction: 4, maxFeaturesPerImage: 1024 },
-      "CPM-WGPU": { workGridStridePx: 32, requestedLevels: 4, propagationIterationsPerLevel: 6,
+      "CPM-WGPU": { matchingSupportPx: 32, workGridStridePx: 32, requestedLevels: 4,
+        initialHypotheses: 16, affineRadiusPx: 64, propagationIterationsPerLevel: 6,
         randomTrialsPerPass: 16, searchRadiusPx: 1024, localSearchRadiusPx: 64,
         seed: 17, reciprocityThresholdPx: 8 },
     },
