@@ -1,10 +1,11 @@
 import { createDeepMatchingHogDescriptors } from "./deepmatching.js";
+import { applyBrowserDefaults } from "./matcher-contracts.js";
 
 const BU = globalThis.GPUBufferUsage;
 const MM = globalThis.GPUMapMode;
 
 async function loadMatcher(device) {
-  const response = await fetch(new URL("./cpm-match.wgsl", import.meta.url));
+  const response = await fetch(new URL("./python/src/wgpu_matching/shaders/cpm-match.wgsl", import.meta.url));
   if (!response.ok) throw new Error("Could not load CPM WGSL shader (" + response.status + ").");
   const module = device.createShaderModule({ label: "CPM PatchMatch HOG", code: await response.text() });
   const errors = (await module.getCompilationInfo()).messages.filter(message => message.type === "error");
@@ -26,7 +27,7 @@ async function loadMatcher(device) {
 }
 
 async function buildDescriptorPyramid(device, hog, levelCount) {
-  const response = await fetch(new URL("./cpm-pyramid.wgsl", import.meta.url));
+  const response = await fetch(new URL("./python/src/wgpu_matching/shaders/cpm-pyramid.wgsl", import.meta.url));
   if (!response.ok) throw new Error("Could not load CPM pyramid WGSL shader (" + response.status + ").");
   const module = device.createShaderModule({ label: "CPM pooled-HOG pyramid", code: await response.text() });
   const errors = (await module.getCompilationInfo()).messages.filter(message => message.type === "error");
@@ -430,6 +431,7 @@ function fitLocalAffine(workMatches, x, y, radiusPx) {
  */
 export async function computeCPM(device, referencePixels, targetPixels,
   width, height, settings, onProgress = () => {}) {
+  settings = await applyBrowserDefaults(settings ?? {}, "cpm");
   if (!BU || !MM) throw new Error("WebGPU buffer constants are unavailable.");
   const scale = 2 ** (settings.downscaleLevels ?? 2);
   const patchSizePx = settings.patchSize || 32;
@@ -512,8 +514,13 @@ export async function computeCPM(device, referencePixels, targetPixels,
         || Math.ceil(centers.length / 64) > device.limits.maxComputeWorkgroupsPerDimension) {
       throw new Error("CPM state buffers exceed this adapter's WebGPU buffer limit.");
     }
-    const gridWidth = 1 + Math.floor((width - patchSizePx) / workStride);
-    const gridHeight = Math.ceil(centers.length / Math.max(1, gridWidth));
+    // The propagation lattice belongs to the matching support, not the larger
+    // DIC window used to choose requested output seeds.
+    const gridWidth = 1 + Math.floor((width - matchingSupportPx) / workStride);
+    const gridHeight = 1 + Math.floor((height - matchingSupportPx) / workStride);
+    if (gridWidth * gridHeight !== centers.length) {
+      throw new Error("CPM work-grid coordinates do not match its propagation lattice.");
+    }
     const perLevelBytes = centers.length * 8;
     for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
       const levelScale = scale * (2 ** levelIndex);
@@ -542,7 +549,7 @@ export async function computeCPM(device, referencePixels, targetPixels,
     const matchingMs = performance.now() - patchmatchStart;
 
     let oracleDiagnostics = null;
-    if (settings.cpmOracleAffine !== undefined) {
+    if (settings.cpmOracleAffine != null) {
       const affine = settings.cpmOracleAffine;
       if (!Array.isArray(affine) || affine.length !== 6 || !affine.every(Number.isFinite)) {
         throw new Error("CPM oracle affine must be [a00, a01, tx, a10, a11, ty].");

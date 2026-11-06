@@ -1,7 +1,19 @@
 Python API
 ==========
 
-The public package exports the following API from `wgpu_matching`:
+The public package exports DeepMatching, HORG-DIC, and CPM-HOG through
+``WGPUMatching`` and their corresponding option records:
+
+The shared matcher defaults and coordinate conventions are recorded in
+``python/src/wgpu_matching/matcher-contracts.json``. Python's option records
+load their defaults from this file; the browser UI and browser matcher
+functions use the same file. The parity check compares both option mappings
+against the manifest before comparing GPU results.
+
+The manifest also declares supported numeric ranges, DeepMatching modes, and
+the maximum manual-seed count. The browser and Python APIs reject invalid
+options before allocating GPU resources; seed coordinates must be finite and
+inside the source image.
 
 Matcher and device lifecycle
 ----------------------------
@@ -17,6 +29,9 @@ Option records
    :members:
 
 .. autoclass:: wgpu_matching.DeepMatchingOptions
+   :members:
+
+.. autoclass:: wgpu_matching.CPMOptions
    :members:
 
 Results

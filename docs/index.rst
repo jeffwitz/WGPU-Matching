@@ -3,7 +3,7 @@ WGPU-Matching
 
 **WebGPU initializers for digital image correlation (DIC).**
 
-WGPU-Matching provides two Python methods for finding correspondences between a reference image and a deformed image: DeepMatching and HORG-DIC. Their compute kernels are written in WGSL and run through `wgpu-py` on a native WebGPU adapter. Installing the package does not compile a project-specific extension.
+WGPU-Matching provides three Python methods for finding correspondences between a reference image and a deformed image: DeepMatching, HORG-DIC, and the experimental CPM-HOG initializer. Their compute kernels are written in WGSL and run through ``wgpu-py`` on a native WebGPU adapter. Installing the package does not compile a project-specific extension.
 
 These methods provide **initial displacement estimates** at points of interest. They do not compute a full DIC field or perform IC-GN refinement.
 
@@ -16,7 +16,7 @@ Choose a path
 
 * :doc:`Tutorial <tutorials/first-matches>` — install the package, create a reproducible speckle pair, and compute your first displacements.
 * :doc:`How-to guides <how-to/index>` — select an adapter, pass explicit seeds, run a benchmark, or inspect uncertain initializations.
-* :doc:`Explanations <explanation/index>` — learn how the correlation hierarchy and HORG descriptors work, how they fit into DIC, and what the measurements show.
+* :doc:`Explanations <explanation/index>` — learn how the correlation hierarchy, HORG descriptors, and CPM-HOG PatchMatch work, how they fit into DIC, and what the measurements show.
 * :doc:`Reference <reference/index>` — look up the Python API, options, result fields, metrics, and raw reports.
 * :doc:`Reports and raw data <_generated_results/index>` — browse rendered experiment reports, CSV previews, and complete data downloads.
 

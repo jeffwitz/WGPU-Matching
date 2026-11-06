@@ -93,6 +93,19 @@ class DeepMatchingBackend:
             result.append({"width": width, "height": height, "texture": texture})
         return result
 
+    def build_hog_descriptors(
+        self,
+        scope: ResourceScope,
+        reference: np.ndarray,
+        target: np.ndarray,
+        downscale_levels: int,
+        progress: Callable[[str], None],
+    ) -> dict[str, Any]:
+        """Build the shared INRIA-style HOG descriptor textures for a matcher backend."""
+        height, width = reference.shape
+        inputs = self._upload_gray(scope, reference, target)
+        return self._descriptors(scope, inputs, width, height, downscale_levels, progress)
+
     def _descriptors(
         self,
         scope: ResourceScope,

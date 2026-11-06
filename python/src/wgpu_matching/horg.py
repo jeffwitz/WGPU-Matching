@@ -395,6 +395,115 @@ class HORGBackend:
                     selected.append(int(index))
         return np.ascontiguousarray(features[selected], dtype=np.float32)
 
+    def fit_local_correspondences(
+        self,
+        correspondences: np.ndarray,
+        seed_points: np.ndarray,
+        *,
+        radius_px: float = 256.0,
+        threshold_px: float = 3.0,
+        max_iterations: int = 256,
+        candidate_capacity: int = MAX_RANSAC_CANDIDATES,
+    ) -> dict[str, Any]:
+        """Fit local affine models to supplied ``(x0, y0, x1, y1)`` pairs.
+
+        This reuses HORG's WGSL local-candidate and RANSAC kernels without
+        running HORG detection or descriptor matching. It is intended for
+        alternate correspondence sources such as XFeat.
+        """
+        pairs = np.ascontiguousarray(correspondences, dtype=np.float32)
+        centers = np.ascontiguousarray(seed_points, dtype=np.float32)
+        if pairs.ndim != 2 or pairs.shape[1] != 4 or pairs.shape[0] < 3:
+            raise ValueError("correspondences must be an Nx4 array of (x0, y0, x1, y1) pairs")
+        if centers.ndim != 2 or centers.shape[1] != 2 or centers.shape[0] < 1:
+            raise ValueError("seed_points must be a non-empty Nx2 array")
+        if not np.isfinite(pairs).all() or not np.isfinite(centers).all():
+            raise ValueError("correspondences and seed_points must contain only finite coordinates")
+        if not math.isfinite(radius_px) or radius_px <= 0:
+            raise ValueError("radius_px must be finite and positive")
+        if not math.isfinite(threshold_px) or threshold_px <= 0:
+            raise ValueError("threshold_px must be finite and positive")
+        if max_iterations < 1 or not 1 <= candidate_capacity <= MAX_RANSAC_CANDIDATES:
+            raise ValueError("RANSAC iterations and candidate_capacity are out of range")
+
+        pair_count, seed_count = len(pairs), len(centers)
+        max_binding_size = self.device.limits["max-storage-buffer-binding-size"]
+        candidate_bytes = seed_count * candidate_capacity * np.dtype(np.uint32).itemsize
+        if max(pair_count * 16, seed_count * 16, candidate_bytes, seed_count * 32) > max_binding_size:
+            raise ValueError("Local affine buffers exceed the adapter storage-buffer limit")
+        seeds = np.zeros((seed_count, 4), dtype=np.float32)
+        seeds[:, :2] = centers
+        seeds[:, 3] = np.arange(seed_count, dtype=np.float32)
+
+        resources = ResourceScope()
+        try:
+            prepare_module = self._shader("horg-prepare.wgsl")
+            ransac_module = self._shader("horg-ransac.wgsl")
+            build_candidates = make_pipeline(
+                self.device, prepare_module, "build_local_candidates", "Local affine candidate lists"
+            )
+            ransac = make_pipeline(self.device, ransac_module, "ransac_local", "Local affine RANSAC")
+            pair_buffer = upload_buffer(
+                self.device, resources, pairs, wgpu.BufferUsage.STORAGE, "Input correspondence pairs"
+            )
+            seed_buffer = upload_buffer(
+                self.device, resources, seeds, wgpu.BufferUsage.STORAGE, "Local affine POI centers"
+            )
+            candidate_buffer = create_buffer(
+                self.device, resources, candidate_bytes, wgpu.BufferUsage.STORAGE, "Local affine candidates"
+            )
+            result_buffer = create_buffer(
+                self.device, resources, seed_count * 32,
+                wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC, "Local affine RANSAC results"
+            )
+            candidate_params = self._ransac_uniform(
+                resources, [seed_count, pair_count, candidate_capacity, 0], [radius_px, 0, 0, 0]
+            )
+            candidate_group = make_bind_group(self.device, build_candidates, [
+                self._buffer_entry(3, pair_buffer), self._buffer_entry(5, seed_buffer),
+                self._buffer_entry(6, candidate_buffer), self._buffer_entry(7, candidate_params),
+            ])
+            ransac_params = self._ransac_uniform(
+                resources,
+                [seed_count, pair_count, candidate_capacity, max_iterations],
+                [threshold_px, 0, 0, 0],
+            )
+            ransac_group = make_bind_group(self.device, ransac, [
+                self._buffer_entry(0, pair_buffer), self._buffer_entry(1, seed_buffer),
+                self._buffer_entry(2, candidate_buffer), self._buffer_entry(3, result_buffer),
+                self._buffer_entry(4, ransac_params),
+            ])
+
+            start = time.perf_counter()
+            encoder = self.device.create_command_encoder(label="Local affine correspondence RANSAC")
+            dispatch(encoder, build_candidates, candidate_group, seed_count, label="Local affine GPU candidates")
+            dispatch(encoder, ransac, ransac_group, seed_count, label="Local affine GPU RANSAC")
+            self.device.queue.submit([encoder.finish()])
+            values = read_array(self.device, result_buffer, np.dtype(np.float32), seed_count * 8)
+            compute_ms = (time.perf_counter() - start) * 1000.0
+
+            matches = []
+            for index, (x, y) in enumerate(centers):
+                raw = values[index * 8 : index * 8 + 8]
+                inliers = round(float(raw[2]))
+                candidates = round(float(raw[3]))
+                fraction = float(raw[4])
+                residual = float(raw[5])
+                fitted = bool(raw[6] > 0.5)
+                matches.append({
+                    "x": float(x), "y": float(y),
+                    "dx": float(raw[0]) if fitted else 0.0,
+                    "dy": float(raw[1]) if fitted else 0.0,
+                    "inliers": inliers if fitted else 0,
+                    "candidates": candidates if fitted else 0,
+                    "inlier_fraction": fraction if fitted else 0.0,
+                    "residual": residual if fitted else math.nan,
+                    "fitted": fitted,
+                })
+            return {"matches": matches, "gpu_compute_ms": compute_ms, "candidate_capacity": candidate_capacity}
+        finally:
+            resources.close()
+
     def compute(
         self,
         reference: np.ndarray,

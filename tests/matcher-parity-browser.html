@@ -1,0 +1,153 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>DeepMatching/HORG browser parity</title>
+<pre id="result">running</pre>
+<script type="module">
+import { computeDeepMatching } from "../deepmatching.js";
+import { computeHorg } from "../horg.js";
+import { computeCPM } from "../cpm.js";
+import { applyBrowserDefaults, browserDefaults } from "../matcher-contracts.js";
+
+const WIDTH = 512;
+const HEIGHT = 384;
+const result = document.querySelector("#result");
+const base = new URL("./assets/", import.meta.url);
+
+try {
+  if (!navigator.gpu) throw new Error("navigator.gpu unavailable");
+  async function rejectsOptions(algorithm, options) {
+    try {
+      await applyBrowserDefaults(options, algorithm);
+      return false;
+    } catch (error) {
+      return error instanceof RangeError;
+    }
+  }
+  const optionValidation = {
+    deepmatchingRange: await rejectsOptions("deepmatching", { downscaleLevels: 9 }),
+    horgPositiveCount: await rejectsOptions("horg", { horgMaxFeatures: 0 }),
+    cpmLevelRange: await rejectsOptions("cpm", { cpmLevels: 7 }),
+    manualSeedLimit: await rejectsOptions("horg", {
+      seedPoints: Array.from({ length: 513 }, (_, index) => ({ x: index, y: 10 })),
+    }),
+  };
+  if (Object.values(optionValidation).some(valid => !valid)) {
+    throw new Error("Browser option validation does not follow the shared matcher contract");
+  }
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  if (!adapter) throw new Error("No WebGPU adapter");
+  const device = await adapter.requestDevice();
+  const reference = new Uint8Array(await (await fetch(new URL("matcher_parity_reference.u8", base))).arrayBuffer());
+  const targets = {
+    translation: new Uint8Array(await (await fetch(new URL("matcher_parity_target.u8", base))).arrayBuffer()),
+    affine: new Uint8Array(await (await fetch(new URL("matcher_parity_affine.u8", base))).arrayBuffer()),
+  };
+  const affineTruth = await (await fetch(new URL("matcher_parity_affine.json", base))).json();
+  if (reference.length !== WIDTH * HEIGHT
+      || Object.values(targets).some(target => target.length !== WIDTH * HEIGHT)) {
+    throw new Error("Parity fixture size does not match 512x384 uint8 grayscale");
+  }
+
+  const seeds = [];
+  const patchSize = 128;
+  const stride = 128;
+  for (let y = 0; y <= HEIGHT - patchSize; y += stride) {
+    for (let x = 0; x <= WIDTH - patchSize; x += stride) {
+      seeds.push({ x: x + (patchSize - 1) / 2, y: y + (patchSize - 1) / 2 });
+    }
+  }
+  const manualSeeds = [
+    { x: 98.25, y: 90.75 }, { x: 248.5, y: 190.25 }, { x: 402.25, y: 278.75 },
+  ];
+  const cases = {
+    translation: { target: targets.translation, seedPoints: seeds },
+    affine: { target: targets.affine, seedPoints: seeds },
+    manual_translation: { target: targets.translation, seedPoints: manualSeeds },
+  };
+  const normalize = field => field.matches.map(match => ({
+    x: match.x, y: match.y, dx: match.dx, dy: match.dy,
+    usable: match.usable,
+    score: Number.isFinite(match.score) ? match.score : null,
+    secondScore: Number.isFinite(match.secondScore) ? match.secondScore : null,
+    margin: Number.isFinite(match.margin) ? match.margin : null,
+    reciprocal: match.reciprocal ?? null,
+    inliers: match.inliers ?? null,
+    candidates: match.candidates ?? null,
+    inlierFraction: Number.isFinite(match.inlierFraction) ? match.inlierFraction : null,
+    residual: Number.isFinite(match.residual) ? match.residual : null,
+    localConsistencyPx: Number.isFinite(match.localConsistencyPx) ? match.localConsistencyPx : null,
+    localConsistencyNeighbors: match.localConsistencyNeighbors ?? null,
+    seedX: Number.isFinite(match.seedX) ? match.seedX : null,
+    seedY: Number.isFinite(match.seedY) ? match.seedY : null,
+    rootX: Number.isFinite(match.rootX) ? match.rootX : null,
+    rootY: Number.isFinite(match.rootY) ? match.rootY : null,
+    targetX: Number.isFinite(match.targetX) ? match.targetX : null,
+    targetY: Number.isFinite(match.targetY) ? match.targetY : null,
+  }));
+  const methods = { deepmatching: {}, horg: {} };
+  for (const [name, scenario] of Object.entries(cases)) {
+    const deep = await computeDeepMatching(device, reference, scenario.target, WIDTH, HEIGHT, {
+      patchSize, rootPatchSize: 128, stride, downscaleLevels: 1,
+      searchRadiusPx: 64, seedPoints: scenario.seedPoints,
+    });
+    const horg = await computeHorg(device, reference, scenario.target, WIDTH, HEIGHT, {
+      patchSize, stride, horgReduction: 2, horgMaxFeatures: 1024,
+      seedPoints: name === "manual_translation" ? scenario.seedPoints : null,
+    });
+    methods.deepmatching[name] = normalize(deep);
+    methods.horg[name] = normalize(horg);
+  }
+  const cpm = await computeCPM(device, reference, targets.translation, WIDTH, HEIGHT, {
+    patchSize: 64, stride: 64, downscaleLevels: 1, searchRadiusPx: 64,
+    seedPoints: manualSeeds,
+    cpmMatchingPatchSizePx: 32, cpmGridStride: 16, cpmLevels: 2,
+    cpmPropagationIterations: 2, cpmRandomTrials: 4, cpmInitialHypotheses: 8,
+    cpmLocalSearchRadiusPx: 32, cpmAffineRadiusPx: 64, cpmSeed: 17,
+    cpmReciprocalThresholdPx: 8,
+    cpmOracleAffine: [1, 0, 8, 0, 1, -4],
+  });
+  methods.cpm = {
+    manual_translation: cpm.matches.map(match => ({
+      x: match.x, y: match.y, dx: match.dx, dy: match.dy,
+      usable: match.usable, score: match.score, reciprocal: match.reciprocal,
+      inliers: match.affineSupportCount, candidates: match.affineCandidateCount,
+      inlierFraction: match.affineCandidateCount
+        ? match.affineSupportCount / match.affineCandidateCount : 0,
+      residual: match.affineFitRmsePx,
+      measuredX: match.measuredX, measuredY: match.measuredY,
+      measuredDx: match.measuredDx, measuredDy: match.measuredDy,
+      gridDistancePx: match.gridDistancePx,
+      reciprocalErrorPx: match.reciprocalErrorPx,
+    })),
+    metadata: {
+      workGridPointCount: cpm.workGridPointCount,
+      workGridReciprocalCount: cpm.workGridReciprocalCount,
+      workGridUsableCount: cpm.workGridUsableCount,
+      gridWidth: cpm.gridWidth,
+      gridHeight: cpm.gridHeight,
+    },
+    oracle: cpm.oracleDiagnostics,
+  };
+  const contractDefaults = {
+    deepmatching: await browserDefaults("deepmatching"),
+    horg: await browserDefaults("horg"),
+    cpm: await browserDefaults("cpm"),
+  };
+
+  const report = {
+    adapter: adapter.info?.description || adapter.info?.device || "unknown",
+    width: WIDTH, height: HEIGHT,
+    seedCounts: { translation: seeds.length, affine: seeds.length, manual_translation: manualSeeds.length },
+    contractDefaults,
+    optionValidation,
+    transforms: { translation: [8, -4], affine: affineTruth, manual_translation: [8, -4] },
+    methods,
+  };
+  result.textContent = JSON.stringify(report);
+  document.title = "MATCH_PARITY:" + btoa(unescape(encodeURIComponent(result.textContent)));
+  device.destroy();
+} catch (error) {
+  result.textContent = "ERROR: " + (error.stack || error.message || error);
+  document.title = "MATCH_PARITY_ERROR:" + btoa(unescape(encodeURIComponent(result.textContent)));
+}
+</script>

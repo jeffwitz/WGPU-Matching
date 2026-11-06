@@ -98,6 +98,9 @@ Reports and raw data
 The native Python benchmark measures HORG and DeepMatching separately on Live-DIC frames 040, 100, and 199 using `wgpu-py`. Its protocol differs from the earlier browser benchmark.
 
 * :doc:`DeepMatching–HORG accuracy and timing report <_generated_results/uniaxial/deepmatching_horg_current_comparison>`
+* :doc:`RaCo-ALIKED-LightGlue+ exploratory comparison <_generated_results/features/raco_aliked_lightglue_webgpu_study>` with :doc:`per-seed raw data <_generated_results/features/raco_aliked_lightglue_webgpu_study.json>`
+* :doc:`Modern learned-matcher comparison <_generated_results/features/modern_matcher_speckle_study>` (DeepMatching, XFeat, RaCo-ALIKED-LightGlue+, EfficientLoFTR) and :doc:`EfficientLoFTR per-seed data <_generated_results/features/efficientloftr_webgpu_study.json>`
+* :doc:`DeepMatching/XFeat comparison <_generated_results/features/deepmatching_vs_xfeat>`
 * :doc:`DeepMatching–HORG raw comparison data <_generated_results/uniaxial/deepmatching_horg_current_comparison.csv>`
 * :doc:`Native Python benchmark report <_generated_results/uniaxial/python_runtime_comparison>` and :doc:`timing data <_generated_results/uniaxial/python_runtime_comparison.csv>`
 * :doc:`INRIA–WebGPU DeepMatching parity report <_generated_results/uniaxial/inria_webgpu_hierarchy_comparison>` and :doc:`per-seed data <_generated_results/uniaxial/inria_webgpu_hierarchy_comparison.csv>`

@@ -1,5 +1,9 @@
 # CPM-WGPU validation status
 
+The progressive and 60% browser benchmarks below predate the correction that
+made work-grid geometry independent of DIC-window size. Treat those CPM
+measurements as historical baselines until the browser experiments are rerun.
+
 The browser CPM-HOG implementation remains experimental and is not qualified as a reliable initializer for large deformation. Current progressive results and diagnostics are linked below.
 
 ## Current prototype

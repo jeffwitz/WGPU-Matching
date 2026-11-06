@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from wgpu_matching import DeepMatchingOptions, HORGOptions, WGPUMatching
+from wgpu_matching import CPMOptions, DeepMatchingOptions, HORGOptions, WGPUMatching
 
 
 def speckle_pair() -> tuple[np.ndarray, np.ndarray]:
@@ -22,12 +22,34 @@ def main() -> None:
         ("DeepMatching direct", "direct"),
         ("DeepMatching INRIA", "inria"),
         ("HORG-DIC", "horg"),
+        ("CPM-HOG", "cpm"),
     )
 
     with WGPUMatching() as matcher:
         print(f"Adapter: {matcher.device_name}")
         for label, method in methods:
-            if method == "horg":
+            if method == "cpm":
+                field = matcher.match_cpm(
+                    reference,
+                    target,
+                    options=CPMOptions(
+                        patch_size=64,
+                        stride=128,
+                        downscale_levels=1,
+                        search_radius_px=48,
+                        matching_support_px=32,
+                        work_grid_stride=16,
+                        levels=2,
+                        propagation_iterations=2,
+                        random_trials=4,
+                        initial_hypotheses=8,
+                        local_search_radius_px=32,
+                        affine_radius_px=64,
+                        seed=17,
+                        seed_points=seeds,
+                    ),
+                )
+            elif method == "horg":
                 field = matcher.match_horg(
                     reference,
                     target,

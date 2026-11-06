@@ -2,16 +2,26 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
+from importlib.resources import files
 from pathlib import Path
 from typing import Any, Literal, Self
 
 import numpy as np
 import wgpu
 
+from .contracts import validate_matcher_options
 from .horg import HORGBackend
 from .images import load_gray
+
+_MATCHER_CONTRACT = json.loads(
+    files("wgpu_matching").joinpath("matcher-contracts.json").read_text(encoding="utf-8")
+)
+_DEEP_DEFAULTS = _MATCHER_CONTRACT["algorithms"]["deepmatching"]["defaults"]
+_HORG_DEFAULTS = _MATCHER_CONTRACT["algorithms"]["horg"]["defaults"]
+_CPM_DEFAULTS = _MATCHER_CONTRACT["algorithms"]["cpm"]["defaults"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,11 +35,11 @@ class HORGOptions:
     replace the regular grid.
     """
 
-    patch_size: int = 128
-    stride: int = 512
-    reduction: int = 4
-    max_features: int = 1024
-    seed_points: tuple[tuple[float, float], ...] | None = None
+    patch_size: int = _HORG_DEFAULTS["patch_size_px"]
+    stride: int = _HORG_DEFAULTS["stride_px"]
+    reduction: int = _HORG_DEFAULTS["reduction"]
+    max_features: int = _HORG_DEFAULTS["max_features"]
+    seed_points: tuple[tuple[float, float], ...] | None = _HORG_DEFAULTS["seed_points"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,15 +57,38 @@ class DeepMatchingOptions:
     acceptance test; they do not alter the INRIA reciprocal-match test.
     """
 
-    patch_size: int = 128
-    root_patch_size: int = 512
-    stride: int = 512
-    downscale_levels: int = 2
-    search_radius_px: int = 256
-    minimum_score: float = 0.0
-    minimum_margin: float = 0.0
-    seed_points: tuple[tuple[float, float], ...] | None = None
-    mode: Literal["inria", "inria_sparse", "direct"] = "inria"
+    patch_size: int = _DEEP_DEFAULTS["patch_size_px"]
+    root_patch_size: int = _DEEP_DEFAULTS["root_patch_size_px"]
+    stride: int = _DEEP_DEFAULTS["stride_px"]
+    downscale_levels: int = _DEEP_DEFAULTS["downscale_levels"]
+    search_radius_px: int = _DEEP_DEFAULTS["search_radius_px"]
+    minimum_score: float = _DEEP_DEFAULTS["minimum_score"]
+    minimum_margin: float = _DEEP_DEFAULTS["minimum_margin"]
+    seed_points: tuple[tuple[float, float], ...] | None = _DEEP_DEFAULTS["seed_points"]
+    mode: Literal["inria", "inria_sparse", "direct"] = _DEEP_DEFAULTS["mode"]
+
+
+@dataclass(frozen=True, slots=True)
+class CPMOptions:
+    """Parameters for sparse-grid coarse-to-fine CPM-HOG initialization."""
+
+    patch_size: int = _CPM_DEFAULTS["patch_size_px"]
+    stride: int = _CPM_DEFAULTS["stride_px"]
+    downscale_levels: int = _CPM_DEFAULTS["downscale_levels"]
+    search_radius_px: int = _CPM_DEFAULTS["search_radius_px"]
+    matching_support_px: int = _CPM_DEFAULTS["matching_support_px"]
+    work_grid_stride: int = _CPM_DEFAULTS["work_grid_stride_px"]
+    levels: int = _CPM_DEFAULTS["levels"]
+    propagation_iterations: int = _CPM_DEFAULTS["propagation_iterations"]
+    random_trials: int = _CPM_DEFAULTS["random_trials"]
+    initial_hypotheses: int = _CPM_DEFAULTS["initial_hypotheses"]
+    local_search_radius_px: float = _CPM_DEFAULTS["local_search_radius_px"]
+    affine_radius_px: float | None = _CPM_DEFAULTS["affine_radius_px"]
+    seed: int = _CPM_DEFAULTS["seed"]
+    reciprocal_threshold_px: float = _CPM_DEFAULTS["reciprocal_threshold_px"]
+    minimum_similarity: float = _CPM_DEFAULTS["minimum_similarity"]
+    seed_points: tuple[tuple[float, float], ...] | None = _CPM_DEFAULTS["seed_points"]
+    oracle_affine: tuple[float, float, float, float, float, float] | None = _CPM_DEFAULTS["oracle_affine"]
 
 
 @dataclass(slots=True)
@@ -128,6 +161,22 @@ class MatchField:
         }
 
 
+@dataclass(slots=True)
+class LocalAffineField:
+    """GPU affine fits built from an external set of point correspondences."""
+
+    matches: list[Match]
+    correspondence_count: int
+    radius_px: float
+    threshold_px: float
+    gpu_compute_ms: float
+
+    @property
+    def accepted(self) -> list[Match]:
+        """Return local affine estimates that meet the requested confidence criteria."""
+        return [match for match in self.matches if match.usable]
+
+
 def _select_adapter(adapters: list[Any], device_type: str, power_preference: str) -> Any:
     if device_type not in {"auto", "gpu", "cpu"}:
         raise ValueError("device_type must be 'auto', 'gpu' or 'cpu'")
@@ -166,7 +215,7 @@ def _as_gray(image: np.ndarray | str | Path) -> np.ndarray:
 
 
 class WGPUMatching:
-    """Own one native WebGPU device and run the HORG and DeepMatching pipelines.
+    """Own one native WebGPU device and run the HORG, DeepMatching, and CPM pipelines.
 
     The class is a context manager so the device can be released explicitly.
     All matching kernels are WGSL; installation uses the prebuilt ``wgpu`` wheel
@@ -226,6 +275,11 @@ class WGPUMatching:
         settings = options or HORGOptions()
         ref = _as_gray(reference)
         tar = _as_gray(target)
+        if ref.shape != tar.shape:
+            raise ValueError("HORG expects same-sized grayscale images")
+        if settings.seed_points is not None and len(settings.seed_points) == 0:
+            settings = replace(settings, seed_points=None)
+        validate_matcher_options("horg", asdict(settings), ref.shape[1], ref.shape[0])
         result = self._horg.compute(
             ref,
             tar,
@@ -260,9 +314,91 @@ class WGPUMatching:
 
         settings = options or DeepMatchingOptions()
         ref, tar = _as_gray(reference), _as_gray(target)
+        if ref.shape != tar.shape:
+            raise ValueError("DeepMatching expects same-sized grayscale images")
+        validate_matcher_options("deepmatching", asdict(settings), ref.shape[1], ref.shape[0])
         backend = DeepMatchingBackend(self.device)
         result = backend.compute(ref, tar, settings, on_progress=on_progress)
         return _field_from_dict(result)
+
+    def match_cpm(
+        self,
+        reference: np.ndarray | str | Path,
+        target: np.ndarray | str | Path,
+        *,
+        options: CPMOptions | None = None,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> MatchField:
+        """Compute sparse-grid CPM-HOG correspondences and local affine seeds.
+
+        The matcher runs HOG extraction, HOG pyramids, PatchMatch propagation,
+        random search, and reciprocal checking on WebGPU. Requested DIC seeds
+        are fitted from nearby accepted work-grid matches when the local affine
+        support is adequate; rejected fits remain in the returned field.
+        """
+        self._ensure_open()
+        settings = options or CPMOptions()
+        ref, tar = _as_gray(reference), _as_gray(target)
+        if ref.shape != tar.shape:
+            raise ValueError("CPM expects same-sized grayscale images")
+        if settings.seed_points is not None and len(settings.seed_points) == 0:
+            settings = replace(settings, seed_points=None)
+        validate_matcher_options("cpm", asdict(settings), ref.shape[1], ref.shape[0])
+        from .cpm import CPMBackend
+
+        result = CPMBackend(self.device).compute(ref, tar, settings, on_progress=on_progress)
+        return _field_from_dict(result)
+
+    def fit_local_affine(
+        self,
+        correspondences: np.ndarray,
+        seed_points: np.ndarray,
+        *,
+        radius_px: float = 256.0,
+        threshold_px: float = 3.0,
+        min_inliers: int = 6,
+        min_candidates: int = 8,
+        min_inlier_fraction: float = 0.2,
+        max_iterations: int = 256,
+    ) -> LocalAffineField:
+        """Fit one robust affine model per requested center on WebGPU.
+
+        ``correspondences`` is an Nx4 float array ordered as
+        ``(x_reference, y_reference, x_target, y_target)``. This method reuses
+        HORG's WGSL candidate-selection and RANSAC kernels, allowing a different
+        detector/descriptor or external learned matcher to provide the pairs.
+        """
+        self._ensure_open()
+        result = self._horg.fit_local_correspondences(
+            correspondences,
+            seed_points,
+            radius_px=radius_px,
+            threshold_px=threshold_px,
+            max_iterations=max_iterations,
+        )
+        matches = []
+        for item in result["matches"]:
+            usable = bool(
+                item["fitted"]
+                and item["inliers"] >= min_inliers
+                and item["candidates"] >= min_candidates
+                and item["inlier_fraction"] >= min_inlier_fraction
+                and item["residual"] <= threshold_px
+            )
+            matches.append(Match(
+                x=item["x"], y=item["y"], dx=item["dx"], dy=item["dy"], usable=usable,
+                score=item["inlier_fraction"], second_score=item["residual"],
+                margin=item["inlier_fraction"], inliers=item["inliers"],
+                candidates=item["candidates"], inlier_fraction=item["inlier_fraction"],
+                residual=item["residual"],
+            ))
+        return LocalAffineField(
+            matches=matches,
+            correspondence_count=len(correspondences),
+            radius_px=radius_px,
+            threshold_px=threshold_px,
+            gpu_compute_ms=result["gpu_compute_ms"],
+        )
 
     def _ensure_open(self) -> None:
         if self.closed:

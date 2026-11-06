@@ -1,6 +1,7 @@
 import { computeDeepMatching } from "./deepmatching.js";
 import { computeHorg } from "./horg.js";
 import { computeCPM } from "./cpm.js";
+import { browserDefaults } from "./matcher-contracts.js";
 
 const $ = id => document.getElementById(id);
 const state = {
@@ -440,6 +441,39 @@ $("algorithm").addEventListener("change", () => {
   updateAlgorithmControls();
 });
 
-updateAlgorithmControls();
+async function initializeApp() {
+  try {
+    const [deepDefaults, horgDefaults, cpmDefaults] = await Promise.all([
+      browserDefaults("deepmatching"), browserDefaults("horg"), browserDefaults("cpm"),
+    ]);
+    if ([horgDefaults, cpmDefaults].some(defaults =>
+      defaults.patchSize !== deepDefaults.patchSize || defaults.stride !== deepDefaults.stride)) {
+      throw new Error("All matchers must share DIC window and grid defaults.");
+    }
+    const uiDefaults = {
+      "patch-size": deepDefaults.patchSize,
+      "root-patch-size": deepDefaults.rootPatchSize,
+      "grid-stride": deepDefaults.stride,
+      "downscale-levels": deepDefaults.downscaleLevels,
+      "search-radius": deepDefaults.searchRadiusPx,
+      "horg-reduction": horgDefaults.horgReduction,
+      "horg-max-features": horgDefaults.horgMaxFeatures,
+      "cpm-grid-stride": cpmDefaults.cpmGridStride,
+      "cpm-matching-support": cpmDefaults.cpmMatchingPatchSizePx,
+      "cpm-levels": cpmDefaults.cpmLevels,
+      "cpm-initial-hypotheses": cpmDefaults.cpmInitialHypotheses,
+      "cpm-propagation-iterations": cpmDefaults.cpmPropagationIterations,
+      "cpm-random-trials": cpmDefaults.cpmRandomTrials,
+      "cpm-local-radius": cpmDefaults.cpmLocalSearchRadiusPx,
+      "cpm-seed": cpmDefaults.cpmSeed,
+      "cpm-reciprocal-threshold": cpmDefaults.cpmReciprocalThresholdPx,
+    };
+    for (const [id, value] of Object.entries(uiDefaults)) $(id).value = String(value);
+    updateAlgorithmControls();
+    initializeGpu();
+  } catch (error) {
+    status(error.message || String(error), true);
+  }
+}
 
-initializeGpu();
+initializeApp();

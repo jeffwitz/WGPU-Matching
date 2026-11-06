@@ -1,9 +1,11 @@
+import { applyBrowserDefaults } from "./matcher-contracts.js";
+
 const bufferUsage = globalThis.GPUBufferUsage;
 const textureUsage = globalThis.GPUTextureUsage;
 const mapMode = globalThis.GPUMapMode;
 
 async function loadShader(device, filename, substitutions = {}) {
-  const response = await fetch(new URL(filename, import.meta.url));
+  const response = await fetch(new URL(`./python/src/wgpu_matching/shaders/${filename}`, import.meta.url));
   if (!response.ok) throw new Error("Chargement du noyau " + filename + " impossible (" + response.status + ").");
   let code = await response.text();
   for (const [name, value] of Object.entries(substitutions)) {
@@ -750,6 +752,7 @@ function uploadParentLevel(device, resources, lower, current, label) {
 
 export async function computeDeepMatching(device, referencePixels, targetPixels,
   width, height, settings, onProgress = () => {}) {
+  settings = await applyBrowserDefaults(settings ?? {}, "deepmatching");
   if (!bufferUsage || !textureUsage || !mapMode) {
     throw new Error("Les constantes WebGPU requises ne sont pas disponibles dans ce navigateur.");
   }

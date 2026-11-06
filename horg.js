@@ -1,3 +1,5 @@
+import { applyBrowserDefaults } from "./matcher-contracts.js";
+
 const bufferUsage = globalThis.GPUBufferUsage;
 const textureUsage = globalThis.GPUTextureUsage;
 const mapMode = globalThis.GPUMapMode;
@@ -14,7 +16,7 @@ const MAX_RANSAC_CANDIDATES = 96;
 const MAX_RANSAC_ITERATIONS = 256;
 
 async function loadShader(device, filename) {
-  const response = await fetch(new URL(filename, import.meta.url), { cache: "no-store" });
+  const response = await fetch(new URL(`./python/src/wgpu_matching/shaders/${filename}`, import.meta.url), { cache: "no-store" });
   if (!response.ok) throw new Error("Chargement du noyau " + filename + " impossible (" + response.status + ").");
   const module = device.createShaderModule({ label: filename, code: await response.text() });
   const errors = (await module.getCompilationInfo()).messages.filter(message => message.type === "error");
@@ -433,21 +435,49 @@ function ratioDiagnostics(ratioValues) {
 }
 
 function buildLocalProblem(width, height, settings) {
-  const gridWidth = 1 + Math.floor((width - settings.patchSize) / settings.stride);
-  const gridHeight = 1 + Math.floor((height - settings.patchSize) / settings.stride);
-  if (gridWidth < 1 || gridHeight < 1) throw new Error("La fenêtre DIC est plus grande que l’image.");
-  const centers = [];
-  const seeds = new Float32Array(gridWidth * gridHeight * 4);
-  for (let gy = 0; gy < gridHeight; gy++) {
-    for (let gx = 0; gx < gridWidth; gx++) {
-      const seed = gy * gridWidth + gx;
-      const center = {
-        x: gx * settings.stride + (settings.patchSize - 1) / 2,
-        y: gy * settings.stride + (settings.patchSize - 1) / 2,
-      };
-      seeds.set([center.x, center.y, 0, seed], seed * 4);
-      centers.push(center);
+  const defaultGridWidth = 1 + Math.floor((width - settings.patchSize) / settings.stride);
+  const defaultGridHeight = 1 + Math.floor((height - settings.patchSize) / settings.stride);
+  if (defaultGridWidth < 1 || defaultGridHeight < 1) {
+    throw new Error("La fenêtre DIC est plus grande que l’image.");
+  }
+  const manual = Array.isArray(settings.seedPoints) && settings.seedPoints.length > 0;
+  let centers;
+  let gridWidth;
+  let gridHeight;
+  if (manual) {
+    if (settings.seedPoints.length > 512) throw new Error("HORG accepts at most 512 manual seeds.");
+    centers = settings.seedPoints.map((point, index) => {
+      const x = Number(point.x);
+      const y = Number(point.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x >= width || y >= height) {
+        throw new Error(`HORG seed ${index + 1} must contain finite coordinates inside the image.`);
+      }
+      return { x, y };
+    });
+    gridWidth = centers.length;
+    gridHeight = 1;
+  } else {
+    gridWidth = defaultGridWidth;
+    gridHeight = defaultGridHeight;
+    centers = Array.from({ length: gridWidth * gridHeight }, (_, seed) => ({
+      x: (seed % gridWidth) * settings.stride + (settings.patchSize - 1) / 2,
+      y: Math.floor(seed / gridWidth) * settings.stride + (settings.patchSize - 1) / 2,
+    }));
+  }
+  const seeds = new Float32Array(centers.length * 4);
+  const half = (settings.patchSize - 1) / 2;
+  for (let seed = 0; seed < centers.length; seed++) {
+    const center = centers[seed];
+    let randomStream = seed;
+    if (manual) {
+      const gx = Math.round((center.x - half) / settings.stride);
+      const gy = Math.round((center.y - half) / settings.stride);
+      const onGrid = gx >= 0 && gx < defaultGridWidth
+        && Math.abs(center.x - (gx * settings.stride + half)) < 1e-3
+        && Math.abs(center.y - (gy * settings.stride + half)) < 1e-3;
+      if (onGrid) randomStream = gy * defaultGridWidth + gx;
     }
+    seeds.set([center.x, center.y, 0, randomStream], seed * 4);
   }
   return { gridWidth, gridHeight, centers, seeds };
 }
@@ -501,6 +531,7 @@ function makeLocalField(ratioMatchCount, ratioStats, problem, ransacResults, con
 
 export async function computeHorg(device, referencePixels, targetPixels,
   width, height, settings, onProgress = () => {}) {
+  settings = await applyBrowserDefaults(settings ?? {}, "horg");
   if (!bufferUsage || !textureUsage || !mapMode) {
     throw new Error("Les constantes WebGPU requises ne sont pas disponibles dans ce navigateur.");
   }

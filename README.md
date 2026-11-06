@@ -1,8 +1,10 @@
 # WGPU-Matching
 
-WebGPU feature matchers for initializing digital image correlation (DIC). The Python package provides DeepMatching and HORG-DIC through `wgpu-py`; compute kernels run as WGSL shaders, with no project-specific native extension to compile.
+WebGPU feature matchers for initializing digital image correlation (DIC). The Python package provides DeepMatching, HORG-DIC, and CPM-HOG through `wgpu-py`; compute kernels run as WGSL shaders, with no project-specific native extension to compile.
 
 These methods estimate initial correspondences at points of interest. They do not compute a complete DIC displacement field or perform IC-GN refinement.
+
+DeepMatching, HORG, and CPM have browser and native Python frontends. They load the same canonical WGSL sources from `python/src/wgpu_matching/shaders/`; the Python package embeds them as resources, while the browser fetches them from the repository's static tree. Their shared option defaults, constraints, and coordinate conventions live in `python/src/wgpu_matching/matcher-contracts.json`. A deterministic Python/browser parity check covers translation, a mild affine warp, irregular manual seeds, and invalid-option rejection: `node tests/run_matcher_parity.mjs`. This is a small integration control; Live-DIC analytic benchmarks remain the scientific comparison.
 
 ## Python quick start
 
@@ -40,8 +42,8 @@ The repository also contains a standalone WebGPU browser demo. Serve the reposit
 python -m http.server 8000
 ```
 
-The browser UI now includes an **experimental CPM-WGPU** path. It builds the validated INRIA-style HOG descriptors on WebGPU, then runs deterministic sparse-grid PatchMatch passes with spatial propagation, random search, and forward/backward consistency. Requested DIC seeds are associated with the nearest directly evaluated work-grid center; the CSV preserves both coordinates and the association distance.
+The browser and Python APIs include **experimental CPM-HOG**. They build the validated INRIA-style HOG descriptors on WebGPU, then run deterministic sparse-grid PatchMatch passes with spatial propagation, random search, and forward/backward consistency. Requested DIC seeds are associated with measured work-grid points and receive a local affine fit when enough accepted neighbors are available; metadata preserves measured positions, support, fit residuals, and affine parameters.
 
-This first implementation is a CPM-inspired prototype, not a complete CPM port. The paper uses factor-two image pyramids, transfers flow between levels, performs interleaved propagation and exponentially shrinking random search, and scores dense 128D SIFT patches with an L1 cost. This prototype pools the repository's INRIA-style HOG descriptors into a factor-two pyramid, uses a normalized cosine patch cost and synchronous four-neighbor ping-pong GPU passes. HOG is computed once at the base resolution rather than recomputed at every pyramid level. Displacements are quantized to that descriptor scale; local affine initializations are not implemented yet. The original CPM repository is GPL-3.0; no source code from it is copied. The synthetic smoke run passes at 0 px error for a known translation, but CPM currently accepts no matches on the 60% tensile frame. See the [three-method 60% comparison](results/uniaxial/tensile_60pct/three_method_browser_60.md) and the [validation harness](tests/cpm-browser-smoke.html).
+This is a CPM-inspired adaptation, not a numerically equivalent port of the original. The paper scores dense 128D SIFT patches with an L1 cost; this implementation pools the repository's INRIA-style HOG descriptors into a factor-two pyramid and uses normalized cosine patch cost. HOG is computed once at base resolution, and displacements are quantized to that descriptor scale. The local affine fit prepares seed initializations but does not refine them with IC-GN. The original CPM repository is GPL-3.0; no source code from it is copied. The known-translation browser smoke passes at 0 px error. The published 60% CPM row is a pre-correction historical measurement and needs a rerun; current large-strain performance is unqualified. See the [three-method 60% comparison](results/uniaxial/tensile_60pct/three_method_browser_60.md) and the [validation harness](tests/cpm-browser-smoke.html).
 
 For development checks and CI details, see [Contributing](docs/contributing.rst) and the [quality workflow](.github/workflows/quality.yml).

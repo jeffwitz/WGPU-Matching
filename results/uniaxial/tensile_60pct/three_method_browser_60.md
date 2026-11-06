@@ -2,6 +2,8 @@
 
 This is a synthetic stress test, not an experimental validation. Frame 199 is an extrapolation of the Live-DIC tensile image to 60% engineering strain. Sixteen evaluation seeds were used; all have analytically visible target locations. The source images and analytic displacement field are documented in the adjacent series report.
 
+**Historical CPM result:** this browser comparison predates the correction that made CPM's propagation-grid dimensions follow matching-support size independently of the DIC window. The DeepMatching and HORG rows are unaffected, but the CPM row, timings, and proposal diagnostics below are not measurements of the current CPM implementation. Rerun this case before using CPM's 60% figures as current results.
+
 The browser ran three full calls per method on the same decoded images and WebGPU device. Timings include per-call preprocessing, GPU work, pipeline creation, synchronization, and result readback; image decoding is excluded. Chromium was launched with Vulkan/WebGPU flags. Its adapter information was unavailable, so the selected adapter cannot be confirmed. See the raw JSON and CSV beside this report.
 
 | Method | Accepted | Accepted with error <5 px | Repairable coverage | Accepted ≤2 px | Accepted RMSE (px) | Median time (s) |

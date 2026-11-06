@@ -9,4 +9,5 @@ These pages explain why matcher outputs are initializations, how each method bui
    dic-initialization
    deepmatching
    horg
+   cpm
    quality-and-confidence
