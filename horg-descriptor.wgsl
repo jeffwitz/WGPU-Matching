@@ -3,7 +3,7 @@ struct Params {
     options: vec4<u32>,
 }
 
-struct KeypointBuffer { values: array<vec4<u32>> }
+struct KeypointBuffer { values: array<vec4<f32>> }
 struct FloatBuffer { values: array<f32> }
 
 @group(0) @binding(0) var gaussian2: texture_2d<f32>;
@@ -25,12 +25,26 @@ fn image_value(layer: u32, point: vec2<i32>) -> f32 {
     }
 }
 
-fn sample_gradient(layer: u32, point: vec2<i32>) -> vec2<f32> {
+fn image_value_linear(layer: u32, point: vec2<f32>) -> f32 {
     let width = i32(params.options.w);
     let height = i32(params.dims.y);
-    let p = clamp(point, vec2<i32>(1), vec2<i32>(width - 2, height - 2));
-    let dx = 0.5 * (image_value(layer, p + vec2<i32>(1, 0)) - image_value(layer, p - vec2<i32>(1, 0)));
-    let dy = 0.5 * (image_value(layer, p + vec2<i32>(0, 1)) - image_value(layer, p - vec2<i32>(0, 1)));
+    let p = clamp(point, vec2<f32>(1.0), vec2<f32>(f32(width - 2), f32(height - 2)));
+    let lower = vec2<i32>(floor(p));
+    let fraction = p - vec2<f32>(lower);
+    let top = mix(image_value(layer, lower), image_value(layer, lower + vec2<i32>(1, 0)), fraction.x);
+    let bottom = mix(image_value(layer, lower + vec2<i32>(0, 1)),
+        image_value(layer, lower + vec2<i32>(1, 1)), fraction.x);
+    return mix(top, bottom, fraction.y);
+}
+
+fn sample_gradient(layer: u32, point: vec2<f32>) -> vec2<f32> {
+    let width = f32(params.options.w);
+    let height = f32(params.dims.y);
+    let p = clamp(point, vec2<f32>(1.0), vec2<f32>(width - 2.0, height - 2.0));
+    let dx = 0.5 * (image_value_linear(layer, p + vec2<f32>(1.0, 0.0))
+        - image_value_linear(layer, p - vec2<f32>(1.0, 0.0)));
+    let dy = 0.5 * (image_value_linear(layer, p + vec2<f32>(0.0, 1.0))
+        - image_value_linear(layer, p - vec2<f32>(0.0, 1.0)));
     return vec2<f32>(dx, dy);
 }
 
@@ -39,9 +53,9 @@ fn build_horg(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_id)
     let feature_index = group.x;
     if feature_index >= params.dims.z { return; }
     let kp = keypoints.values[feature_index];
-    let center = vec2<i32>(kp.xy);
-    let layer = kp.z;
-    let octave_scale = 1.6 * pow(2.0, f32(layer - 2u) / 3.0);
+    let center = kp.xy;
+    let layer = u32(clamp(round(kp.z), 2.0, 4.0));
+    let octave_scale = 1.6 * pow(2.0, (kp.z - 2.0) / 3.0);
     let orientation_radius = i32(clamp(round(4.5 * octave_scale), 1.0, 32.0));
     let orientation_sigma = 1.5 * octave_scale;
     let diameter = orientation_radius * 2 + 1;
@@ -52,7 +66,7 @@ fn build_horg(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_id)
         let sx = i32(sample % u32(diameter)) - orientation_radius;
         let sy = i32(sample / u32(diameter)) - orientation_radius;
         if sx * sx + sy * sy > orientation_radius * orientation_radius { continue; }
-        let gradient = sample_gradient(layer, center + vec2<i32>(sx, sy));
+        let gradient = sample_gradient(layer, center + vec2<f32>(f32(sx), f32(sy)));
         let magnitude = length(gradient);
         if magnitude <= 0.0 { continue; }
         var angle = atan2(gradient.y, gradient.x);
@@ -120,7 +134,7 @@ fn build_horg(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_id)
                 let v = cell_y + f32(dy);
                 if abs(u - cell_x) > cell_width * 0.5 || abs(v - cell_y) > cell_width * 0.5 { continue; }
                 let rotated = vec2<f32>(cosine * u - sine * v, sine * u + cosine * v);
-                let sample_point = center + vec2<i32>(round(rotated));
+                let sample_point = center + rotated;
                 let gradient_image = sample_gradient(layer, sample_point);
                 let gradient = vec2<f32>(cosine * gradient_image.x + sine * gradient_image.y,
                                          -sine * gradient_image.x + cosine * gradient_image.y);
@@ -176,11 +190,11 @@ fn build_horg(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_id)
         }
         let output_index = feature_index * 68u;
         let scale_to_input = f32(params.options.x);
-        let local_scale = 1.6 * pow(2.0, f32(layer - 2u) / 3.0);
-        features.values[output_index] = f32(kp.x) * scale_to_input;
-        features.values[output_index + 1u] = f32(kp.y) * scale_to_input;
+        let local_scale = octave_scale;
+        features.values[output_index] = kp.x * scale_to_input;
+        features.values[output_index + 1u] = kp.y * scale_to_input;
         features.values[output_index + 2u] = local_scale * scale_to_input;
-        features.values[output_index + 3u] = bitcast<f32>(kp.w);
+        features.values[output_index + 3u] = kp.w;
     }
     workgroupBarrier();
     if lane < 64u {

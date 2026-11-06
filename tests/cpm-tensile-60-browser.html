@@ -1,0 +1,102 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CPM-WGPU 60% tensile benchmark</title>
+<pre id="result">loading 60% tensile images</pre>
+<script type="module">
+import { computeCPM } from "../cpm.js";
+
+const result = document.querySelector("#result");
+const DATA = "../results/uniaxial/tensile_60pct/";
+const WIDTH = 3840, HEIGHT = 2160;
+const STRETCH_X = 1.6, STRETCH_Y = 0.7910265877644076;
+
+async function loadGray(path) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error("Could not load " + path + " (" + response.status + ")");
+  const bitmap = await createImageBitmap(await response.blob());
+  try {
+    if (bitmap.width !== WIDTH || bitmap.height !== HEIGHT) throw new Error("Unexpected image dimensions.");
+    const canvas = new OffscreenCanvas(WIDTH, HEIGHT);
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0);
+    const rgba = context.getImageData(0, 0, WIDTH, HEIGHT).data;
+    const pixels = new Uint8Array(WIDTH * HEIGHT);
+    for (let index = 0; index < pixels.length; index++) {
+      pixels[index] = Math.floor((2126 * rgba[index * 4] + 7152 * rgba[index * 4 + 1]
+        + 722 * rgba[index * 4 + 2] + 5000) / 10000);
+    }
+    return pixels;
+  } finally {
+    bitmap.close();
+  }
+}
+
+function visibleSeeds() {
+  const seeds = [];
+  for (let row = 0; row < 4; row++) for (let column = 0; column < 8; column++) {
+    const x = column * 512 + 63.5;
+    const y = row * 512 + 63.5;
+    const targetX = 1920 + STRETCH_X * (x - 1920);
+    const targetY = 1080 + STRETCH_Y * (y - 1080);
+    if (targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT) seeds.push({ x, y });
+  }
+  return seeds;
+}
+
+try {
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  if (!adapter) throw new Error("No WebGPU adapter available.");
+  const requiredFeatures = adapter.features.has("texture-formats-tier1") ? ["texture-formats-tier1"] : [];
+  const device = await adapter.requestDevice({ requiredFeatures });
+  const [reference, target] = await Promise.all([
+    loadGray(DATA + "reference.png"), loadGray(DATA + "frame_199_eng_60pct.png"),
+  ]);
+  const seeds = visibleSeeds();
+  const start = performance.now();
+  const field = await computeCPM(device, reference, target, WIDTH, HEIGHT, {
+    patchSize: 128, stride: 512, downscaleLevels: 2, searchRadiusPx: 1024,
+    seedPoints: seeds,
+    cpmGridStride: 32, cpmLevels: 4, cpmPropagationIterations: 6,
+    cpmRandomTrials: 16, cpmLocalSearchRadiusPx: 64,
+    cpmSeed: 17, cpmReciprocalThresholdPx: 8,
+  }, message => { result.textContent = message; });
+  const perSeed = field.matches.map(match => {
+    const trueDx = (STRETCH_X - 1) * (match.x - 1920);
+    const trueDy = (STRETCH_Y - 1) * (match.y - 1080);
+    const error = Math.hypot(match.dx - trueDx, match.dy - trueDy);
+    return { ...match, trueDx, trueDy, errorPx: error };
+  });
+  const accepted = perSeed.filter(match => match.usable);
+  const errors = accepted.map(match => match.errorPx).sort((a, b) => a - b);
+  const rmse = errors.length ? Math.sqrt(errors.reduce((sum, value) => sum + value * value, 0) / errors.length) : null;
+  const summary = {
+    case: "Live-DIC synthetic tensile extrapolation, frame 199, 60% engineering strain",
+    adapter: adapter.info?.description || adapter.info?.device || "not exposed by this browser",
+    browser: navigator.userAgent,
+    requestedCount: seeds.length,
+    acceptedCount: accepted.length,
+    accurateAcceptedCount: accepted.filter(match => match.errorPx <= 2).length,
+    accurateCoverageVisiblePercent: 100 * accepted.filter(match => match.errorPx <= 2).length / seeds.length,
+    acceptedRmsePx: rmse,
+    acceptedMedianPx: errors.length ? errors[Math.floor(errors.length / 2)] : null,
+    acceptedP95Px: errors.length ? errors[Math.min(errors.length - 1, Math.ceil(0.95 * errors.length) - 1)] : null,
+    acceptedMaxPx: errors.length ? errors.at(-1) : null,
+    elapsedTotalMs: performance.now() - start,
+    descriptorMs: field.descriptorMs,
+    pyramidMs: field.pyramidMs,
+    matchingMs: field.matchingMs,
+    settings: { patchSizePx: 128, seedStridePx: 512, workGridStridePx: 32,
+      searchRadiusPx: 1024, levels: field.levels, propagationIterations: 6,
+      randomTrials: 16, localSearchRadiusPx: 64, seed: 17, reciprocalThresholdPx: 8 },
+    perSeed,
+  };
+  globalThis.cpm60Report = summary;
+  result.textContent = JSON.stringify(summary);
+  document.title = "CPM60_RESULT";
+  device.destroy();
+} catch (error) {
+  globalThis.cpm60Error = error.stack || error.message || String(error);
+  result.textContent = "ERROR: " + globalThis.cpm60Error;
+  document.title = "CPM60_ERROR";
+}
+</script>

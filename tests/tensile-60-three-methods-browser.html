@@ -1,0 +1,170 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>60% tensile three-matcher benchmark</title>
+<pre id="result">loading images</pre>
+<script type="module">
+import { computeDeepMatching } from "../deepmatching.js";
+import { computeHorg } from "../horg.js";
+import { computeCPM } from "../cpm.js";
+
+const result = document.querySelector("#result");
+const DATA = "../results/uniaxial/tensile_60pct/";
+const WIDTH = 3840, HEIGHT = 2160;
+const STRETCH_X = 1.6, STRETCH_Y = 0.7910265877644076;
+
+async function loadGray(path) {
+  const response = await fetch(path);
+  if (!response.ok) throw new Error("Could not load " + path + " (" + response.status + ")");
+  const bitmap = await createImageBitmap(await response.blob());
+  try {
+    if (bitmap.width !== WIDTH || bitmap.height !== HEIGHT) throw new Error("Unexpected image dimensions.");
+    const canvas = new OffscreenCanvas(WIDTH, HEIGHT);
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(bitmap, 0, 0);
+    const rgba = context.getImageData(0, 0, WIDTH, HEIGHT).data;
+    const pixels = new Uint8Array(WIDTH * HEIGHT);
+    for (let index = 0; index < pixels.length; index++) {
+      pixels[index] = Math.floor((2126 * rgba[index * 4] + 7152 * rgba[index * 4 + 1]
+        + 722 * rgba[index * 4 + 2] + 5000) / 10000);
+    }
+    return pixels;
+  } finally {
+    bitmap.close();
+  }
+}
+
+function visibleSeeds() {
+  const seeds = [];
+  for (let row = 0; row < 4; row++) for (let column = 0; column < 8; column++) {
+    const x = column * 512 + 63.5, y = row * 512 + 63.5;
+    const tx = 1920 + STRETCH_X * (x - 1920);
+    const ty = 1080 + STRETCH_Y * (y - 1080);
+    if (tx >= 0 && tx < WIDTH && ty >= 0 && ty < HEIGHT) seeds.push({ x, y });
+  }
+  return seeds;
+}
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function metrics(name, field, elapsedRunsMs, seeds) {
+  const visibleMatches = field.matches.filter(match => {
+    const sourceX = match.seedX ?? match.requestedX ?? match.x;
+    const sourceY = match.seedY ?? match.requestedY ?? match.y;
+    const targetX = 1920 + STRETCH_X * (sourceX - 1920);
+    const targetY = 1080 + STRETCH_Y * (sourceY - 1080);
+    return targetX >= 0 && targetX < WIDTH && targetY >= 0 && targetY < HEIGHT;
+  });
+  const perSeed = visibleMatches.map(match => {
+    const x = Number.isFinite(match.x) ? match.x : match.seedX;
+    const y = Number.isFinite(match.y) ? match.y : match.seedY;
+    const trueDx = (STRETCH_X - 1) * (x - 1920);
+    const trueDy = (STRETCH_Y - 1) * (y - 1080);
+    const errorPx = Math.hypot(match.dx - trueDx, match.dy - trueDy);
+    return { requestedX: match.requestedX ?? match.seedX ?? x,
+      requestedY: match.requestedY ?? match.seedY ?? y,
+      x, y, dx: match.dx, dy: match.dy, errorPx, usable: Boolean(match.usable),
+      reciprocal: match.reciprocal ?? null, score: match.score ?? null,
+      reciprocalErrorPx: match.reciprocalErrorPx ?? null };
+  });
+  const acceptedErrors = perSeed.filter(match => match.usable).map(match => match.errorPx).sort((a, b) => a - b);
+  const allErrors = perSeed.map(match => match.errorPx).sort((a, b) => a - b);
+  const accurate = acceptedErrors.filter(error => error <= 2).length;
+  return {
+    method: name,
+    requestedCount: seeds.length,
+    returnedCount: field.matches.length,
+    visibleReturnedCount: visibleMatches.length,
+    acceptedCount: acceptedErrors.length,
+    accurateAcceptedCount: accurate,
+    acceptedCoverageVisiblePercent: 100 * acceptedErrors.length / seeds.length,
+    accurateCoverageVisiblePercent: 100 * accurate / seeds.length,
+    acceptedRmsePx: acceptedErrors.length
+      ? Math.sqrt(acceptedErrors.reduce((sum, error) => sum + error * error, 0) / acceptedErrors.length) : null,
+    acceptedMedianPx: median(acceptedErrors),
+    acceptedP95Px: acceptedErrors.length
+      ? acceptedErrors[Math.min(acceptedErrors.length - 1, Math.ceil(0.95 * acceptedErrors.length) - 1)] : null,
+    acceptedMaxPx: acceptedErrors.at(-1) ?? null,
+    rejectedVectorRmsePx: name === "CPM-WGPU" && allErrors.length
+      ? Math.sqrt(allErrors.reduce((sum, error) => sum + error * error, 0) / allErrors.length) : null,
+    medianElapsedMs: median(elapsedRunsMs),
+    elapsedRunsMs,
+    perSeed,
+  };
+}
+
+async function repeat(name, compute, seeds) {
+  const elapsedRunsMs = [];
+  const fields = [];
+  let field;
+  for (let repeatIndex = 0; repeatIndex < 3; repeatIndex++) {
+    result.textContent = name + " repeat " + (repeatIndex + 1) + "/3";
+    const started = performance.now();
+    field = await compute();
+    fields.push(field);
+    elapsedRunsMs.push(performance.now() - started);
+  }
+  const signatures = fields.map(value => JSON.stringify(value.matches.map(match =>
+    [match.x, match.y, match.dx, match.dy, match.usable])));
+  return { ...metrics(name, field, elapsedRunsMs, seeds),
+    deterministicAcrossRuns: signatures.every(signature => signature === signatures[0]) };
+}
+
+try {
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  if (!adapter) throw new Error("No WebGPU adapter available.");
+  const features = adapter.features.has("texture-formats-tier1") ? ["texture-formats-tier1"] : [];
+  const device = await adapter.requestDevice({ requiredFeatures: features });
+  const [reference, target] = await Promise.all([
+    loadGray(DATA + "reference.png"), loadGray(DATA + "frame_199_eng_60pct.png"),
+  ]);
+  const seeds = visibleSeeds();
+  const common = { patchSize: 128, stride: 512, seedPoints: seeds };
+  const methods = [];
+  methods.push(await repeat("DeepMatching-INRIA", () => computeDeepMatching(
+    device, reference, target, WIDTH, HEIGHT,
+    { ...common, rootPatchSize: 512, downscaleLevels: 2, searchRadiusPx: 256 },
+  ), seeds));
+  methods.push(await repeat("HORG", () => computeHorg(
+    device, reference, target, WIDTH, HEIGHT,
+    { ...common, horgReduction: 4, horgMaxFeatures: 1024 },
+  ), seeds));
+  methods.push(await repeat("CPM-WGPU", () => computeCPM(
+    device, reference, target, WIDTH, HEIGHT,
+    { ...common, downscaleLevels: 2, searchRadiusPx: 1024,
+      cpmGridStride: 32, cpmLevels: 4, cpmPropagationIterations: 6,
+      cpmRandomTrials: 16, cpmLocalSearchRadiusPx: 64,
+      cpmSeed: 17, cpmReciprocalThresholdPx: 8 },
+  ), seeds));
+  globalThis.threeMatcher60Report = {
+    case: "Live-DIC synthetic tensile extrapolation, frame 199, 60% engineering strain",
+    browser: navigator.userAgent,
+    adapter: adapter.info?.description || adapter.info?.device || "not exposed by this browser",
+    browserLaunchFlags: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=angle",
+      "--use-angle=gl", "--ignore-gpu-blocklist", "--enable-unsafe-webgpu",
+      "--use-angle=vulkan", "--enable-features=Vulkan", "--disable-vulkan-surface"],
+    timingBoundary: "Three full matcher calls per method; decoded images/device already loaded; includes per-call preprocessing, GPU work, pipeline creation, synchronization and result readback.",
+    settings: {
+      common: { patchSizePx: 128, seedStridePx: 512, requestedSeeds: seeds.length },
+      "DeepMatching-INRIA": { rootPatchSizePx: 512, downscaleLevels: 2, searchRadiusPx: 256 },
+      HORG: { reduction: 4, maxFeaturesPerImage: 1024 },
+      "CPM-WGPU": { workGridStridePx: 32, requestedLevels: 4, propagationIterationsPerLevel: 6,
+        randomTrialsPerPass: 16, searchRadiusPx: 1024, localSearchRadiusPx: 64,
+        seed: 17, reciprocityThresholdPx: 8 },
+    },
+    visibleSeeds: seeds,
+    methods,
+  };
+  result.textContent = JSON.stringify(globalThis.threeMatcher60Report);
+  document.title = "THREE60_RESULT";
+  device.destroy();
+} catch (error) {
+  globalThis.threeMatcher60Error = error.stack || error.message || String(error);
+  result.textContent = "ERROR: " + globalThis.threeMatcher60Error;
+  document.title = "THREE60_ERROR";
+}
+</script>

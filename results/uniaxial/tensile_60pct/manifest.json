@@ -1,0 +1,82 @@
+{
+  "description": "Synthetic UHD uniaxial tensile images generated with the DIC_FROM_H264 source model.",
+  "source_generator": "/home/jeff/CNRS/Code/DIC_CODEC/DIC_FROM_H264/experiments/tensile_extensometer_4k/generate.py",
+  "source_modified": false,
+  "width": 3840,
+  "height": 2160,
+  "states": 200,
+  "seed": 20261012,
+  "max_engineering_strain": 0.6,
+  "material_model": {
+    "young_modulus_MPa": 210000.0,
+    "poisson_ratio": 0.3,
+    "yield_stress_MPa": 235.0,
+    "Ludwik_K_MPa": 450.0,
+    "Ludwik_n": 0.25,
+    "initial_area_mm2": 50.0
+  },
+  "coordinate_map": {
+    "center_px": [
+      1920.0,
+      1080.0
+    ],
+    "x_target": "cx + stretch_x * (x_reference - cx)",
+    "y_target": "cy + stretch_y * (y_reference - cy)",
+    "dx": "(stretch_x - 1) * (x_reference - cx)",
+    "dy": "(stretch_y - 1) * (y_reference - cy)",
+    "image_interpolation": "OpenCV INTER_LINEAR inverse remap, BORDER_REFLECT_101"
+  },
+  "extrapolation_note": "The source experiment ends at 10% engineering strain. Values above 10% extrapolate the same constitutive equations and Ludwik hardening law; this is synthetic ground truth, not an experimentally validated material response.",
+  "truth_file": "machine_truth.csv",
+  "snapshots": [
+    {
+      "requested_engineering_strain": 0.1,
+      "file": "frame_066_eng_10pct.png",
+      "frame": 66,
+      "actual_engineering_strain": 0.09904979018993,
+      "stretch_x": 1.09904979018993,
+      "stretch_y": 0.9543134908259364
+    },
+    {
+      "requested_engineering_strain": 0.2,
+      "file": "frame_093_eng_20pct.png",
+      "frame": 93,
+      "actual_engineering_strain": 0.2007464493243051,
+      "stretch_x": 1.2007464493243052,
+      "stretch_y": 0.9130464032558431
+    },
+    {
+      "requested_engineering_strain": 0.3,
+      "file": "frame_119_eng_30pct.png",
+      "frame": 119,
+      "actual_engineering_strain": 0.29867656552777744,
+      "stretch_x": 1.2986765655277774,
+      "stretch_y": 0.877969519213963
+    },
+    {
+      "requested_engineering_strain": 0.4,
+      "file": "frame_146_eng_40pct.png",
+      "frame": 146,
+      "actual_engineering_strain": 0.4003732246621526,
+      "stretch_x": 1.4003732246621525,
+      "stretch_y": 0.8455061970313845
+    },
+    {
+      "requested_engineering_strain": 0.5,
+      "file": "frame_172_eng_50pct.png",
+      "frame": 172,
+      "actual_engineering_strain": 0.49830334086562494,
+      "stretch_x": 1.498303340865625,
+      "stretch_y": 0.8174204251753675
+    },
+    {
+      "requested_engineering_strain": 0.6,
+      "file": "frame_199_eng_60pct.png",
+      "frame": 199,
+      "actual_engineering_strain": 0.6,
+      "stretch_x": 1.6,
+      "stretch_y": 0.7910265877644076
+    }
+  ],
+  "contact_sheet": "contact_sheet.png"
+}

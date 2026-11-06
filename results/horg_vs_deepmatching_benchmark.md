@@ -1,31 +1,31 @@
-# HORG-DIC contre DeepMatching sur l’ROI masquée
+# HORG-DIC vs. DeepMatching on the masked ROI
 
-> **Résultats historiques :** les mesures DeepMatching ci-dessous proviennent de l’ancien descripteur simplifié, calculé directement sur l’image réduite. Elles ne décrivent pas le pipeline de descripteur HOG pixelwise ajouté depuis ; refaire le benchmark avant d’interpréter les temps ou le nombre de graines.
+> **Historical results:** the DeepMatching measurements below use the earlier simplified descriptor computed directly on the reduced image. They do not describe the later pixelwise HOG descriptor pipeline; rerun the benchmark before drawing conclusions about current timing or match counts.
 
-Mesure du 5 novembre 2026 sur `img_000000_0.09422.tiff` et `img_000075_1608.88508.tiff`. Le masque `Mask.tiff` définit l’ROI `x=[384,7576)`, `y=[888,5088)`, soit `7192 × 4200` pixels. Les deux méthodes ont tourné dans la même session Chromium 148 headless, avec WebGPU/Vulkan ; l’adaptateur déclaré par le navigateur est Intel, architecture `xe-2lpg`.
+Measured November 5, 2026, on `img_000000_0.09422.tiff` and `img_000075_1608.88508.tiff`. `Mask.tiff` defines the ROI `x=[384,7576)`, `y=[888,5088)`, which is `7192 × 4200` pixels. Both methods ran in the same Chromium 148 headless session with WebGPU/Vulkan; the browser reported an Intel adapter, architecture `xe-2lpg`.
 
-## Réglages
+## Settings
 
-- Grille DIC : fenêtre 128 px, pas 1024 px, soit 28 POI.
-- DeepMatching : réduction ×8, seuil score 0,12 et marge d’unicité 0,01.
-- HORG : réduction ×4, maximum de 2048 descripteurs par image, ratio Lowe 0,75. Le seuil RANSAC de 1,5 px dans les coordonnées réduites équivaut à 6 px dans l’image d’origine. Une affine est retenue à partir de quatre inliers, huit candidats locaux et 20 % d’inliers.
+- DIC grid: 128 px window, 1024 px stride, 28 POIs.
+- DeepMatching: ×8 reduction, score threshold 0.12, uniqueness margin 0.01.
+- HORG: ×4 reduction, maximum 2048 descriptors per image, Lowe ratio 0.75. The RANSAC threshold of 1.5 px in reduced coordinates corresponds to 6 px in the original image. An affine is retained with at least four inliers, eight local candidates, and 20% inliers.
 
-## Temps observés
+## Observed processing time
 
-Chaque méthode a été lancée trois fois après chargement des images. Le temps comprend toute l’extraction et l’initialisation ; pour HORG, il comprend aussi le RANSAC local exécuté en JavaScript sur le CPU.
+Each method ran three times after loading the images. Time includes extraction and initialization; for HORG it also includes local RANSAC on the JavaScript CPU.
 
-| Méthode | Durées des 3 exécutions | Médiane | Écart à DeepMatching |
+| Method | Three run times | Median | Difference from DeepMatching |
 |---|---:|---:|---:|
-| DeepMatching WebGPU | 0,41 · 0,43 · 0,42 s | 0,42 s | — |
-| HORG-DIC WebGPU | 0,55 · 0,52 · 0,51 s | 0,52 s | +0,10 s, soit +23,8 % |
+| DeepMatching WebGPU | 0.41 · 0.43 · 0.42 s | 0.42 s | — |
+| HORG-DIC WebGPU | 0.55 · 0.52 · 0.51 s | 0.52 s | +0.10 s, or +23.8% |
 
-## Résultat sur cette paire
+## Results on this image pair
 
-| Méthode | Correspondances / graines | POI avec initialisation retenue |
+| Method | Correspondences / seeds | POIs with retained initialization |
 |---|---:|---:|
-| DeepMatching | 25 graines sur 28 passent les seuils de score et d’unicité | 25/28 |
-| HORG-DIC | 131 paires passent le ratio Lowe | 0/28 affines locales passent le consensus RANSAC |
+| DeepMatching | 25 of 28 seeds pass score and uniqueness thresholds | 25/28 |
+| HORG-DIC | 131 pairs pass the Lowe ratio | 0/28 local affines pass RANSAC consensus |
 
-Le passage des seuils DeepMatching n’est pas une validation par vérité terrain. HORG détecte 8069 et 8315 points-clés dans les deux images, mais les paires retenues ne donnent pas ici un consensus local assez soutenu. Le PNG affiche les 28 POI rejetés sans dessiner les ajustements aberrants. Il n’y a donc pas de champ HORG exploitable pour cette paire, malgré un temps de calcul proche de DeepMatching.
+Passing DeepMatching thresholds is not validation against ground truth. HORG detects 8,069 and 8,315 keypoints in the two images, but retained pairs do not provide enough local consensus here. The PNG shows all 28 rejected POIs without drawing outlier affine estimates. There is no usable HORG field for this pair despite a processing time close to DeepMatching.
 
-Ces durées comparent deux réglages utiles sur la même grille et le même ROI, pas deux quantités de calcul strictement équivalentes : les réductions diffèrent et HORG compare 2048 descripteurs par image. L’implémentation s’arrête à l’initialisation et ne lance pas l’étape IC-GN.
+These timings compare useful settings on the same grid and ROI, not strictly equal amounts of computation: the reduction factors differ and HORG compares 2,048 descriptors per image. The implementation stops at initialization and does not run IC-GN refinement.

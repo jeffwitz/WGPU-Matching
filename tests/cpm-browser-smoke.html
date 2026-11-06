@@ -1,0 +1,69 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>CPM-WGPU browser smoke validation</title>
+<pre id="result">running</pre>
+<script type="module">
+import { computeCPM } from "../cpm.js";
+
+const result = document.querySelector("#result");
+function speckle(width, height) {
+  let state = 42;
+  const random = () => {
+    state = (1664525 * state + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+  const spots = Array.from({ length: Math.floor(width * height / 80) }, () => ({
+    x: random() * width, y: random() * height,
+    radius: 1.5 + random() * 2.8, amplitude: (random() - 0.5) * 120,
+  }));
+  const data = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    let value = 128 + (random() - 0.5) * 8;
+    for (const spot of spots) {
+      const distance2 = (x - spot.x) ** 2 + (y - spot.y) ** 2;
+      if (distance2 < spot.radius * spot.radius * 9) {
+        value += spot.amplitude * Math.exp(-distance2 / (2 * spot.radius * spot.radius));
+      }
+    }
+    data[y * width + x] = Math.max(0, Math.min(255, Math.round(value)));
+  }
+  return data;
+}
+
+try {
+  if (!navigator.gpu) throw new Error("navigator.gpu unavailable");
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  if (!adapter) throw new Error("No WebGPU adapter");
+  const device = await adapter.requestDevice();
+  const width = 192, height = 160, dx = 8, dy = -4;
+  const reference = speckle(width, height);
+  const target = new Uint8Array(reference.length);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const sx = x - dx, sy = y - dy;
+    target[y * width + x] = sx >= 0 && sy >= 0 && sx < width && sy < height
+      ? reference[sy * width + sx] : 128;
+  }
+  const field = await computeCPM(device, reference, target, width, height, {
+    patchSize: 24, stride: 32, downscaleLevels: 0, searchRadiusPx: 24,
+    seedPoints: [{ x: 79.5, y: 79.5 }, { x: 111.5, y: 79.5 }, { x: 79.5, y: 111.5 }],
+    cpmGridStride: 8, cpmLevels: 3, cpmPropagationIterations: 2,
+    cpmRandomTrials: 4, cpmSeed: 17, cpmReciprocalThresholdPx: 8,
+  });
+  const errors = field.matches.map(match => Math.hypot(match.dx - dx, match.dy - dy));
+  const summary = {
+    adapter: adapter.info?.description || adapter.info?.device || "unknown",
+    count: field.count,
+    accepted: field.matches.filter(match => match.usable).length,
+    errorsPx: errors,
+    maxErrorPx: Math.max(...errors),
+    descriptorMs: field.descriptorMs,
+    matchingMs: field.matchingMs,
+  };
+  result.textContent = JSON.stringify(summary);
+  document.title = "CPM_RESULT:" + btoa(unescape(encodeURIComponent(result.textContent)));
+  device.destroy();
+} catch (error) {
+  result.textContent = "ERROR: " + (error.stack || error.message || error);
+  document.title = "CPM_ERROR:" + btoa(unescape(encodeURIComponent(result.textContent)));
+}
+</script>

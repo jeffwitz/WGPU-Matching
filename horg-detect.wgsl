@@ -5,7 +5,7 @@ struct Params {
 }
 
 struct Counter { value: atomic<u32> }
-struct KeypointBuffer { values: array<vec4<u32>> }
+struct KeypointBuffer { values: array<vec4<f32>> }
 
 @group(0) @binding(0) var dog0: texture_2d<f32>;
 @group(0) @binding(1) var dog1: texture_2d<f32>;
@@ -37,8 +37,6 @@ fn detect_extrema(@builtin(global_invocation_id) id: vec3<u32>) {
     let layer = id.z + 1u;
     let point = vec2<i32>(id.xy);
     let center = dog_value(layer, point);
-    if abs(center) < params.settings.x { return; }
-
     var is_maximum = true;
     var is_minimum = true;
     for (var dz = -1; dz <= 1; dz = dz + 1) {
@@ -69,8 +67,43 @@ fn detect_extrema(@builtin(global_invocation_id) id: vec3<u32>) {
     let trace = dxx + dyy;
     if trace * trace / determinant >= params.settings.y { return; }
 
+    // Taylor localization of the DoG extremum in x, y and scale. The accepted
+    // offsets stay within half a sample so neighboring invocations cannot
+    // emit the same extremum after relocation.
+    let dx = 0.5 * (right - left);
+    let dy = 0.5 * (bottom - top);
+    let scale_before = dog_value(layer - 1u, point);
+    let scale_after = dog_value(layer + 1u, point);
+    let ds = 0.5 * (scale_after - scale_before);
+    let dxxs = 0.25 * (
+        dog_value(layer + 1u, point + vec2<i32>(1, 0))
+        - dog_value(layer + 1u, point + vec2<i32>(-1, 0))
+        - dog_value(layer - 1u, point + vec2<i32>(1, 0))
+        + dog_value(layer - 1u, point + vec2<i32>(-1, 0)));
+    let dyys = 0.25 * (
+        dog_value(layer + 1u, point + vec2<i32>(0, 1))
+        - dog_value(layer + 1u, point + vec2<i32>(0, -1))
+        - dog_value(layer - 1u, point + vec2<i32>(0, 1))
+        + dog_value(layer - 1u, point + vec2<i32>(0, -1)));
+    let dss = scale_before + scale_after - 2.0 * center;
+    let determinant3 = dxx * (dyy * dss - dyys * dyys)
+        - dxy * (dxy * dss - dyys * dxxs)
+        + dxxs * (dxy * dyys - dyy * dxxs);
+    if abs(determinant3) < 1e-12 { return; }
+    let offset = -vec3<f32>(
+        (dyy * dss - dyys * dyys) * dx + (dxxs * dyys - dxy * dss) * dy
+            + (dxy * dyys - dyy * dxxs) * ds,
+        (dxxs * dyys - dxy * dss) * dx + (dxx * dss - dxxs * dxxs) * dy
+            + (dxy * dxxs - dxx * dyys) * ds,
+        (dxy * dyys - dyy * dxxs) * dx + (dxy * dxxs - dxx * dyys) * dy
+            + (dxx * dyy - dxy * dxy) * ds) / determinant3;
+    if any(abs(offset) > vec3<f32>(0.5)) { return; }
+    let interpolated_contrast = center + 0.5 * dot(vec3<f32>(dx, dy, ds), offset);
+    if abs(interpolated_contrast) < params.settings.x { return; }
+
     let index = atomicAdd(&counter.value, 1u);
     if index < params.options.x {
-        keypoints.values[index] = vec4<u32>(id.x, id.y, layer + 1u, bitcast<u32>(abs(center)));
+        keypoints.values[index] = vec4<f32>(f32(id.x) + offset.x, f32(id.y) + offset.y,
+            f32(layer + 1u) + offset.z, abs(interpolated_contrast));
     }
 }

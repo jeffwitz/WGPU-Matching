@@ -10,6 +10,8 @@ const RANSAC_THRESHOLD = 1.5;
 const MIN_AFFINE_INLIERS = 4;
 const MIN_LOCAL_CANDIDATES = 8;
 const MIN_LOCAL_INLIER_FRACTION = 0.2;
+const MAX_RANSAC_CANDIDATES = 96;
+const MAX_RANSAC_ITERATIONS = 256;
 
 async function loadShader(device, filename) {
   const response = await fetch(new URL(filename, import.meta.url), { cache: "no-store" });
@@ -140,6 +142,16 @@ function makeUniform(device, resources, words, label) {
   return buffer;
 }
 
+function makeRansacUniform(device, resources, counts, settings, label) {
+  const data = new ArrayBuffer(32);
+  new Uint32Array(data, 0, 4).set(counts);
+  new Float32Array(data, 16, 4).set(settings);
+  const buffer = ownBuffer(device, resources, data.byteLength,
+    bufferUsage.UNIFORM | bufferUsage.COPY_DST, label);
+  device.queue.writeBuffer(buffer, 0, data);
+  return buffer;
+}
+
 async function imageFeatures(device, resources, pipelines, pixels, width, height, reduction,
   onProgress, imageName) {
   const limits = device.limits;
@@ -228,7 +240,8 @@ async function imageFeatures(device, resources, pipelines, pixels, width, height
         gaussian[level], gaussian[level + 1], dog, baseWidth, baseHeight, temporaryUniforms);
     }
 
-    const counter = ownBuffer(device, resources, 4, bufferUsage.STORAGE | bufferUsage.COPY_SRC,
+    const counter = ownBuffer(device, resources, 4,
+      bufferUsage.STORAGE | bufferUsage.COPY_SRC | bufferUsage.COPY_DST,
       imageName + " octave " + octave + " keypoint counter");
     device.queue.writeBuffer(counter, 0, new Uint32Array([0]));
     const keypoints = ownBuffer(device, resources, MAX_DETECTIONS_PER_OCTAVE * 16,
@@ -391,165 +404,70 @@ function selectFeatures(features, maxCount, width, height) {
   return result;
 }
 
-function solve3(matrix, vector) {
-  const a = [
-    [matrix[0], matrix[1], matrix[2], vector[0]],
-    [matrix[3], matrix[4], matrix[5], vector[1]],
-    [matrix[6], matrix[7], matrix[8], vector[2]],
-  ];
-  for (let column = 0; column < 3; column++) {
-    let pivot = column;
-    for (let row = column + 1; row < 3; row++) {
-      if (Math.abs(a[row][column]) > Math.abs(a[pivot][column])) pivot = row;
-    }
-    if (Math.abs(a[pivot][column]) < 1e-10) return null;
-    [a[pivot], a[column]] = [a[column], a[pivot]];
-    const divisor = a[column][column];
-    for (let k = column; k < 4; k++) a[column][k] /= divisor;
-    for (let row = 0; row < 3; row++) {
-      if (row === column) continue;
-      const scale = a[row][column];
-      for (let k = column; k < 4; k++) a[row][k] -= scale * a[column][k];
-    }
+function featureCoordinates(features) {
+  const count = features.length / FEATURE_STRIDE;
+  const coordinates = new Float32Array(count * 2);
+  for (let index = 0; index < count; index++) {
+    coordinates[index * 2] = features[index * FEATURE_STRIDE];
+    coordinates[index * 2 + 1] = features[index * FEATURE_STRIDE + 1];
   }
-  return [a[0][3], a[1][3], a[2][3]];
+  return coordinates;
 }
 
-function fitAffine(matches, indices, center) {
-  if (indices.length < 3) return null;
-  const normal = new Float64Array(9);
-  const rhsX = new Float64Array(3);
-  const rhsY = new Float64Array(3);
-  for (const index of indices) {
-    const match = matches[index];
-    const x = match.x - center.x;
-    const y = match.y - center.y;
-    const terms = [x, y, 1];
-    for (let row = 0; row < 3; row++) {
-      rhsX[row] += terms[row] * match.targetX;
-      rhsY[row] += terms[row] * match.targetY;
-      for (let column = 0; column < 3; column++) normal[row * 3 + column] += terms[row] * terms[column];
-    }
+function ratioDiagnostics(ratioValues) {
+  const ratios = [];
+  let ratioMatches = 0;
+  for (const ratio of ratioValues) {
+    if (!(ratio >= 0 && ratio <= 1)) continue;
+    ratios.push(ratio);
+    if (ratio < RATIO_LIMIT) ratioMatches++;
   }
-  const xFit = solve3(normal, rhsX);
-  const yFit = solve3(normal, rhsY);
-  if (!xFit || !yFit) return null;
-  return { x: xFit, y: yFit };
-}
-
-function affineError(model, match, center) {
-  const x = match.x - center.x;
-  const y = match.y - center.y;
-  const dx = model.x[0] * x + model.x[1] * y + model.x[2] - match.targetX;
-  const dy = model.y[0] * x + model.y[1] * y + model.y[2] - match.targetY;
-  return Math.hypot(dx, dy);
-}
-
-function ransacLocal(matches, center, stride, seed, threshold) {
-  const radius = 2 * stride;
-  let candidates = [];
-  for (let index = 0; index < matches.length; index++) {
-    const match = matches[index];
-    const distance = Math.hypot(match.x - center.x, match.y - center.y);
-    if (distance <= radius) candidates.push({ index, distance });
-  }
-  candidates.sort((a, b) => a.distance - b.distance);
-  if (candidates.length < 3) {
-    const present = new Set(candidates.map(value => value.index));
-    const nearest = matches.map((match, index) => ({
-      index,
-      distance: Math.hypot(match.x - center.x, match.y - center.y),
-    })).sort((a, b) => a.distance - b.distance);
-    for (const item of nearest) {
-      if (!present.has(item.index)) candidates.push(item);
-      if (candidates.length >= 3) break;
-    }
-  }
-  const candidateIds = candidates.slice(0, Math.min(96, candidates.length)).map(value => value.index);
-  if (candidateIds.length < 3) return null;
-
-  let state = (seed + 1) >>> 0;
-  const randomIndex = maximum => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state % maximum;
-  };
-  let best = [];
-  const iterations = Math.min(256, Math.max(64, candidateIds.length * 4));
-  for (let iteration = 0; iteration < iterations; iteration++) {
-    const a = randomIndex(candidateIds.length);
-    let b = randomIndex(candidateIds.length);
-    let c = randomIndex(candidateIds.length);
-    if (a === b || a === c || b === c) continue;
-    const sample = [candidateIds[a], candidateIds[b], candidateIds[c]];
-    const model = fitAffine(matches, sample, center);
-    if (!model) continue;
-    const inliers = [];
-    for (const index of candidateIds) {
-      if (affineError(model, matches[index], center) <= threshold) inliers.push(index);
-    }
-    if (inliers.length > best.length) best = inliers;
-  }
-  if (best.length < 3) return null;
-  let model = fitAffine(matches, best, center);
-  if (!model) return null;
-  best = candidateIds.filter(index => affineError(model, matches[index], center) <= threshold);
-  if (best.length < 3) return null;
-  model = fitAffine(matches, best, center) || model;
-  const residual = best.reduce((sum, index) => sum + affineError(model, matches[index], center), 0) / best.length;
-  return {
-    dx: model.x[2] - center.x,
-    dy: model.y[2] - center.y,
-    inliers: best.length,
-    candidates: candidateIds.length,
-    inlierFraction: best.length / candidateIds.length,
-    residual,
-  };
-}
-
-function makeLocalField(referenceFeatures, targetFeatures, knnResults, width, height, settings) {
-  const ratioMatches = [];
-  const ratioValues = [];
-  for (let index = 0; index < referenceFeatures.length / FEATURE_STRIDE; index++) {
-    const firstIndex = Math.round(knnResults[index * 4]);
-    const secondIndex = Math.round(knnResults[index * 4 + 1]);
-    const firstDistance2 = knnResults[index * 4 + 2];
-    const secondDistance2 = knnResults[index * 4 + 3];
-    if (firstIndex < 0 || firstIndex >= targetFeatures.length / FEATURE_STRIDE
-        || secondIndex < 0 || secondIndex >= targetFeatures.length / FEATURE_STRIDE
-        || !(secondDistance2 > 0)) continue;
-    const ratio = Math.sqrt(Math.max(0, firstDistance2 / secondDistance2));
-    if (Number.isFinite(ratio)) ratioValues.push(ratio);
-    if (!(ratio < RATIO_LIMIT)) continue;
-    const source = index * FEATURE_STRIDE;
-    const target = firstIndex * FEATURE_STRIDE;
-    ratioMatches.push({
-      x: referenceFeatures[source],
-      y: referenceFeatures[source + 1],
-      targetX: targetFeatures[target],
-      targetY: targetFeatures[target + 1],
-      ratio,
-    });
-  }
-
-  ratioValues.sort((a, b) => a - b);
-  const quantile = q => ratioValues.length
-    ? ratioValues[Math.floor(q * Math.max(0, ratioValues.length - 1))]
+  ratios.sort((a, b) => a - b);
+  const quantile = q => ratios.length
+    ? ratios[Math.floor(q * Math.max(0, ratios.length - 1))]
     : Number.NaN;
+  return {
+    ratioMatches,
+    ratioStats: { min: quantile(0), p25: quantile(0.25), median: quantile(0.5), p90: quantile(0.9) },
+  };
+}
 
+function buildLocalProblem(width, height, settings) {
   const gridWidth = 1 + Math.floor((width - settings.patchSize) / settings.stride);
   const gridHeight = 1 + Math.floor((height - settings.patchSize) / settings.stride);
   if (gridWidth < 1 || gridHeight < 1) throw new Error("La fenêtre DIC est plus grande que l’image.");
-  const matches = [];
+  const centers = [];
+  const seeds = new Float32Array(gridWidth * gridHeight * 4);
   for (let gy = 0; gy < gridHeight; gy++) {
     for (let gx = 0; gx < gridWidth; gx++) {
+      const seed = gy * gridWidth + gx;
       const center = {
         x: gx * settings.stride + (settings.patchSize - 1) / 2,
         y: gy * settings.stride + (settings.patchSize - 1) / 2,
       };
-      // Keypoint coordinates are integer positions in the reduced pyramid. Scale
-      // the paper's 1.5-pixel cutoff back to the original image coordinates.
-      const fit = ransacLocal(ratioMatches, center, settings.stride,
-        gy * gridWidth + gx, RANSAC_THRESHOLD * settings.horgReduction);
+      seeds.set([center.x, center.y, 0, seed], seed * 4);
+      centers.push(center);
+    }
+  }
+  return { gridWidth, gridHeight, centers, seeds };
+}
+
+function makeLocalField(ratioMatchCount, ratioStats, problem, ransacResults, consistencyResults, settings) {
+  const matches = [];
+  for (let seed = 0; seed < problem.centers.length; seed++) {
+      const center = problem.centers[seed];
+      const result = seed * 8;
+      const consistency = seed * 4;
+      const candidateCount = Math.round(ransacResults[result + 3]);
+      const inliers = Math.round(ransacResults[result + 2]);
+      const fit = ransacResults[result + 6] > 0.5 ? {
+        dx: ransacResults[result],
+        dy: ransacResults[result + 1],
+        inliers,
+        candidates: candidateCount,
+        inlierFraction: ransacResults[result + 4],
+        residual: ransacResults[result + 5],
+      } : null;
       const usable = !!fit && fit.inliers >= MIN_AFFINE_INLIERS
         && fit.candidates >= MIN_LOCAL_CANDIDATES
         && fit.inlierFraction >= MIN_LOCAL_INLIER_FRACTION
@@ -557,8 +475,8 @@ function makeLocalField(referenceFeatures, targetFeatures, knnResults, width, he
       matches.push({
         x: center.x,
         y: center.y,
-        dx: fit ? Math.round(fit.dx) : 0,
-        dy: fit ? Math.round(fit.dy) : 0,
+        dx: fit ? fit.dx : 0,
+        dy: fit ? fit.dy : 0,
         score: fit ? fit.inlierFraction : 0,
         secondScore: fit ? fit.residual : Number.NaN,
         margin: fit ? fit.inlierFraction : 0,
@@ -567,15 +485,17 @@ function makeLocalField(referenceFeatures, targetFeatures, knnResults, width, he
         candidates: fit ? fit.candidates : 0,
         inlierFraction: fit ? fit.inlierFraction : 0,
         residual: fit ? fit.residual : Number.NaN,
+        localConsistencyPx: consistencyResults[consistency] >= 0
+          ? consistencyResults[consistency] : Number.NaN,
+        localConsistencyNeighbors: Math.round(consistencyResults[consistency + 1]),
       });
-    }
   }
   return {
-    ratioMatches,
+    ratioMatches: ratioMatchCount,
     matches,
-    gridWidth,
-    gridHeight,
-    ratioStats: { min: quantile(0), p25: quantile(0.25), median: quantile(0.5), p90: quantile(0.9) },
+    gridWidth: problem.gridWidth,
+    gridHeight: problem.gridHeight,
+    ratioStats,
   };
 }
 
@@ -591,11 +511,15 @@ export async function computeHorg(device, referencePixels, targetPixels,
   const maxFeatures = settings.horgMaxFeatures || 4096;
   const resources = new Set();
   try {
-    const [pyramidModule, detectModule, descriptorModule, matcherModule] = await Promise.all([
+    const [pyramidModule, detectModule, descriptorModule, matcherModule, prepareModule,
+      ransacModule, confidenceModule] = await Promise.all([
       loadShader(device, "horg-pyramid.wgsl"),
       loadShader(device, "horg-detect.wgsl"),
       loadShader(device, "horg-descriptor.wgsl"),
       loadShader(device, "horg-match.wgsl"),
+      loadShader(device, "horg-prepare.wgsl"),
+      loadShader(device, "horg-ransac.wgsl"),
+      loadShader(device, "horg-confidence.wgsl"),
     ]);
     const pipelines = await Promise.all([
       makePipeline(device, pyramidModule, "downsample_base", "HORG initial image reduction"),
@@ -605,8 +529,13 @@ export async function computeHorg(device, referencePixels, targetPixels,
       makePipeline(device, detectModule, "detect_extrema", "HORG SIFT keypoint detection"),
       makePipeline(device, descriptorModule, "build_horg", "HORG 64D descriptor"),
       makePipeline(device, matcherModule, "nearest_two", "HORG descriptor nearest neighbours"),
+      makePipeline(device, prepareModule, "filter_lowe_ratio", "HORG GPU Lowe ratio filter"),
+      makePipeline(device, prepareModule, "build_local_candidates", "HORG GPU local candidate preparation"),
+      makePipeline(device, ransacModule, "ransac_local", "HORG local affine RANSAC"),
+      makePipeline(device, confidenceModule, "local_affine_leave_one_out", "HORG GPU local confidence diagnostic"),
     ]);
-    const [downsampleBase, downsampleHalf, blur, subtract, detect, descriptor, nearest] = pipelines;
+    const [downsampleBase, downsampleHalf, blur, subtract, detect, descriptor,
+      nearest, filterRatios, buildCandidates, ransac, localConsistency] = pipelines;
 
     const extractionStart = performance.now();
     const referenceAll = await imageFeatures(device, resources,
@@ -628,6 +557,10 @@ export async function computeHorg(device, referencePixels, targetPixels,
 
     const referenceCount = referenceFeatures.length / FEATURE_STRIDE;
     const targetCount = targetFeatures.length / FEATURE_STRIDE;
+    const referenceCoordinates = featureCoordinates(referenceFeatures);
+    const targetCoordinates = featureCoordinates(targetFeatures);
+    const localProblem = buildLocalProblem(width, height, settings);
+    const seedCount = localProblem.centers.length;
     const referenceDescriptors = new Float32Array(referenceCount * DESCRIPTOR_SIZE);
     const targetDescriptors = new Float32Array(targetCount * DESCRIPTOR_SIZE);
     for (let feature = 0; feature < referenceCount; feature++) {
@@ -649,11 +582,44 @@ export async function computeHorg(device, referencePixels, targetPixels,
       bufferUsage.STORAGE | bufferUsage.COPY_DST, "HORG target descriptor matrix");
     device.queue.writeBuffer(referenceBuffer, 0, referenceDescriptors);
     device.queue.writeBuffer(targetBuffer, 0, targetDescriptors);
+    const coordinateBufferSize = referenceCoordinates.byteLength + targetCoordinates.byteLength;
     const resultBytes = referenceCount * 16;
+    const ratioBytes = referenceCount * 4;
+    const candidateBytes = seedCount * MAX_RANSAC_CANDIDATES * 4;
+    const ransacResultBytes = seedCount * 32;
+    if (Math.max(coordinateBufferSize, resultBytes, ratioBytes, candidateBytes, ransacResultBytes)
+        > device.limits.maxStorageBufferBindingSize) {
+      throw new Error("Les buffers HORG de correspondance dépassent la limite de stockage WebGPU.");
+    }
+    const referenceCoordinateBuffer = ownBuffer(device, resources, referenceCoordinates.byteLength,
+      bufferUsage.STORAGE | bufferUsage.COPY_DST, "HORG reference feature coordinates");
+    const targetCoordinateBuffer = ownBuffer(device, resources, targetCoordinates.byteLength,
+      bufferUsage.STORAGE | bufferUsage.COPY_DST, "HORG target feature coordinates");
     const resultBuffer = ownBuffer(device, resources, resultBytes,
       bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG top two descriptor matches");
-    const readback = ownBuffer(device, resources, resultBytes,
-      bufferUsage.COPY_DST | bufferUsage.MAP_READ, "HORG match readback");
+    const ratioMatchesBuffer = ownBuffer(device, resources, resultBytes,
+      bufferUsage.STORAGE, "HORG GPU ratio-filtered matches");
+    const ratioBuffer = ownBuffer(device, resources, ratioBytes,
+      bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG GPU ratio diagnostics");
+    const ratioReadback = ownBuffer(device, resources, ratioBytes,
+      bufferUsage.COPY_DST | bufferUsage.MAP_READ, "HORG ratio diagnostics readback");
+    const ransacSeeds = ownBuffer(device, resources, localProblem.seeds.byteLength,
+      bufferUsage.STORAGE | bufferUsage.COPY_DST, "HORG RANSAC POI seeds");
+    const ransacCandidates = ownBuffer(device, resources, candidateBytes,
+      bufferUsage.STORAGE, "HORG GPU local candidate ids");
+    const ransacResultsBuffer = ownBuffer(device, resources, ransacResultBytes,
+      bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG RANSAC affine results");
+    const ransacReadback = ownBuffer(device, resources, ransacResultBytes,
+      bufferUsage.COPY_DST | bufferUsage.MAP_READ, "HORG RANSAC result readback");
+    const consistencyBytes = seedCount * 16;
+    const consistencyBuffer = ownBuffer(device, resources, consistencyBytes,
+      bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG GPU leave-one-out confidence diagnostic");
+    const consistencyReadback = ownBuffer(device, resources, consistencyBytes,
+      bufferUsage.COPY_DST | bufferUsage.MAP_READ, "HORG confidence diagnostic readback");
+    device.queue.writeBuffer(referenceCoordinateBuffer, 0, referenceCoordinates);
+    device.queue.writeBuffer(targetCoordinateBuffer, 0, targetCoordinates);
+    device.queue.writeBuffer(ransacSeeds, 0, localProblem.seeds);
+
     const matchParams = makeUniform(device, resources,
       [referenceCount, targetCount, 0, 0], "HORG nearest-neighbour parameters");
     const matchGroup = bindGroup(device, nearest, [
@@ -662,19 +628,80 @@ export async function computeHorg(device, referencePixels, targetPixels,
       { binding: 2, resource: { buffer: resultBuffer } },
       { binding: 3, resource: { buffer: matchParams } },
     ]);
+    const ratioParams = makeRansacUniform(device, resources,
+      [referenceCount, targetCount, 0, 0], [RATIO_LIMIT, 0, 0, 0], "HORG GPU ratio parameters");
+    const ratioGroup = bindGroup(device, filterRatios, [
+      { binding: 0, resource: { buffer: resultBuffer } },
+      { binding: 1, resource: { buffer: referenceCoordinateBuffer } },
+      { binding: 2, resource: { buffer: targetCoordinateBuffer } },
+      { binding: 3, resource: { buffer: ratioMatchesBuffer } },
+      { binding: 4, resource: { buffer: ratioBuffer } },
+      { binding: 7, resource: { buffer: ratioParams } },
+    ]);
+    const candidateParams = makeRansacUniform(device, resources,
+      [seedCount, referenceCount, MAX_RANSAC_CANDIDATES, 0],
+      [2 * settings.stride, 0, 0, 0], "HORG local candidate parameters");
+    const candidateGroup = bindGroup(device, buildCandidates, [
+      { binding: 3, resource: { buffer: ratioMatchesBuffer } },
+      { binding: 5, resource: { buffer: ransacSeeds } },
+      { binding: 6, resource: { buffer: ransacCandidates } },
+      { binding: 7, resource: { buffer: candidateParams } },
+    ]);
+
     const matchStart = performance.now();
-    const encoder = device.createCommandEncoder({ label: "HORG exhaustive GPU descriptor search" });
+    const encoder = device.createCommandEncoder({ label: "HORG descriptor matching and local preparation" });
     encodePass(encoder, nearest, matchGroup, referenceCount, 1, 1, "HORG exact k=2 descriptor matching");
-    encoder.copyBufferToBuffer(resultBuffer, 0, readback, 0, resultBytes);
+    encodePass(encoder, filterRatios, ratioGroup, Math.ceil(referenceCount / 64), 1, 1,
+      "HORG GPU Lowe ratio filtering");
+    encodePass(encoder, buildCandidates, candidateGroup, seedCount, 1, 1,
+      "HORG GPU spatial candidate preparation");
+    encoder.copyBufferToBuffer(ratioBuffer, 0, ratioReadback, 0, ratioBytes);
     device.queue.submit([encoder.finish()]);
     await device.queue.onSubmittedWorkDone();
-    await readback.mapAsync(mapMode.READ);
-    const knnResults = new Float32Array(readback.getMappedRange()).slice();
-    readback.unmap();
+    await ratioReadback.mapAsync(mapMode.READ);
+    const ratioValues = new Float32Array(ratioReadback.getMappedRange()).slice();
+    ratioReadback.unmap();
     const matchComputeMs = performance.now() - matchStart;
+    const ratioData = ratioDiagnostics(ratioValues);
 
-    const local = makeLocalField(referenceFeatures, targetFeatures, knnResults,
-      width, height, settings);
+    const ransacParams = makeRansacUniform(device, resources,
+      [seedCount, referenceCount, MAX_RANSAC_CANDIDATES, MAX_RANSAC_ITERATIONS],
+      [RANSAC_THRESHOLD * reduction, 0, 0, 0], "HORG GPU RANSAC parameters");
+    const ransacGroup = bindGroup(device, ransac, [
+      { binding: 0, resource: { buffer: ratioMatchesBuffer } },
+      { binding: 1, resource: { buffer: ransacSeeds } },
+      { binding: 2, resource: { buffer: ransacCandidates } },
+      { binding: 3, resource: { buffer: ransacResultsBuffer } },
+      { binding: 4, resource: { buffer: ransacParams } },
+    ]);
+    const consistencyParams = makeRansacUniform(device, resources,
+      [seedCount, 0, 0, 0],
+      [RANSAC_THRESHOLD, MIN_AFFINE_INLIERS, MIN_LOCAL_CANDIDATES,
+        MIN_LOCAL_INLIER_FRACTION], "HORG local confidence parameters");
+    const consistencyGroup = bindGroup(device, localConsistency, [
+      { binding: 0, resource: { buffer: ransacSeeds } },
+      { binding: 1, resource: { buffer: ransacResultsBuffer } },
+      { binding: 2, resource: { buffer: consistencyBuffer } },
+      { binding: 3, resource: { buffer: consistencyParams } },
+    ]);
+    const ransacStart = performance.now();
+    const ransacEncoder = device.createCommandEncoder({ label: "HORG local affine RANSAC" });
+    encodePass(ransacEncoder, ransac, ransacGroup, seedCount, 1, 1, "HORG deterministic GPU RANSAC");
+    encodePass(ransacEncoder, localConsistency, consistencyGroup, seedCount, 1, 1,
+      "HORG GPU local leave-one-out confidence diagnostic");
+    ransacEncoder.copyBufferToBuffer(ransacResultsBuffer, 0, ransacReadback, 0, ransacResultBytes);
+    ransacEncoder.copyBufferToBuffer(consistencyBuffer, 0, consistencyReadback, 0, consistencyBytes);
+    device.queue.submit([ransacEncoder.finish()]);
+    await device.queue.onSubmittedWorkDone();
+    await Promise.all([ransacReadback.mapAsync(mapMode.READ), consistencyReadback.mapAsync(mapMode.READ)]);
+    const ransacResults = new Float32Array(ransacReadback.getMappedRange()).slice();
+    const consistencyResults = new Float32Array(consistencyReadback.getMappedRange()).slice();
+    ransacReadback.unmap();
+    consistencyReadback.unmap();
+    const ransacGpuMs = performance.now() - ransacStart;
+
+    const local = makeLocalField(ratioData.ratioMatches, ratioData.ratioStats,
+      localProblem, ransacResults, consistencyResults, settings);
     const accepted = local.matches.reduce((count, match) => count + Number(match.usable), 0);
     return {
       algorithm: "HORG-WebGPU",
@@ -693,11 +720,12 @@ export async function computeHorg(device, referencePixels, targetPixels,
       keypointOverflow: referenceAll.overflow + targetAll.overflow,
       descriptorsReference: referenceCount,
       descriptorsTarget: targetCount,
-      ratioMatches: local.ratioMatches.length,
+      ratioMatches: local.ratioMatches,
       ratioStats: local.ratioStats,
       acceptedInitializations: accepted,
       extractionMs,
       matchComputeMs,
+      ransacGpuMs,
       ransacThreshold: RANSAC_THRESHOLD * reduction,
       ratioLimit: RATIO_LIMIT,
       maxFeatures,

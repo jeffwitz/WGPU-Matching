@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 350" role="img" aria-labelledby="title desc">
+  <title id="title">WGPU-Matching DIC initialization pipeline</title>
+  <desc id="desc">Reference and target images feed DeepMatching or HORG-DIC. Both produce initial displacements for downstream DIC refinement.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#60758b"/>
+    </marker>
+  </defs>
+  <style>
+    .box { fill:#f3f7fb; stroke:#45627d; stroke-width:2; rx:14; }
+    .green { fill:#e9f7ef; stroke:#36865a; }
+    .blue { fill:#eaf1fb; stroke:#3c6ea8; }
+    .gold { fill:#fff5dc; stroke:#a4771e; }
+    .title { font:600 20px sans-serif; fill:#172b3a; }
+    .small { font:15px sans-serif; fill:#34495a; }
+    .arrow { fill:none; stroke:#60758b; stroke-width:2.5; marker-end:url(#arrow); }
+  </style>
+  <rect class="box" x="25" y="122" width="185" height="105"/>
+  <text class="title" x="117" y="158" text-anchor="middle">Image pair</text>
+  <text class="small" x="117" y="185" text-anchor="middle">reference + target</text>
+  <text class="small" x="117" y="207" text-anchor="middle">same dimensions</text>
+  <path class="arrow" d="M210 175 H272 V82 H315"/>
+  <path class="arrow" d="M272 175 V268 H315"/>
+  <rect class="box blue" x="320" y="28" width="390" height="110"/>
+  <text class="title" x="515" y="61" text-anchor="middle">DeepMatching</text>
+  <text class="small" x="515" y="89" text-anchor="middle">dense descriptors → correlations</text>
+  <text class="small" x="515" y="112" text-anchor="middle">deformable hierarchy → reciprocal matches</text>
+  <rect class="box green" x="320" y="213" width="390" height="110"/>
+  <text class="title" x="515" y="246" text-anchor="middle">HORG-DIC</text>
+  <text class="small" x="515" y="274" text-anchor="middle">DoG/SIFT → signed HORG descriptor</text>
+  <text class="small" x="515" y="297" text-anchor="middle">neighbors → local candidates → affine RANSAC</text>
+  <path class="arrow" d="M710 83 H770 V175 H815"/>
+  <path class="arrow" d="M710 268 H770 V175"/>
+  <rect class="box gold" x="820" y="122" width="175" height="105"/>
+  <text class="title" x="907" y="158" text-anchor="middle">Initialization</text>
+  <text class="small" x="907" y="185" text-anchor="middle">POI displacements</text>
+  <text class="small" x="907" y="207" text-anchor="middle">+ diagnostics</text>
+  <path class="arrow" d="M995 175 H1040"/>
+  <rect class="box" x="1045" y="122" width="140" height="105"/>
+  <text class="title" x="1115" y="158" text-anchor="middle">DIC solver</text>
+  <text class="small" x="1115" y="185" text-anchor="middle">e.g. IC-GN</text>
+  <text class="small" x="1115" y="207" text-anchor="middle">not included</text>
+</svg>

@@ -75,7 +75,7 @@ function makeCorrelationPipeline(device, module, entryPoint) {
   });
 }
 
-function makePipelines(device, descriptorModule, matcherModule) {
+function makeDescriptorPipelines(device, descriptorModule) {
   return Promise.all([
     makePipeline(device, descriptorModule, "presmooth_horizontal", "INRIA descriptor pre-smoothing horizontal"),
     makePipeline(device, descriptorModule, "presmooth_vertical", "INRIA descriptor pre-smoothing vertical"),
@@ -84,12 +84,19 @@ function makePipelines(device, descriptorModule, matcherModule) {
     makePipeline(device, descriptorModule, "smooth_vertical", "INRIA HOG smoothing vertical"),
     makePipeline(device, descriptorModule, "sigmoid_smooth_horizontal", "INRIA HOG sigmoid and smoothing"),
     makePipeline(device, descriptorModule, "average_pool", "INRIA descriptor average pooling"),
+  ]).then(([presmoothHorizontal, presmoothVertical, buildHog, smoothHorizontal,
+    smoothVertical, sigmoidSmoothHorizontal, averagePool]) =>
+    ({ presmoothHorizontal, presmoothVertical, buildHog, smoothHorizontal,
+      smoothVertical, sigmoidSmoothHorizontal, averagePool }));
+}
+
+function makePipelines(device, descriptorModule, matcherModule) {
+  return Promise.all([
+    makeDescriptorPipelines(device, descriptorModule),
     makeCorrelationPipeline(device, matcherModule, "correlate_patches"),
     makePipeline(device, matcherModule, "select_best_patch", "DeepMatching patch selection"),
-  ]).then(([presmoothHorizontal, presmoothVertical, buildHog, smoothHorizontal,
-    smoothVertical, sigmoidSmoothHorizontal, averagePool, correlate, select]) =>
-    ({ presmoothHorizontal, presmoothVertical, buildHog, smoothHorizontal,
-      smoothVertical, sigmoidSmoothHorizontal, averagePool, correlate, select }));
+  ]).then(([descriptorPipelines, correlate, select]) =>
+    ({ ...descriptorPipelines, correlate, select }));
 }
 
 function releaseResource(resources, resource) {
@@ -253,6 +260,52 @@ async function makeDescriptors(device, resources, inputs, fullWidth, fullHeight,
 
   releaseResource(resources, imageParams);
   return { width, height, reference: referenceSet, target: targetSet };
+}
+
+// Shared descriptor entry point for matchers that use the repository's validated
+// INRIA-style HOG representation without running the DeepMatching hierarchy.
+export async function createDeepMatchingHogDescriptors(device, referencePixels,
+  targetPixels, width, height, downscaleLevels, onProgress = () => {}) {
+  if (!bufferUsage || !textureUsage) {
+    throw new Error("Les constantes WebGPU requises ne sont pas disponibles dans ce navigateur.");
+  }
+  if (referencePixels.length !== width * height || targetPixels.length !== width * height) {
+    throw new Error("Les pixels reçus ne correspondent pas aux dimensions des images.");
+  }
+  if (width > device.limits.maxTextureDimension2D || height > device.limits.maxTextureDimension2D) {
+    throw new Error("Les images dépassent la limite de texture WebGPU (" +
+      device.limits.maxTextureDimension2D + " px).");
+  }
+  if (!Number.isInteger(downscaleLevels) || downscaleLevels < 0 || downscaleLevels > 6) {
+    throw new Error("Le nombre de réductions HOG doit être compris entre 0 et 6.");
+  }
+
+  const resources = new Set();
+  try {
+    const grayStorageFormat = device.features.has("texture-formats-tier1") ? "r8unorm" : "rgba8unorm";
+    const descriptorModule = await loadShader(device,
+      "deepmatching-descriptor.wgsl", { GRAY_STORAGE_FORMAT: grayStorageFormat });
+    const pipelines = await makeDescriptorPipelines(device, descriptorModule);
+    const inputs = uploadGrayInputs(device, resources, referencePixels, targetPixels, width, height);
+    const descriptors = await makeDescriptors(device, resources, inputs,
+      width, height, downscaleLevels, pipelines, onProgress);
+    await device.queue.onSubmittedWorkDone();
+    let disposed = false;
+    return {
+      ...descriptors,
+      scale: 2 ** downscaleLevels,
+      destroy() {
+        if (disposed) return;
+        disposed = true;
+        for (const resource of resources) resource.destroy();
+        resources.clear();
+      },
+    };
+  } catch (error) {
+    try { await device.queue.onSubmittedWorkDone(); } catch {}
+    for (const resource of resources) resource.destroy();
+    throw error;
+  }
 }
 
 function makeBindGroup(device, pipeline, entries) {

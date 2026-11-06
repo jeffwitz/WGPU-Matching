@@ -60,6 +60,7 @@
           <select id="algorithm">
             <option value="deepmatching" selected>DeepMatching · pyramide INRIA</option>
             <option value="horg">HORG · SIFT et affine locale</option>
+            <option value="cpm">CPM-WGPU · PatchMatch parcimonieux</option>
           </select>
         </label>
         <label>Fenêtre DIC (px)<input id="patch-size" type="number" min="8" max="128" step="4" value="32"></label>
@@ -75,7 +76,7 @@
           </select>
         </label>
         <label>Pas de la grille (px)<input id="grid-stride" type="number" min="4" max="2048" step="4" value="256"></label>
-        <label>Rayon de recherche (px)<input id="search-radius" type="number" min="0" max="4096" step="16" value="256"></label>
+        <label>Rayon de recherche (px)<input id="search-radius" type="number" min="0" max="8192" step="16" value="256"></label>
         <label>Réduction des images
           <select id="downscale-levels">
             <option value="0">Aucune</option>
@@ -108,8 +109,18 @@
           </select>
         </label>
       </div>
+      <div class="settings" id="cpm-settings" hidden>
+        <label>Pas de la grille CPM (px)<input id="cpm-grid-stride" type="number" min="4" max="256" step="4" value="16"></label>
+        <label>Niveaux de pyramide<input id="cpm-levels" type="number" min="1" max="6" step="1" value="4"></label>
+        <label>Passes de propagation par niveau<input id="cpm-propagation-iterations" type="number" min="1" max="16" step="1" value="6"></label>
+        <label>Essais aléatoires par passe<input id="cpm-random-trials" type="number" min="1" max="16" step="1" value="4"></label>
+        <label>Rayon local de raffinement (px)<input id="cpm-local-radius" type="number" min="1" max="512" step="1" value="16"></label>
+        <label>Graine déterministe<input id="cpm-seed" type="number" min="0" max="4294967295" step="1" value="1"></label>
+        <label>Seuil de réciprocité (px)<input id="cpm-reciprocal-threshold" type="number" min="0" max="256" step="0.5" value="8"></label>
+      </div>
       <p class="hint" id="deepmatching-hint">La taille racine réduite doit contenir 1, 2, 4, 8… cellules atomiques de 4 px par côté. Le score suit la hiérarchie ; seules les correspondances réciproques sont marquées utilisables. La grille automatique est limitée à 512 seeds ; commencez avec la réduction ×4 et un rayon limité.</p>
       <p class="hint" id="horg-hint" hidden>HORG calcule sur WebGPU la pyramide DoG, l’orientation dominante, le descripteur 64D et les deux voisins exacts. Le nombre de points-clés comparés est plafonné par image. L’affine locale RANSAC est ajustée en JavaScript ; l’IC-GN et le raffinement sous-pixel de SIFT ne sont pas inclus.</p>
+      <p class="hint" id="cpm-hint" hidden>Prototype CPM-HOG : pyramide de descripteurs HOG à facteur 2, propagation ping-pong déterministe, recherche aléatoire GPU et vérification dans les deux sens. Les seeds sont associées au point de grille mesuré le plus proche, indiqué dans le CSV. Les niveaux HOG sont moyennés depuis la base ; les déplacements restent quantifiés à la réduction HOG initiale. L’affine locale et la validation comparative restent à faire. Code original CPM sous GPL-3.0 : cette implémentation autonome n’en copie pas le code.</p>
       <div class="actions"><button id="run" disabled>Lancer DeepMatching INRIA · WebGPU</button><button id="export" class="secondary" disabled>Exporter les graines CSV</button></div>
       <p id="status" role="status" aria-live="polite">Recherche d’un adaptateur WebGPU…</p>
     </section>
