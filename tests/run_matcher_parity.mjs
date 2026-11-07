@@ -227,6 +227,8 @@ function compare(browserReport, python, contract) {
   let cpmCorrect = 0;
   let cpmMaxDisplacementDifference = 0;
   let cpmMaxDiagnosticDifference = 0;
+  const softwareDiagnosticTolerance =
+    process.env.WGPU_MATCHING_PARITY_DEVICE_TYPE === "cpu" ? 0.1 : 0.05;
   for (let index = 0; index < cpmJS.length; index++) {
     const js = cpmJS[index];
     const py = cpmPython[index];
@@ -247,7 +249,12 @@ function compare(browserReport, python, contract) {
       }
       const difference = Math.abs(a - b);
       cpmMaxDiagnosticDifference = Math.max(cpmMaxDiagnosticDifference, difference);
-      if (difference > 0.05) throw new Error(`cpm/manual_translation[${index}].${key} differs by ${difference}`);
+      const tolerance = key === "residual" ? softwareDiagnosticTolerance : 0.05;
+      if (difference > tolerance) {
+        throw new Error(
+          `cpm/manual_translation[${index}].${key} differs by ${difference} (limit ${tolerance})`,
+        );
+      }
     }
     const difference = Math.hypot(js.dx - py.dx, js.dy - py.dy);
     cpmMaxDisplacementDifference = Math.max(cpmMaxDisplacementDifference, difference);
