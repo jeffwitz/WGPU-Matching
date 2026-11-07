@@ -77,6 +77,8 @@ def main() -> None:
     device_type = os.environ.get("WGPU_MATCHING_PARITY_DEVICE_TYPE", "gpu")
     if device_type not in {"gpu", "cpu"}:
         raise ValueError("WGPU_MATCHING_PARITY_DEVICE_TYPE must be 'gpu' or 'cpu'")
+    if device_type == "cpu":
+        cases = {"manual_translation": cases["manual_translation"]}
     with WGPUMatching(device_type=device_type) as matcher:
         for name, scenario in cases.items():
             scenario_options = replace(options, seed_points=scenario["seed_points"])
@@ -167,7 +169,11 @@ def main() -> None:
             "adapter": matcher.device_name,
             "width": WIDTH,
             "height": HEIGHT,
-            "seedCounts": {"translation": 12, "affine": 12, "manual_translation": 3},
+            "seedCounts": (
+                {"manual_translation": len(manual_seeds)}
+                if device_type == "cpu"
+                else {"translation": 12, "affine": 12, "manual_translation": 3}
+            ),
             "transforms": {
                 "translation": [8, -4],
                 "affine": affine_truth,

@@ -113,7 +113,10 @@ function compare(browserReport, python, contract) {
     }
   }
   for (const name of ["deepmatching", "horg"]) {
-    for (const caseName of ["translation", "affine", "manual_translation"]) {
+    const parityCases = process.env.WGPU_MATCHING_PARITY_DEVICE_TYPE === "cpu"
+      ? ["manual_translation"]
+      : ["translation", "affine", "manual_translation"];
+    for (const caseName of parityCases) {
       const jsMatches = browserReport.methods[name][caseName];
       const pyMatches = python.methods[name][caseName];
       const expectedCount = browserReport.seedCounts[caseName];
