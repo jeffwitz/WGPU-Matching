@@ -12,6 +12,7 @@ const WIDTH = 512;
 const HEIGHT = 384;
 const result = document.querySelector("#result");
 const base = new URL("./assets/", import.meta.url);
+const softwareParity = new URLSearchParams(location.search).get("software") === "1";
 
 try {
   if (!navigator.gpu) throw new Error("navigator.gpu unavailable");
@@ -97,37 +98,41 @@ try {
     methods.deepmatching[name] = normalize(deep);
     methods.horg[name] = normalize(horg);
   }
-  const cpm = await computeCPM(device, reference, targets.translation, WIDTH, HEIGHT, {
-    patchSize: 64, stride: 64, downscaleLevels: 1, searchRadiusPx: 64,
-    seedPoints: manualSeeds,
-    cpmMatchingPatchSizePx: 32, cpmGridStride: 16, cpmLevels: 2,
-    cpmPropagationIterations: 2, cpmRandomTrials: 4, cpmInitialHypotheses: 8,
-    cpmLocalSearchRadiusPx: 32, cpmAffineRadiusPx: 64, cpmSeed: 17,
-    cpmReciprocalThresholdPx: 8,
-    cpmOracleAffine: [1, 0, 8, 0, 1, -4],
-  });
-  methods.cpm = {
-    manual_translation: cpm.matches.map(match => ({
-      x: match.x, y: match.y, dx: match.dx, dy: match.dy,
-      usable: match.usable, score: match.score, reciprocal: match.reciprocal,
-      inliers: match.affineSupportCount, candidates: match.affineCandidateCount,
-      inlierFraction: match.affineCandidateCount
-        ? match.affineSupportCount / match.affineCandidateCount : 0,
-      residual: match.affineFitRmsePx,
-      measuredX: match.measuredX, measuredY: match.measuredY,
-      measuredDx: match.measuredDx, measuredDy: match.measuredDy,
-      gridDistancePx: match.gridDistancePx,
-      reciprocalErrorPx: match.reciprocalErrorPx,
-    })),
-    metadata: {
-      workGridPointCount: cpm.workGridPointCount,
-      workGridReciprocalCount: cpm.workGridReciprocalCount,
-      workGridUsableCount: cpm.workGridUsableCount,
-      gridWidth: cpm.gridWidth,
-      gridHeight: cpm.gridHeight,
-    },
-    oracle: cpm.oracleDiagnostics,
-  };
+  if (softwareParity) {
+    methods.cpm = null;
+  } else {
+    const cpm = await computeCPM(device, reference, targets.translation, WIDTH, HEIGHT, {
+      patchSize: 64, stride: 64, downscaleLevels: 1, searchRadiusPx: 64,
+      seedPoints: manualSeeds,
+      cpmMatchingPatchSizePx: 32, cpmGridStride: 16, cpmLevels: 2,
+      cpmPropagationIterations: 2, cpmRandomTrials: 4, cpmInitialHypotheses: 8,
+      cpmLocalSearchRadiusPx: 32, cpmAffineRadiusPx: 64, cpmSeed: 17,
+      cpmReciprocalThresholdPx: 8,
+      cpmOracleAffine: [1, 0, 8, 0, 1, -4],
+    });
+    methods.cpm = {
+      manual_translation: cpm.matches.map(match => ({
+        x: match.x, y: match.y, dx: match.dx, dy: match.dy,
+        usable: match.usable, score: match.score, reciprocal: match.reciprocal,
+        inliers: match.affineSupportCount, candidates: match.affineCandidateCount,
+        inlierFraction: match.affineCandidateCount
+          ? match.affineSupportCount / match.affineCandidateCount : 0,
+        residual: match.affineFitRmsePx,
+        measuredX: match.measuredX, measuredY: match.measuredY,
+        measuredDx: match.measuredDx, measuredDy: match.measuredDy,
+        gridDistancePx: match.gridDistancePx,
+        reciprocalErrorPx: match.reciprocalErrorPx,
+      })),
+      metadata: {
+        workGridPointCount: cpm.workGridPointCount,
+        workGridReciprocalCount: cpm.workGridReciprocalCount,
+        workGridUsableCount: cpm.workGridUsableCount,
+        gridWidth: cpm.gridWidth,
+        gridHeight: cpm.gridHeight,
+      },
+      oracle: cpm.oracleDiagnostics,
+    };
+  }
   const contractDefaults = {
     deepmatching: await browserDefaults("deepmatching"),
     horg: await browserDefaults("horg"),

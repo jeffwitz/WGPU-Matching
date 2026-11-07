@@ -190,6 +190,12 @@ function compare(browserReport, python, contract) {
       };
     }
   }
+  if (process.env.WGPU_MATCHING_PARITY_DEVICE_TYPE === "cpu") {
+    summary.cases["cpm/manual_translation"] = {
+      status: "covered by the following standalone browser CPM smoke test",
+    };
+    return summary;
+  }
   const cpmJS = browserReport.methods.cpm.manual_translation;
   const cpmPython = python.methods.cpm.manual_translation;
   if (cpmJS.length !== 3 || cpmPython.length !== 3) {
@@ -325,7 +331,10 @@ try {
     return response.ok ? response.json() : null;
   }, value => Boolean(value?.webSocketDebuggerUrl), 30000, "Chromium DevTools endpoint");
   const target = await poll(async () => {
-    const response = await fetch(`http://127.0.0.1:${debugPort}/json/new?http://127.0.0.1:${httpPort}/tests/matcher-parity-browser.html`, { method: "PUT" });
+    const parityPage = process.env.WGPU_MATCHING_PARITY_DEVICE_TYPE === "cpu"
+      ? "matcher-parity-browser.html?software=1"
+      : "matcher-parity-browser.html";
+    const response = await fetch(`http://127.0.0.1:${debugPort}/json/new?http://127.0.0.1:${httpPort}/tests/${parityPage}`, { method: "PUT" });
     if (!response.ok) throw new Error(`DevTools target creation failed: ${response.status}`);
     return response.json();
   }, value => value?.webSocketDebuggerUrl, 15000, "browser parity page");
