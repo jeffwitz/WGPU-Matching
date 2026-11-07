@@ -54,6 +54,21 @@ async function poll(read, predicate, timeoutMs, label) {
   throw new Error(`Timed out waiting for ${label}`);
 }
 
+async function stopBrowser() {
+  if (!browser || browser.exitCode !== null || browser.signalCode !== null) return;
+  await new Promise(resolve => {
+    const timeout = setTimeout(() => {
+      browser.kill("SIGKILL");
+      setTimeout(resolve, 250);
+    }, 5000);
+    browser.once("close", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    browser.kill("SIGTERM");
+  });
+}
+
 try {
   const chrome = process.env.CHROMIUM_BIN || process.env.CHROME_PATH || "google-chrome";
   browser = spawn(chrome, [
@@ -115,7 +130,7 @@ try {
   }
   console.log(JSON.stringify(report));
 } finally {
-  browser?.kill("SIGTERM");
+  await stopBrowser();
   server.close();
-  await rm(profile, { recursive: true, force: true });
+  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }

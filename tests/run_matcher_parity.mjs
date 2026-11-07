@@ -71,6 +71,21 @@ function pythonReport() {
   });
 }
 
+async function stopBrowser() {
+  if (!browser || browser.exitCode !== null || browser.signalCode !== null) return;
+  await new Promise(resolve => {
+    const timeout = setTimeout(() => {
+      browser.kill("SIGKILL");
+      setTimeout(resolve, 250);
+    }, 5000);
+    browser.once("close", () => {
+      clearTimeout(timeout);
+      resolve();
+    });
+    browser.kill("SIGTERM");
+  });
+}
+
 function compare(browserReport, python, contract) {
   const summary = {
     pythonAdapter: python.adapter,
@@ -355,7 +370,7 @@ try {
   summary.browserUiDefaults = uiState.controls;
   console.log(JSON.stringify(summary, null, 2));
 } finally {
-  browser?.kill("SIGTERM");
+  await stopBrowser();
   server.close();
-  await rm(profile, { recursive: true, force: true });
+  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
