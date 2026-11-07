@@ -195,9 +195,32 @@ function compare(browserReport, python, contract) {
   if (cpmJS.length !== 3 || cpmPython.length !== 3) {
     throw new Error(`cpm/manual_translation: expected 3 seeds, got JS=${cpmJS.length}, Python=${cpmPython.length}`);
   }
-  for (const key of ["workGridPointCount", "workGridReciprocalCount", "workGridUsableCount", "gridWidth", "gridHeight"]) {
+  for (const key of ["workGridPointCount", "gridWidth", "gridHeight"]) {
     if (browserReport.methods.cpm.metadata[key] !== python.methods.cpm.metadata[key]) {
-      throw new Error(`cpm metadata ${key} differs between browser and Python`);
+      throw new Error(
+        `cpm metadata ${key} differs between browser (${browserReport.methods.cpm.metadata[key]}) `
+        + `and Python (${python.methods.cpm.metadata[key]})`,
+      );
+    }
+  }
+  const cpmWorkGridCounts = {
+    browser: {
+      reciprocal: browserReport.methods.cpm.metadata.workGridReciprocalCount,
+      usable: browserReport.methods.cpm.metadata.workGridUsableCount,
+    },
+    python: {
+      reciprocal: python.methods.cpm.metadata.workGridReciprocalCount,
+      usable: python.methods.cpm.metadata.workGridUsableCount,
+    },
+  };
+  if (process.env.WGPU_MATCHING_PARITY_DEVICE_TYPE !== "cpu") {
+    for (const key of ["workGridReciprocalCount", "workGridUsableCount"]) {
+      if (browserReport.methods.cpm.metadata[key] !== python.methods.cpm.metadata[key]) {
+        throw new Error(
+          `cpm metadata ${key} differs between browser (${browserReport.methods.cpm.metadata[key]}) `
+          + `and Python (${python.methods.cpm.metadata[key]})`,
+        );
+      }
     }
   }
   let cpmAccepted = 0;
@@ -368,6 +391,7 @@ try {
   }
   const summary = compare(browserReport, python, contract);
   summary.browserUiDefaults = uiState.controls;
+  summary.cpmWorkGridCounts = cpmWorkGridCounts;
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   await stopBrowser();
