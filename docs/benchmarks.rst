@@ -100,6 +100,9 @@ The native Python benchmark measures HORG and DeepMatching separately on Live-DI
 * :doc:`DeepMatching–HORG accuracy and timing report <_generated_results/uniaxial/deepmatching_horg_current_comparison>`
 * :doc:`RaCo-ALIKED-LightGlue+ exploratory comparison <_generated_results/features/raco_aliked_lightglue_webgpu_study>` with :doc:`per-seed raw data <_generated_results/features/raco_aliked_lightglue_webgpu_study.json>`
 * :doc:`Modern learned-matcher comparison <_generated_results/features/modern_matcher_speckle_study>` (DeepMatching, XFeat, RaCo-ALIKED-LightGlue+, EfficientLoFTR) and :doc:`EfficientLoFTR per-seed data <_generated_results/features/efficientloftr_webgpu_study.json>`
+* :doc:`EfficientLoFTR WebGPU graph optimization <_generated_results/features/efficientloftr_border_mask_optimization_20261107>` with :doc:`profile and parity data <_generated_results/features/efficientloftr_border_mask_optimization_20261107.json>`
+* :doc:`RaCo GridSample WebGPU optimization <_generated_results/features/raco_gridsample_webgpu_optimization_20261107>` with :doc:`profile and per-seed data <_generated_results/features/raco_gridsample_webgpu_optimization_20261107.json>`
+* :doc:`RaCo ONNX CPU-fallback reduction <_generated_results/features/raco_onnx_cpu_fallbacks_20261107>` with :doc:`profile and exact per-seed parity data <_generated_results/features/raco_onnx_cpu_fallbacks_20261107.json>`
 * :doc:`DeepMatching/XFeat comparison <_generated_results/features/deepmatching_vs_xfeat>`
 * :doc:`DeepMatching–HORG raw comparison data <_generated_results/uniaxial/deepmatching_horg_current_comparison.csv>`
 * :doc:`Native Python benchmark report <_generated_results/uniaxial/python_runtime_comparison>` and :doc:`timing data <_generated_results/uniaxial/python_runtime_comparison.csv>`

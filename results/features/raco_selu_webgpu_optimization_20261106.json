@@ -1,0 +1,789 @@
+{
+  "date": "2026-11-06",
+  "objective": "Measure operator placement and host/device transfer changes for RaCo-ALIKED-LightGlue+ before any native-4K refinement work.",
+  "environment": {
+    "gpu": "Intel Graphics LNL integrated",
+    "backend": "Vulkan / Mesa 25.2.8",
+    "onnxruntime": "1.31.1",
+    "native_webgpu_ep": "0.5.0",
+    "wgpu_py": "0.32.0",
+    "model_input_px": [
+      640,
+      384
+    ],
+    "source_image_px": [
+      3840,
+      2160
+    ]
+  },
+  "model": {
+    "source_sha256": "575e1746138204e19027cb37541cd840c7fc9f2c932b844e9685354a3913bda1",
+    "selu_rewrite_sha256": "f4d3109557f60bb81688fc0b267f2d7bd6c04f718fcb954e9beaeb398a42d6d0",
+    "rewritten_selu_nodes": 83,
+    "rewrite": "Selu replaced by Exp, Sub, Mul, Greater, Where, Mul",
+    "opt_in_only": true
+  },
+  "production_benchmark": {
+    "protocol": "Existing frame 040/100/199 and synthetic 60% cases; warm-up excluded; 3 unprofiled repetitions; same seeds, thresholds, postprocessing, and device. Times are ONNX inference plus coordinate conversion and WGSL affine fit; image decode/resize excluded.",
+    "results": [
+      {
+        "case": "frame_040",
+        "requested_visible_seeds": 32,
+        "accepted_before": 26,
+        "accepted_after": 26,
+        "correct_le2_before": 26,
+        "correct_le2_after": 26,
+        "correct_lt5_before": 26,
+        "correct_lt5_after": 26,
+        "pair_median_before_s": 2.3573708770563826,
+        "pair_median_after_s": 1.4203395259100944,
+        "fps_before": 0.42420138881527486,
+        "fps_after": 0.7040570101428683,
+        "accepted_error_before": {
+          "median_px": 0.154554883794444,
+          "p95_px": 0.42953136530139285,
+          "rmse_px": 0.21971793398610906
+        },
+        "accepted_error_after": {
+          "median_px": 0.154554883794444,
+          "p95_px": 0.42953041940558795,
+          "rmse_px": 0.2197138020334094
+        },
+        "all_per_seed_usable_states_identical": true,
+        "max_accepted_seed_target_delta_px": 0.0002516543960948279,
+        "time_reduction_percent": 39.749000051970896
+      },
+      {
+        "case": "frame_100",
+        "requested_visible_seeds": 28,
+        "accepted_before": 23,
+        "accepted_after": 23,
+        "correct_le2_before": 23,
+        "correct_le2_after": 23,
+        "correct_lt5_before": 23,
+        "correct_lt5_after": 23,
+        "pair_median_before_s": 2.3657324380474165,
+        "pair_median_after_s": 1.6244950800901279,
+        "fps_before": 0.42270207057961345,
+        "fps_after": 0.6155758870901101,
+        "accepted_error_before": {
+          "median_px": 0.4166512685468581,
+          "p95_px": 0.6881452200020518,
+          "rmse_px": 0.45078024158242314
+        },
+        "accepted_error_after": {
+          "median_px": 0.4166512685468581,
+          "p95_px": 0.6881452200020518,
+          "rmse_px": 0.45071970512806475
+        },
+        "all_per_seed_usable_states_identical": true,
+        "max_accepted_seed_target_delta_px": 0.0007425247229367944,
+        "time_reduction_percent": 31.332256599950803
+      },
+      {
+        "case": "frame_199",
+        "requested_visible_seeds": 28,
+        "accepted_before": 23,
+        "accepted_after": 23,
+        "correct_le2_before": 23,
+        "correct_le2_after": 23,
+        "correct_lt5_before": 23,
+        "correct_lt5_after": 23,
+        "pair_median_before_s": 2.4433975219726562,
+        "pair_median_after_s": 1.5078213220695034,
+        "fps_before": 0.40926619226193633,
+        "fps_after": 0.6632085548621157,
+        "accepted_error_before": {
+          "median_px": 0.5531921286610729,
+          "p95_px": 1.5969227358601437,
+          "rmse_px": 0.7403358809844451
+        },
+        "accepted_error_after": {
+          "median_px": 0.5531921286610729,
+          "p95_px": 1.596718851576179,
+          "rmse_px": 0.7402862451265346
+        },
+        "all_per_seed_usable_states_identical": true,
+        "max_accepted_seed_target_delta_px": 0.0006372257390692475,
+        "time_reduction_percent": 38.28997089052556
+      },
+      {
+        "case": "stress_60pct",
+        "requested_visible_seeds": 16,
+        "accepted_before": 13,
+        "accepted_after": 13,
+        "correct_le2_before": 6,
+        "correct_le2_after": 6,
+        "correct_lt5_before": 12,
+        "correct_lt5_after": 12,
+        "pair_median_before_s": 2.35028362297453,
+        "pair_median_after_s": 1.596348546911031,
+        "fps_before": 0.42548056337745116,
+        "fps_after": 0.6264296114623724,
+        "accepted_error_before": {
+          "median_px": 2.048044445478863,
+          "p95_px": 6.171323688739378,
+          "rmse_px": 3.449368241182305
+        },
+        "accepted_error_after": {
+          "median_px": 2.048044445478863,
+          "p95_px": 6.171491012087283,
+          "rmse_px": 3.4493980592481415
+        },
+        "all_per_seed_usable_states_identical": true,
+        "max_accepted_seed_target_delta_px": 0.0003662109375,
+        "time_reduction_percent": 32.0784720913519
+      }
+    ]
+  },
+  "profiled_diagnostic": {
+    "protocol": "One instrumented inference on frame 100 per graph; diagnostic traces include profiling overhead and are not production timings. Transfer event durations can include waits/synchronization, and estimated tensor volumes are not unique bytes or peak residency.",
+    "baseline": {
+      "profiled_wall_s": 3.0389781770063564,
+      "providers": [
+        {
+          "count": 2314,
+          "provider": "WebGpuExecutionProvider",
+          "duration_ms": 2776.749
+        },
+        {
+          "count": 544,
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 230.01
+        }
+      ],
+      "transfers": [
+        {
+          "count": 145,
+          "bytes_sum": 1373147704,
+          "max_bytes": 251658240,
+          "direction": "MemcpyToHost",
+          "duration_ms": 1437.511
+        },
+        {
+          "count": 168,
+          "bytes_sum": 1231473224,
+          "max_bytes": 78643200,
+          "direction": "MemcpyFromHost",
+          "duration_ms": 606.633
+        }
+      ],
+      "cpu_top_operators": [
+        {
+          "count": 83,
+          "input_bytes_sum": 1113841664,
+          "output_bytes_sum": 1113841664,
+          "max_input_bytes": 78643200,
+          "max_output_bytes": 78643200,
+          "op": "Selu",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 158.978
+        },
+        {
+          "count": 39,
+          "input_bytes_sum": 283659776,
+          "output_bytes_sum": 46653440,
+          "max_input_bytes": 251920384,
+          "max_output_bytes": 16777216,
+          "op": "GridSample",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 49.816
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 8388608,
+          "output_bytes_sum": 8388608,
+          "max_input_bytes": 4194304,
+          "max_output_bytes": 4194304,
+          "op": "LogSoftmax",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 6.787
+        },
+        {
+          "count": 15,
+          "input_bytes_sum": 14645624,
+          "output_bytes_sum": 62692544,
+          "max_input_bytes": 14450712,
+          "max_output_bytes": 43352064,
+          "op": "Expand",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 5.633
+        },
+        {
+          "count": 84,
+          "input_bytes_sum": 98952,
+          "output_bytes_sum": 98952,
+          "max_input_bytes": 40960,
+          "max_output_bytes": 40960,
+          "op": "Concat",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 3.043
+        },
+        {
+          "count": 12,
+          "input_bytes_sum": 29769624,
+          "output_bytes_sum": 44433416,
+          "max_input_bytes": 28901376,
+          "max_output_bytes": 14450688,
+          "op": "Add",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 1.223
+        },
+        {
+          "count": 64,
+          "input_bytes_sum": 3424,
+          "output_bytes_sum": 1376,
+          "max_input_bytes": 64,
+          "max_output_bytes": 32,
+          "op": "Gather",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.648
+        },
+        {
+          "count": 59,
+          "input_bytes_sum": 2912,
+          "output_bytes_sum": 656,
+          "max_input_bytes": 64,
+          "max_output_bytes": 16,
+          "op": "Slice",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.559
+        },
+        {
+          "count": 11,
+          "input_bytes_sum": 14782640,
+          "output_bytes_sum": 14782552,
+          "max_input_bytes": 14450696,
+          "max_output_bytes": 14450688,
+          "op": "Mul",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.548
+        },
+        {
+          "count": 6,
+          "input_bytes_sum": 2243600,
+          "output_bytes_sum": 2243600,
+          "max_input_bytes": 1966080,
+          "max_output_bytes": 1966080,
+          "op": "Transpose",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.527
+        },
+        {
+          "count": 48,
+          "input_bytes_sum": 74304,
+          "output_bytes_sum": 37192,
+          "max_input_bytes": 40960,
+          "max_output_bytes": 20480,
+          "op": "Cast",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.413
+        },
+        {
+          "count": 38,
+          "input_bytes_sum": 14834608,
+          "output_bytes_sum": 14834304,
+          "max_input_bytes": 14450696,
+          "max_output_bytes": 14450688,
+          "op": "Unsqueeze",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.392
+        },
+        {
+          "count": 26,
+          "input_bytes_sum": 14865736,
+          "output_bytes_sum": 14865432,
+          "max_input_bytes": 14450704,
+          "max_output_bytes": 14450688,
+          "op": "Reshape",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.251
+        },
+        {
+          "count": 7,
+          "input_bytes_sum": 20584,
+          "output_bytes_sum": 20528,
+          "max_input_bytes": 20488,
+          "max_output_bytes": 20480,
+          "op": "Div",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.223
+        },
+        {
+          "count": 11,
+          "input_bytes_sum": 16560,
+          "output_bytes_sum": 16472,
+          "max_input_bytes": 8200,
+          "max_output_bytes": 8192,
+          "op": "Sub",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.128
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 368656,
+          "output_bytes_sum": 46080,
+          "max_input_bytes": 184328,
+          "max_output_bytes": 23040,
+          "op": "Less",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.11
+        },
+        {
+          "count": 9,
+          "input_bytes_sum": 64936,
+          "output_bytes_sum": 64888,
+          "max_input_bytes": 16392,
+          "max_output_bytes": 16384,
+          "op": "Squeeze",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.099
+        },
+        {
+          "count": 3,
+          "input_bytes_sum": 752992,
+          "output_bytes_sum": 376496,
+          "max_input_bytes": 368640,
+          "max_output_bytes": 184320,
+          "op": "Max",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.092
+        },
+        {
+          "count": 4,
+          "input_bytes_sum": 49216,
+          "output_bytes_sum": 49152,
+          "max_input_bytes": 16400,
+          "max_output_bytes": 16384,
+          "op": "Clip",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.084
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 368656,
+          "output_bytes_sum": 46080,
+          "max_input_bytes": 184328,
+          "max_output_bytes": 23040,
+          "op": "GreaterOrEqual",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.08
+        }
+      ],
+      "grid_sample_cpu": [
+        {
+          "count": 39,
+          "input_bytes_sum": 283659776,
+          "output_bytes_sum": 46653440,
+          "max_input_bytes": 251920384,
+          "max_output_bytes": 16777216,
+          "op": "GridSample",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 49.816
+        }
+      ],
+      "selu_cpu": [
+        {
+          "count": 83,
+          "input_bytes_sum": 1113841664,
+          "output_bytes_sum": 1113841664,
+          "max_input_bytes": 78643200,
+          "max_output_bytes": 78643200,
+          "op": "Selu",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 158.978
+        }
+      ],
+      "limitations": [
+        "ORT trace durations are event durations, not hardware GPU timestamps.",
+        "Memcpy event durations may include synchronization or queue waits.",
+        "Tensor byte counts are estimates from static input/output shapes.",
+        "The trace does not provide peak GPU allocation or live-buffer memory."
+      ]
+    },
+    "selu_decomposed": {
+      "profiled_wall_s": 1.3691333410097286,
+      "providers": [
+        {
+          "count": 2648,
+          "provider": "WebGpuExecutionProvider",
+          "duration_ms": 1263.094
+        },
+        {
+          "count": 459,
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 86.157
+        }
+      ],
+      "transfers": [
+        {
+          "count": 64,
+          "bytes_sum": 261517880,
+          "max_bytes": 251658240,
+          "direction": "MemcpyToHost",
+          "duration_ms": 881.808
+        },
+        {
+          "count": 85,
+          "bytes_sum": 117631560,
+          "max_bytes": 43352064,
+          "direction": "MemcpyFromHost",
+          "duration_ms": 73.801
+        }
+      ],
+      "cpu_top_operators": [
+        {
+          "count": 39,
+          "input_bytes_sum": 283659776,
+          "output_bytes_sum": 46653440,
+          "max_input_bytes": 251920384,
+          "max_output_bytes": 16777216,
+          "op": "GridSample",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 50.019
+        },
+        {
+          "count": 15,
+          "input_bytes_sum": 14645624,
+          "output_bytes_sum": 62692544,
+          "max_input_bytes": 14450712,
+          "max_output_bytes": 43352064,
+          "op": "Expand",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 24.14
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 8388608,
+          "output_bytes_sum": 8388608,
+          "max_input_bytes": 4194304,
+          "max_output_bytes": 4194304,
+          "op": "LogSoftmax",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 4.06
+        },
+        {
+          "count": 12,
+          "input_bytes_sum": 29769624,
+          "output_bytes_sum": 44433416,
+          "max_input_bytes": 28901376,
+          "max_output_bytes": 14450688,
+          "op": "Add",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 3.682
+        },
+        {
+          "count": 11,
+          "input_bytes_sum": 14782640,
+          "output_bytes_sum": 14782552,
+          "max_input_bytes": 14450696,
+          "max_output_bytes": 14450688,
+          "op": "Mul",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 1.259
+        },
+        {
+          "count": 84,
+          "input_bytes_sum": 98952,
+          "output_bytes_sum": 98952,
+          "max_input_bytes": 40960,
+          "max_output_bytes": 40960,
+          "op": "Concat",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.711
+        },
+        {
+          "count": 64,
+          "input_bytes_sum": 3424,
+          "output_bytes_sum": 1376,
+          "max_input_bytes": 64,
+          "max_output_bytes": 32,
+          "op": "Gather",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.392
+        },
+        {
+          "count": 59,
+          "input_bytes_sum": 2912,
+          "output_bytes_sum": 656,
+          "max_input_bytes": 64,
+          "max_output_bytes": 16,
+          "op": "Slice",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.31
+        },
+        {
+          "count": 48,
+          "input_bytes_sum": 74304,
+          "output_bytes_sum": 37192,
+          "max_input_bytes": 40960,
+          "max_output_bytes": 20480,
+          "op": "Cast",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.304
+        },
+        {
+          "count": 38,
+          "input_bytes_sum": 14834608,
+          "output_bytes_sum": 14834304,
+          "max_input_bytes": 14450696,
+          "max_output_bytes": 14450688,
+          "op": "Unsqueeze",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.29
+        },
+        {
+          "count": 26,
+          "input_bytes_sum": 14865736,
+          "output_bytes_sum": 14865432,
+          "max_input_bytes": 14450704,
+          "max_output_bytes": 14450688,
+          "op": "Reshape",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.203
+        },
+        {
+          "count": 11,
+          "input_bytes_sum": 16560,
+          "output_bytes_sum": 16472,
+          "max_input_bytes": 8200,
+          "max_output_bytes": 8192,
+          "op": "Sub",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.086
+        },
+        {
+          "count": 9,
+          "input_bytes_sum": 64936,
+          "output_bytes_sum": 64888,
+          "max_input_bytes": 16392,
+          "max_output_bytes": 16384,
+          "op": "Squeeze",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.08
+        },
+        {
+          "count": 7,
+          "input_bytes_sum": 20584,
+          "output_bytes_sum": 20528,
+          "max_input_bytes": 20488,
+          "max_output_bytes": 20480,
+          "op": "Div",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.07
+        },
+        {
+          "count": 4,
+          "input_bytes_sum": 96,
+          "output_bytes_sum": 8584,
+          "max_input_bytes": 24,
+          "max_output_bytes": 8192,
+          "op": "Range",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.063
+        },
+        {
+          "count": 3,
+          "input_bytes_sum": 752992,
+          "output_bytes_sum": 376496,
+          "max_input_bytes": 368640,
+          "max_output_bytes": 184320,
+          "op": "Max",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.06
+        },
+        {
+          "count": 3,
+          "input_bytes_sum": 64912,
+          "output_bytes_sum": 64864,
+          "max_input_bytes": 32784,
+          "max_output_bytes": 32768,
+          "op": "Split",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.059
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 118784,
+          "output_bytes_sum": 28672,
+          "max_input_bytes": 102400,
+          "max_output_bytes": 20480,
+          "op": "GatherElements",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.049
+        },
+        {
+          "count": 4,
+          "input_bytes_sum": 31760,
+          "output_bytes_sum": 31760,
+          "max_input_bytes": 8192,
+          "max_output_bytes": 8192,
+          "op": "Transpose",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.044
+        },
+        {
+          "count": 2,
+          "input_bytes_sum": 368656,
+          "output_bytes_sum": 368640,
+          "max_input_bytes": 184328,
+          "max_output_bytes": 184320,
+          "op": "Min",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 0.041
+        }
+      ],
+      "grid_sample_cpu": [
+        {
+          "count": 39,
+          "input_bytes_sum": 283659776,
+          "output_bytes_sum": 46653440,
+          "max_input_bytes": 251920384,
+          "max_output_bytes": 16777216,
+          "op": "GridSample",
+          "provider": "CPUExecutionProvider",
+          "duration_ms": 50.019
+        }
+      ],
+      "selu_cpu": [],
+      "limitations": [
+        "ORT trace durations are event durations, not hardware GPU timestamps.",
+        "Memcpy event durations may include synchronization or queue waits.",
+        "Tensor byte counts are estimates from static input/output shapes.",
+        "The trace does not provide peak GPU allocation or live-buffer memory."
+      ]
+    }
+  },
+  "graph_optimization_level_probe": [
+    {
+      "level": "ORT_DISABLE_ALL",
+      "profiled_wall_s": 3.6312,
+      "WebGPU_events": 3455,
+      "WebGPU_event_ms": 3150.528,
+      "CPU_events": 2370,
+      "CPU_event_ms": 431.952,
+      "CPU_GridSample_count": 39,
+      "CPU_GridSample_ms": 98.084,
+      "CPU_Selu_count": 83,
+      "CPU_Selu_ms": 292.06,
+      "MemcpyToHost_events": 147,
+      "MemcpyToHost_estimated_bytes": 1373147720,
+      "MemcpyFromHost_events": 634,
+      "MemcpyFromHost_estimated_bytes": 1231471044
+    },
+    {
+      "level": "ORT_ENABLE_BASIC",
+      "profiled_wall_s": 2.3762,
+      "WebGPU_events": 2316,
+      "WebGPU_event_ms": 2082.824,
+      "CPU_events": 541,
+      "CPU_event_ms": 265.018,
+      "CPU_GridSample_count": 39,
+      "CPU_GridSample_ms": 83.641,
+      "CPU_Selu_count": 83,
+      "CPU_Selu_ms": 166.095,
+      "MemcpyToHost_events": 145,
+      "MemcpyToHost_estimated_bytes": 1373147704,
+      "MemcpyFromHost_events": 168,
+      "MemcpyFromHost_estimated_bytes": 1231469160
+    },
+    {
+      "level": "ORT_ENABLE_EXTENDED",
+      "profiled_wall_s": 2.3031,
+      "WebGPU_events": 2314,
+      "WebGPU_event_ms": 2006.602,
+      "CPU_events": 544,
+      "CPU_event_ms": 253.378,
+      "CPU_GridSample_count": 39,
+      "CPU_GridSample_ms": 74.206,
+      "CPU_Selu_count": 83,
+      "CPU_Selu_ms": 165.989,
+      "MemcpyToHost_events": 145,
+      "MemcpyToHost_estimated_bytes": 1373147704,
+      "MemcpyFromHost_events": 168,
+      "MemcpyFromHost_estimated_bytes": 1231469160
+    },
+    {
+      "level": "ORT_ENABLE_ALL",
+      "profiled_wall_s": 2.3335,
+      "WebGPU_events": 2314,
+      "WebGPU_event_ms": 2019.86,
+      "CPU_events": 544,
+      "CPU_event_ms": 285.407,
+      "CPU_GridSample_count": 39,
+      "CPU_GridSample_ms": 76.744,
+      "CPU_Selu_count": 83,
+      "CPU_Selu_ms": 193.572,
+      "MemcpyToHost_events": 145,
+      "MemcpyToHost_estimated_bytes": 1373147704,
+      "MemcpyFromHost_events": 168,
+      "MemcpyFromHost_estimated_bytes": 1231469160
+    }
+  ],
+  "decision": "Keep the Selu decomposition as an explicit, opt-in model-copy transform for this model. It removes the measured Selu CPU fallback and improves end-to-end matcher time on all four evaluated cases with unchanged accepted counts and seed validity, while slightly changing floating-point output. Do not claim the pipeline is GPU-resident: GridSample remains CPU and the 251.7 MB largest host-bound transfer remains. Generalize only after validating the same rewrite against other model exports.",
+  "grid_sample_operator_probe": {
+    "mode": "linear",
+    "align_corners": 1,
+    "padding_mode": "zeros",
+    "tested_shapes_nchw": [
+      [
+        1,
+        1,
+        16,
+        16
+      ],
+      [
+        1,
+        1,
+        48,
+        80
+      ],
+      [
+        1,
+        32,
+        48,
+        80
+      ],
+      [
+        2,
+        1,
+        48,
+        80
+      ],
+      [
+        2,
+        32,
+        48,
+        80
+      ],
+      [
+        2,
+        32,
+        96,
+        160
+      ]
+    ],
+    "provider": "CPUExecutionProvider for every tested shape on this native WebGPU EP 0.5.0 build",
+    "representative_graph_node_shapes": {
+      "input_nchw": [
+        2,
+        32,
+        48,
+        80
+      ],
+      "grid_nhwc": [
+        2,
+        48,
+        80,
+        2
+      ],
+      "output_nchw": [
+        2,
+        32,
+        48,
+        80
+      ]
+    },
+    "conclusion": "The earlier small-probe GPU-support interpretation is not reproducible. Isolated probes, including the exact representative graph shape, are assigned to CPU. Treat GridSample as an unsupported/fallback operator on this tested EP build."
+  }
+}

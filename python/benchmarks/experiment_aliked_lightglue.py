@@ -14,6 +14,8 @@ import hashlib
 import json
 import os
 import statistics
+import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -21,13 +23,16 @@ from typing import Any
 import numpy as np
 from PIL import Image
 from wgpu_matching import WGPUMatching
+from ort_profile import summarize_profile
+
+try:
+    import resource
+except ImportError:  # resource is unavailable on Windows.
+    resource = None
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-DEFAULT_PROGRESSIVE = Path(
-    "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile"
-)
+DEFAULT_PROGRESSIVE = Path("/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile")
 DEFAULT_STRESS = REPOSITORY / "results/uniaxial/tensile_60pct"
-DEFAULT_OUTPUT = REPOSITORY / "results/features/raco_aliked_lightglue_webgpu_study.json"
 PROGRESSIVE_FRAMES = (40, 100, 199)
 IMAGE_WIDTH = 3840
 IMAGE_HEIGHT = 2160
@@ -48,9 +53,7 @@ def load_rgb(path: Path, width: int, height: int) -> np.ndarray:
 def read_truth(path: Path) -> dict[int, dict[str, float]]:
     with path.open(newline="", encoding="utf-8") as stream:
         return {
-            int(row["frame"]): {
-                key: float(value) for key, value in row.items() if key != "frame"
-            }
+            int(row["frame"]): {key: float(value) for key, value in row.items() if key != "frame"}
             for row in csv.DictReader(stream)
         }
 
@@ -104,9 +107,11 @@ def evaluate_pair(
     scale_y = IMAGE_HEIGHT / height
     seeds = visible_seeds(truth["stretch_x"], truth["stretch_y"])
 
-    def infer_and_fit() -> tuple[Any, Any, Any, Any, float, Any]:
+    def infer_and_fit() -> tuple[Any, Any, Any, Any, float, Any, float, float]:
         start = time.perf_counter()
         keypoints, matches, scores = session.run(None, {input_name: image_pair})
+        inference_s = time.perf_counter() - start
+        fit_start = time.perf_counter()
         pair_matches = matches[matches[:, 0] == 0]
         source = keypoints[0, pair_matches[:, 1].astype(np.int64)].astype(np.float32)
         destination = keypoints[1, pair_matches[:, 2].astype(np.int64)].astype(np.float32)
@@ -122,11 +127,23 @@ def evaluate_pair(
             min_inliers=6,
             min_candidates=8,
         )
-        return keypoints, pair_matches, source, destination, time.perf_counter() - start, fit
+        fit_s = time.perf_counter() - fit_start
+        return (
+            keypoints,
+            pair_matches,
+            source,
+            destination,
+            inference_s + fit_s,
+            fit,
+            inference_s,
+            fit_s,
+        )
 
     # Warm up ORT and compile the shared WGSL affine-fit pipelines.
     infer_and_fit()
     times_s = []
+    inference_times_s = []
+    fit_times_s = []
     last_fit = None
     last_source = None
     last_destination = None
@@ -135,8 +152,10 @@ def evaluate_pair(
     stretch_x = truth["stretch_x"]
     stretch_y = truth["stretch_y"]
     for _ in range(repeats):
-        keypoints, pairs, source, destination, elapsed, fit = infer_and_fit()
+        keypoints, pairs, source, destination, elapsed, fit, inference_s, fit_s = infer_and_fit()
         times_s.append(elapsed)
+        inference_times_s.append(inference_s)
+        fit_times_s.append(fit_s)
         last_fit = fit
         last_source, last_destination = source, destination
         last_raw_matches = len(pairs)
@@ -163,9 +182,7 @@ def evaluate_pair(
     per_seed = []
     for seed, match in zip(seeds, last_fit.matches, strict=True):
         x, y = seed
-        exact_target = np.asarray(
-            (1920 + stretch_x * (x - 1920), 1080 + stretch_y * (y - 1080))
-        )
+        exact_target = np.asarray((1920 + stretch_x * (x - 1920), 1080 + stretch_y * (y - 1080)))
         predicted = np.asarray((match.x + match.dx, match.y + match.dy))
         error = float(np.linalg.norm(predicted - exact_target)) if match.usable else None
         per_seed.append(
@@ -202,6 +219,10 @@ def evaluate_pair(
         "warmup_excluded": True,
         "end_to_end_repeat_times_s": times_s,
         "end_to_end_median_s": float(statistics.median(times_s)),
+        "ort_inference_repeat_times_s": inference_times_s,
+        "ort_inference_median_s": float(statistics.median(inference_times_s)),
+        "postprocess_and_affine_fit_repeat_times_s": fit_times_s,
+        "postprocess_and_affine_fit_median_s": float(statistics.median(fit_times_s)),
         "fps": 1.0 / float(statistics.median(times_s)),
         "fit_gpu_compute_ms_last_repeat": last_fit.gpu_compute_ms,
         "per_seed": per_seed,
@@ -213,19 +234,107 @@ def main() -> None:
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--progressive-dir", type=Path, default=DEFAULT_PROGRESSIVE)
     parser.add_argument("--stress-dir", type=Path, default=DEFAULT_STRESS)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--output", type=Path, help="Output JSON path (default: unique dated run file)."
+    )
     parser.add_argument("--width", type=int, default=640)
     parser.add_argument("--height", type=int, default=360)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--intra-op-threads", type=int, default=8)
-    parser.add_argument("--provider", choices=("WebGpuExecutionProvider", "CPUExecutionProvider"), default="WebGpuExecutionProvider")
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable ORT trace profiling (diagnostic; adds overhead).",
+    )
+    parser.add_argument(
+        "--decompose-selu",
+        action="store_true",
+        help=(
+            "Rewrite ONNX Selu nodes as WebGPU-supported primitive ops on a temporary model copy. "
+            "Requires onnx; raw model outputs can differ slightly due to floating-point evaluation."
+        ),
+    )
+    parser.add_argument(
+        "--decompose-grid-sample",
+        action="store_true",
+        help=(
+            "Rewrite zero-padded bilinear GridSample nodes as GatherND-based sampling on a "
+            "temporary model copy. Border-padded GridSample nodes remain unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--optimize-raco-indices",
+        action="store_true",
+        help=(
+            "Rewrite RaCo's sparse feature-index arithmetic and large GatherElements index "
+            "expansions to int32 so the broadcast work can stay on the WebGPU EP."
+        ),
+    )
+    parser.add_argument(
+        "--provider",
+        choices=("WebGpuExecutionProvider", "CPUExecutionProvider"),
+        default="WebGpuExecutionProvider",
+    )
     args = parser.parse_args()
+    if args.output is None:
+        stamp = time.strftime("%Y%m%d_%H%M%S")
+        args.output = REPOSITORY / "results/features" / f"raco_aliked_lightglue_run_{stamp}.json"
     if args.repeats < 1 or args.intra_op_threads < 1:
         parser.error("--repeats and --intra-op-threads must be positive")
     if args.width < 32 or args.height < 32:
         parser.error("--width and --height must both be at least 32 pixels")
     if not args.model.is_file():
         parser.error(f"ONNX model not found: {args.model}")
+    if (
+        args.decompose_selu
+        or args.decompose_grid_sample
+        or args.optimize_raco_indices
+    ) and args.provider != "WebGpuExecutionProvider":
+        parser.error("ONNX graph rewrites are intended for WebGpuExecutionProvider runs")
+
+    session_model = args.model
+    graph_transforms = []
+    temporary_model_directory = None
+    if (
+        args.decompose_selu
+        or args.decompose_grid_sample
+        or args.optimize_raco_indices
+    ):
+        try:
+            from optimize_onnx_webgpu import (
+                decompose_raco_grid_sample,
+                decompose_selu,
+                rewrite_raco_gather_index_expands,
+                rewrite_raco_sparse_index_arithmetic_int32,
+            )
+
+            temporary_model_directory = tempfile.TemporaryDirectory(prefix="wgpu-matching-raco-")
+            transformations = []
+            if args.decompose_selu:
+                transformations.append(("selu", decompose_selu))
+            if args.decompose_grid_sample:
+                transformations.append(("grid_sample", decompose_raco_grid_sample))
+            if args.optimize_raco_indices:
+                transformations.extend(
+                    [
+                        ("int32_index_grid", rewrite_raco_sparse_index_arithmetic_int32),
+                        ("int32_gather_indices", rewrite_raco_gather_index_expands),
+                    ]
+                )
+            source_model = args.model
+            for index, (name, transform) in enumerate(transformations, start=1):
+                optimized_path = Path(temporary_model_directory.name) / f"{index}_{args.model.name}"
+                metadata = transform(source_model, optimized_path)
+                metadata.pop("output_path", None)
+                graph_transforms.append({"name": name, **metadata})
+                source_model = optimized_path
+            session_model = source_model
+        except (ImportError, RuntimeError, ValueError) as exc:
+            parser.error(f"Could not apply the optional ONNX graph rewrite: {exc}")
+
+    graph_transform = None
+    if graph_transforms:
+        graph_transform = graph_transforms[0] if len(graph_transforms) == 1 else graph_transforms
 
     try:
         import onnxruntime as ort
@@ -236,7 +345,7 @@ def main() -> None:
     options.intra_op_num_threads = args.intra_op_threads
     options.inter_op_num_threads = 1
     options.log_severity_level = 3
-    options.enable_profiling = True
+    options.enable_profiling = args.profile
     webgpu_devices = []
     if args.provider == "WebGpuExecutionProvider":
         try:
@@ -253,24 +362,38 @@ def main() -> None:
     elif args.provider not in ort.get_available_providers():
         parser.error(f"Provider {args.provider!r} is unavailable: {ort.get_available_providers()}")
 
+    session_start = time.perf_counter()
     session = ort.InferenceSession(
-        str(args.model),
+        str(session_model),
         sess_options=options,
         providers=None if args.provider == "WebGpuExecutionProvider" else [args.provider],
     )
+    session_initialization_s = time.perf_counter() - session_start
+    if temporary_model_directory is not None:
+        temporary_model_directory.cleanup()
     expected_names = ["images"]
     if [item.name for item in session.get_inputs()] != expected_names:
         parser.error(f"Unexpected model inputs: {[item.name for item in session.get_inputs()]}")
 
     progressive_truth = read_truth(args.progressive_dir / "machine_truth.csv")
     stress_truth = read_truth(args.stress_dir / "machine_truth.csv")
-    progressive_reference = load_rgb(args.progressive_dir / "reference.png", args.width, args.height)
+    prep_start = time.perf_counter()
+    progressive_reference = load_rgb(
+        args.progressive_dir / "reference.png", args.width, args.height
+    )
+    progressive_reference_prep_s = time.perf_counter() - prep_start
+    prep_start = time.perf_counter()
     stress_reference = load_rgb(args.stress_dir / "reference.png", args.width, args.height)
+    stress_reference_prep_s = time.perf_counter() - prep_start
     report = {
         "protocol": {
             "method": "RaCo-ALIKED-LightGlue+ published end-to-end ONNX model",
             "model_sha256": sha256_file(args.model),
             "model_path": str(args.model),
+            "runtime_model_sha256": sha256_file(session_model)
+            if temporary_model_directory is None
+            else graph_transforms[-1]["optimized_sha256"],
+            "graph_transform": graph_transform,
             "model_source": "https://github.com/fabio-sim/LightGlue-ONNX/releases/tag/v3.0",
             "input_size_px": [args.width, args.height],
             "original_image_size_px": [IMAGE_WIDTH, IMAGE_HEIGHT],
@@ -287,6 +410,12 @@ def main() -> None:
             },
             "warmup_calls": 1,
             "timed_repeats": args.repeats,
+            "ort_profiling_enabled": args.profile,
+            "session_initialization_s": session_initialization_s,
+            "reference_decode_resize_s": {
+                "progressive": progressive_reference_prep_s,
+                "stress_60pct": stress_reference_prep_s,
+            },
             "provider_requested": args.provider,
             "session_providers": session.get_providers(),
             "intra_op_threads": args.intra_op_threads,
@@ -302,47 +431,50 @@ def main() -> None:
     with WGPUMatching(device_type="gpu") as matcher:
         report["protocol"]["wgpu_adapter"] = str(matcher.adapter.info)
         for frame in PROGRESSIVE_FRAMES:
-            report["results"].append(
-                evaluate_pair(
-                    session,
-                    matcher,
-                    progressive_reference,
-                    load_rgb(args.progressive_dir / f"frame_{frame:03d}.png", args.width, args.height),
-                    frame,
-                    progressive_truth[frame],
-                    args.width,
-                    args.height,
-                    args.repeats,
-                )
+            prep_start = time.perf_counter()
+            target = load_rgb(
+                args.progressive_dir / f"frame_{frame:03d}.png", args.width, args.height
             )
-        report["results"].append(
-            evaluate_pair(
+            target_prep_s = time.perf_counter() - prep_start
+            result = evaluate_pair(
                 session,
                 matcher,
-                stress_reference,
-                load_rgb(args.stress_dir / "frame_199_eng_60pct.png", args.width, args.height),
-                199,
-                stress_truth[199],
+                progressive_reference,
+                target,
+                frame,
+                progressive_truth[frame],
                 args.width,
                 args.height,
                 args.repeats,
             )
+            result["target_decode_resize_s"] = target_prep_s
+            report["results"].append(result)
+        prep_start = time.perf_counter()
+        target = load_rgb(args.stress_dir / "frame_199_eng_60pct.png", args.width, args.height)
+        target_prep_s = time.perf_counter() - prep_start
+        result = evaluate_pair(
+            session,
+            matcher,
+            stress_reference,
+            target,
+            199,
+            stress_truth[199],
+            args.width,
+            args.height,
+            args.repeats,
         )
+        result["target_decode_resize_s"] = target_prep_s
+        report["results"].append(result)
 
-    profile_path = Path(session.end_profiling())
-    profile = json.loads(profile_path.read_text(encoding="utf-8"))
-    node_events = [
-        event
-        for event in profile
-        if event.get("cat") == "Node" and event.get("ph") == "X"
-    ]
-    report["protocol"]["ort_profile_node_events_by_provider"] = {
-        provider: sum(event.get("args", {}).get("provider") == provider for event in node_events)
-        for provider in sorted(
-            {event.get("args", {}).get("provider", "unknown") for event in node_events}
+    if args.profile:
+        profile_path = Path(session.end_profiling())
+        report["protocol"]["ort_diagnostics"] = summarize_profile(profile_path)
+        os.unlink(profile_path)
+    if resource is not None:
+        rss_scale = 1 if sys.platform == "darwin" else 1024
+        report["protocol"]["process_peak_rss_bytes"] = int(
+            resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * rss_scale
         )
-    }
-    os.unlink(profile_path)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
