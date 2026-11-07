@@ -21,6 +21,69 @@ def safe(value: float | None) -> float | None:
     return float(value)
 
 
+def normalize_cpm(field) -> dict:
+    return {
+        "manual_translation": [
+            {
+                "x": match.x,
+                "y": match.y,
+                "dx": match.dx,
+                "dy": match.dy,
+                "usable": match.usable,
+                "score": match.score,
+                "reciprocal": match.reciprocal,
+                "inliers": match.inliers,
+                "candidates": match.candidates,
+                "inlierFraction": match.inlier_fraction,
+                "residual": match.residual,
+                "measuredX": diagnostic["measured_x"],
+                "measuredY": diagnostic["measured_y"],
+                "measuredDx": diagnostic["measured_dx"],
+                "measuredDy": diagnostic["measured_dy"],
+                "gridDistancePx": diagnostic["grid_distance_px"],
+                "reciprocalErrorPx": diagnostic["reciprocal_error_px"],
+            }
+            for match, diagnostic in zip(
+                field.matches, field.metadata["match_diagnostics"], strict=True
+            )
+        ],
+        "metadata": {
+            "workGridPointCount": field.metadata["work_grid_point_count"],
+            "workGridReciprocalCount": field.metadata["work_grid_reciprocal_count"],
+            "workGridUsableCount": field.metadata["work_grid_usable_count"],
+            "gridWidth": field.grid_width,
+            "gridHeight": field.grid_height,
+        },
+        "oracle": {
+            "perSeed": [
+                {
+                    "requestedX": item["requested_x"],
+                    "requestedY": item["requested_y"],
+                    "measuredX": item["measured_x"],
+                    "measuredY": item["measured_y"],
+                    "levels": [
+                        {
+                            "level": level["level"],
+                            "descriptorScalePx": level["descriptor_scale_px"],
+                            "foundDxPx": level["found_dx_px"],
+                            "foundDyPx": level["found_dy_px"],
+                            "foundCost": level["found_cost"],
+                            "foundValid": level["found_valid"],
+                            "oracleDxPx": level["oracle_dx_px"],
+                            "oracleDyPx": level["oracle_dy_px"],
+                            "oracleCost": level["oracle_cost"],
+                            "oracleValid": level["oracle_valid"],
+                            "oracleMinusFoundCost": level["oracle_minus_found_cost"],
+                        }
+                        for level in item["levels"]
+                    ],
+                }
+                for item in field.metadata["oracle_diagnostics"]["per_seed"]
+            ]
+        },
+    }
+
+
 def main() -> None:
     reference = np.fromfile(FIXTURES / "matcher_parity_reference.u8", dtype=np.uint8)
     targets = {
@@ -88,82 +151,32 @@ def main() -> None:
             methods["deepmatching"][name] = normalize(deep)
             methods["horg"][name] = normalize(horg)
 
-        cpm = matcher.match_cpm(reference, targets["translation"], options=CPMOptions(
-            patch_size=32,
-            stride=32,
-            downscale_levels=1,
-            search_radius_px=64,
-            matching_support_px=32,
-            work_grid_stride=16,
-            levels=2,
-            propagation_iterations=2,
-            random_trials=4,
-            initial_hypotheses=8,
-            local_search_radius_px=32,
-            affine_radius_px=64,
-            seed=17,
-            reciprocal_threshold_px=8,
-            oracle_affine=(1, 0, 8, 0, 1, -4),
-            seed_points=manual_seeds,
-        ))
-        methods["cpm"] = {
-            "manual_translation": [
-                {
-                    "x": match.x,
-                    "y": match.y,
-                    "dx": match.dx,
-                    "dy": match.dy,
-                    "usable": match.usable,
-                    "score": match.score,
-                    "reciprocal": match.reciprocal,
-                    "inliers": match.inliers,
-                    "candidates": match.candidates,
-                    "inlierFraction": match.inlier_fraction,
-                    "residual": match.residual,
-                    "measuredX": diagnostic["measured_x"],
-                    "measuredY": diagnostic["measured_y"],
-                    "measuredDx": diagnostic["measured_dx"],
-                    "measuredDy": diagnostic["measured_dy"],
-                    "gridDistancePx": diagnostic["grid_distance_px"],
-                    "reciprocalErrorPx": diagnostic["reciprocal_error_px"],
-                }
-                for match, diagnostic in zip(cpm.matches, cpm.metadata["match_diagnostics"], strict=True)
-            ],
-            "metadata": {
-                "workGridPointCount": cpm.metadata["work_grid_point_count"],
-                "workGridReciprocalCount": cpm.metadata["work_grid_reciprocal_count"],
-                "workGridUsableCount": cpm.metadata["work_grid_usable_count"],
-                "gridWidth": cpm.grid_width,
-                "gridHeight": cpm.grid_height,
-            },
-            "oracle": {
-                "perSeed": [
-                    {
-                        "requestedX": item["requested_x"],
-                        "requestedY": item["requested_y"],
-                        "measuredX": item["measured_x"],
-                        "measuredY": item["measured_y"],
-                        "levels": [
-                            {
-                                "level": level["level"],
-                                "descriptorScalePx": level["descriptor_scale_px"],
-                                "foundDxPx": level["found_dx_px"],
-                                "foundDyPx": level["found_dy_px"],
-                                "foundCost": level["found_cost"],
-                                "foundValid": level["found_valid"],
-                                "oracleDxPx": level["oracle_dx_px"],
-                                "oracleDyPx": level["oracle_dy_px"],
-                                "oracleCost": level["oracle_cost"],
-                                "oracleValid": level["oracle_valid"],
-                                "oracleMinusFoundCost": level["oracle_minus_found_cost"],
-                            }
-                            for level in item["levels"]
-                        ],
-                    }
-                    for item in cpm.metadata["oracle_diagnostics"]["per_seed"]
-                ]
-            },
-        }
+        if device_type == "cpu":
+            methods["cpm"] = None
+        else:
+            cpm = matcher.match_cpm(
+                reference,
+                targets["translation"],
+                options=CPMOptions(
+                    patch_size=32,
+                    stride=32,
+                    downscale_levels=1,
+                    search_radius_px=64,
+                    matching_support_px=32,
+                    work_grid_stride=16,
+                    levels=2,
+                    propagation_iterations=2,
+                    random_trials=4,
+                    initial_hypotheses=8,
+                    local_search_radius_px=32,
+                    affine_radius_px=64,
+                    seed=17,
+                    reciprocal_threshold_px=8,
+                    oracle_affine=(1, 0, 8, 0, 1, -4),
+                    seed_points=manual_seeds,
+                ),
+            )
+            methods["cpm"] = normalize_cpm(cpm)
 
         print(json.dumps({
             "adapter": matcher.device_name,
