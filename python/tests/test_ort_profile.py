@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "benchmarks"))
-from ort_profile import summarize_profile  # noqa: E402
+from ort_profile import summarize_profile
 
 
 def test_summarize_profile_groups_provider_ops_and_tensor_sizes(tmp_path: Path) -> None:
@@ -62,7 +62,6 @@ def test_selu_decomposition_keeps_source_and_emits_checked_onnx(tmp_path: Path) 
 
     onnx = pytest.importorskip("onnx")
     from onnx import TensorProto, helper
-
     from optimize_onnx_webgpu import decompose_selu
 
     source = tmp_path / "source.onnx"

@@ -21,9 +21,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from ort_profile import summarize_profile
 from PIL import Image
 from wgpu_matching import WGPUMatching
-from ort_profile import summarize_profile
 
 try:
     import resource
@@ -109,7 +109,7 @@ def evaluate_pair(
 
     def infer_and_fit() -> tuple[Any, Any, Any, Any, float, Any, float, float]:
         start = time.perf_counter()
-        keypoints, matches, scores = session.run(None, {input_name: image_pair})
+        keypoints, matches, _scores = session.run(None, {input_name: image_pair})
         inference_s = time.perf_counter() - start
         fit_start = time.perf_counter()
         pair_matches = matches[matches[:, 0] == 0]

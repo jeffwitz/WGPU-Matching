@@ -6,7 +6,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-
 _TYPE_BYTES = {
     "bool": 1,
     "int8": 1,

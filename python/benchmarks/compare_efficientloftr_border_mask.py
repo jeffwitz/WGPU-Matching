@@ -13,10 +13,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
-
 from ort_profile import summarize_profile
-
+from PIL import Image
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 DEFAULT_IMAGE_DIR = Path("/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile")

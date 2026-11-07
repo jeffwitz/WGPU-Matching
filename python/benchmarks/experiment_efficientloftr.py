@@ -19,9 +19,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from ort_profile import summarize_profile
 from PIL import Image
 from wgpu_matching import WGPUMatching
-from ort_profile import summarize_profile
 
 try:
     import resource
@@ -202,7 +202,7 @@ def evaluate_pair(
         "input_size_px": [width, height],
         "input_tensor_size_px": [reference.shape[1], reference.shape[0]],
         "requested_visible_seeds": len(seeds),
-        "raw_match_count": int(len(last_source)),
+        "raw_match_count": len(last_source),
         "raw_confidence_median": float(np.median(last_confidence))
         if len(last_confidence)
         else None,

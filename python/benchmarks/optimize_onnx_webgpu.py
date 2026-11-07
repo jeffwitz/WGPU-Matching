@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -182,7 +183,7 @@ def rewrite_efficientloftr_border_mask(
         raise ValueError(
             f"Expected eight coarse-matching ScatterND nodes, found {len(scatter_nodes)}."
         )
-    for previous, following in zip(scatter_nodes, scatter_nodes[1:], strict=False):
+    for previous, following in pairwise(scatter_nodes):
         if following.input[0] != previous.output[0]:
             raise ValueError(
                 "The expected sequential coarse-matching ScatterND chain was not found."
@@ -370,14 +371,29 @@ def decompose_raco_grid_sample(input_path: Path, output_path: Path) -> dict[str,
         local_nodes = []
         local_initializers = []
 
-        def add_initializer(label: str, value: Any, dtype: Any) -> str:
+        def add_initializer(
+            label: str,
+            value: Any,
+            dtype: Any,
+            *,
+            prefix: str = prefix,
+            local_initializers: list[Any] = local_initializers,
+        ) -> str:
             name = f"{prefix}_{label}"
             local_initializers.append(
                 numpy_helper.from_array(np.asarray(value, dtype=dtype), name=name)
             )
             return name
 
-        def add_node(op: str, inputs: list[str], label: str, **attrs: Any) -> str:
+        def add_node(
+            op: str,
+            inputs: list[str],
+            label: str,
+            *,
+            prefix: str = prefix,
+            local_nodes: list[Any] = local_nodes,
+            **attrs: Any,
+        ) -> str:
             output = f"{prefix}_{label}"
             local_nodes.append(helper.make_node(op, inputs, [output], name=output, **attrs))
             return output

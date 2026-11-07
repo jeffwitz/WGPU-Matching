@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, replace
 from pathlib import Path
 
@@ -73,7 +74,10 @@ def main() -> None:
         ]
 
     methods = {"deepmatching": {}, "horg": {}}
-    with WGPUMatching(device_type="gpu") as matcher:
+    device_type = os.environ.get("WGPU_MATCHING_PARITY_DEVICE_TYPE", "gpu")
+    if device_type not in {"gpu", "cpu"}:
+        raise ValueError("WGPU_MATCHING_PARITY_DEVICE_TYPE must be 'gpu' or 'cpu'")
+    with WGPUMatching(device_type=device_type) as matcher:
         for name, scenario in cases.items():
             scenario_options = replace(options, seed_points=scenario["seed_points"])
             scenario_horg_options = replace(horg_options, seed_points=scenario["seed_points"])

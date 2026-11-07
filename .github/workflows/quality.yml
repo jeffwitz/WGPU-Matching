@@ -69,6 +69,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libvulkan1 mesa-vulkan-drivers
       - name: Compare Python and browser DeepMatching/HORG outputs
+        env:
+          WGPU_MATCHING_PARITY_DEVICE_TYPE: cpu
         run: node tests/run_matcher_parity.mjs
       - name: Run deterministic CPM translation test
         run: node tests/run_cpm_browser_smoke.mjs
