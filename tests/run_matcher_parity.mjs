@@ -314,6 +314,7 @@ function compare(browserReport, python, contract) {
     maxDiagnosticDifference: cpmMaxDiagnosticDifference,
     maxOracleCostDifference: cpmOracleMaxCostDifference,
   };
+  summary.cpmWorkGridCounts = cpmWorkGridCounts;
   return summary;
 }
 
@@ -410,7 +411,6 @@ try {
   }
   const summary = compare(browserReport, python, contract);
   summary.browserUiDefaults = uiState.controls;
-  summary.cpmWorkGridCounts = cpmWorkGridCounts;
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   await stopBrowser();
