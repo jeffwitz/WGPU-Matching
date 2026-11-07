@@ -1,0 +1,344 @@
+{
+  "method": "dedodev2",
+  "source": {
+    "reference_package": "DeDoDe",
+    "reference_package_version": "0.0.1",
+    "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+    "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+    "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+    "coordinates": "source-image pixel centres; integer values identify pixel centres",
+    "detector": "DeDoDe-v2-L",
+    "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+    "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+    "device": "cpu"
+  },
+  "input_output": {
+    "input_name": "image",
+    "input_layout": "NCHW float32 normalized RGB",
+    "output_name": "scoremap",
+    "output_meaning": "dense detector logits/scores; keypoint selection is not included",
+    "batch_size": 1,
+    "dynamic_spatial_axes": true,
+    "required_input_multiple_px": 8,
+    "export_shape_px": [
+      128,
+      128
+    ],
+    "test_shape_px": [
+      640,
+      360
+    ]
+  },
+  "export": {
+    "opset": 17,
+    "fused_batch_norm_count": 0,
+    "fusion_parity_max_abs": 0.0,
+    "fusion_parity_mean_abs": 0.0,
+    "onnx_sha256": "7714a4a61f03a69ac6809672ec91afb993578f82d182cc4f6225e5175edc6fd6",
+    "onnx_bytes": 58208218,
+    "node_count": 296,
+    "operator_counts": {
+      "Add": 7,
+      "Cast": 14,
+      "Concat": 15,
+      "Constant": 68,
+      "Conv": 88,
+      "Div": 4,
+      "Gather": 6,
+      "MaxPool": 3,
+      "Relu": 48,
+      "Resize": 6,
+      "Shape": 12,
+      "Slice": 13,
+      "Unsqueeze": 12
+    }
+  },
+  "runtime": {
+    "provider_requested": "WebGpuExecutionProvider",
+    "providers_used_by_ort": [
+      "WebGpuExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "onnxruntime_version": "1.31.1",
+    "adapter": {
+      "vendor_id": 32902,
+      "device_id": 25760
+    },
+    "session_initialization_s": 0.16967288893647492,
+    "warmup_calls": 1,
+    "timed_calls": 5,
+    "run_s": [
+      0.5042488090693951,
+      0.5144711571047083,
+      0.5161372390575707,
+      0.5105236780364066,
+      0.4954678490757942
+    ],
+    "median_run_s": 0.5105236780364066,
+    "output_bytes_returned_to_cpu": 921600,
+    "session_run_returns_cpu_numpy": true,
+    "profile_runtime": {
+      "onnxruntime_version": "1.31.1",
+      "adapter": {
+        "vendor_id": 32902,
+        "device_id": 25760
+      }
+    },
+    "profile": {
+      "node_event_count": 181,
+      "node_duration_us_by_provider": {
+        "WebGpuExecutionProvider": 35628,
+        "CPUExecutionProvider": 243
+      },
+      "cpu_node_event_count": 36,
+      "cpu_node_duration_us": 243,
+      "largest_cpu_nodes": [
+        {
+          "name": "Gather_token_413_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 14,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_2_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 14,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_409_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 11,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 11,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_1_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_11_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_1_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_371_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_5_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_354_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Unsqueeze_7_kernel_time",
+          "op_type": "Unsqueeze",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_4_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Unsqueeze_3_kernel_time",
+          "op_type": "Unsqueeze",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_3_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/encoder/Gather_3_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Concat_6_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_369_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_3_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_417_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 6,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "profile_path": "results/features/detector_onnx_webgpu_20261107/dedodev2.ort-profile.json",
+    "host_ram_and_gpu_peak_memory": "not measured"
+  },
+  "numerical_parity_torch_vs_onnx_runtime": {
+    "max_abs": 5.245208740234375e-06,
+    "mean_abs": 7.736677503089595e-07,
+    "rmse": 9.88070610219438e-07
+  }
+}

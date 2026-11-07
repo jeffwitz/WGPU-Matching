@@ -1,0 +1,2575 @@
+{
+  "protocol": "paired held-out synthetic speckles; same texture warped by known affine/smooth field; native-resolution tensor and learned score networks; no descriptor matching or IC-GN",
+  "adapter": "Vulkan (Intel(R) Graphics (LNL))",
+  "image_size_px": [
+    256,
+    256
+  ],
+  "requested_budget": 512,
+  "repeats_after_warmup": 3,
+  "weights_path": "/home/jeff/Code/WGPU-Matching/results/features/dic_detector_training_discontinuous_20261107/dic_detector_weights.npz",
+  "weights_sha256": "d539deef26b46ffbbe54e3d27b1395a66126ddbea7243c3221f2617f25cb9094",
+  "seed_ranges": {
+    "texture": [
+      4000000,
+      4000023
+    ],
+    "warp": [
+      5000000,
+      5000023
+    ]
+  },
+  "summary": {
+    "tensor": {
+      "pair_detection_s_median": 0.0023613194935023785,
+      "pair_fps": 423.49203602125465,
+      "pair_detection_s_repeats": [
+        0.002528536948375404,
+        0.0028212200850248337,
+        0.0027878930559381843,
+        0.00240164902061224,
+        0.002411843976005912,
+        0.0024347269209101796,
+        0.0027257039910182357,
+        0.002352784969843924,
+        0.0023070269962772727,
+        0.00259424583055079,
+        0.0022665620781481266,
+        0.0022596310591325164,
+        0.002356291050091386,
+        0.0023329680552706122,
+        0.0023850119905546308,
+        0.002320242114365101,
+        0.002439480973407626,
+        0.0023265029303729534,
+        0.002247706986963749,
+        0.0023035139311105013,
+        0.002340518869459629,
+        0.0022438339656218886,
+        0.002366347936913371,
+        0.002546933013945818
+      ],
+      "repeatability": {
+        "at_1px": {
+          "correct": 554,
+          "denominator": 3757,
+          "fraction": 0.147458078253926
+        },
+        "at_2px": {
+          "correct": 1246,
+          "denominator": 3757,
+          "fraction": 0.3316475911631621
+        },
+        "at_5px": {
+          "correct": 2435,
+          "denominator": 3757,
+          "fraction": 0.648123502794783
+        }
+      }
+    },
+    "learned": {
+      "pair_detection_s_median": 0.004050899995490909,
+      "pair_fps": 246.85872302774902,
+      "pair_detection_s_repeats": [
+        0.0043844860047101974,
+        0.004671690985560417,
+        0.004255700041539967,
+        0.003988601034507155,
+        0.0039785008411854506,
+        0.0038983961567282677,
+        0.004159598029218614,
+        0.004281340981833637,
+        0.004235030151903629,
+        0.004144262871704996,
+        0.004211676074191928,
+        0.004056539968587458,
+        0.0040333300130441785,
+        0.003784619038924575,
+        0.003854568931274116,
+        0.0038249760400503874,
+        0.004176156944595277,
+        0.0041423519141972065,
+        0.0038523420225828886,
+        0.004061696003191173,
+        0.0037961500929668546,
+        0.003924760967493057,
+        0.004045260022394359,
+        0.003944626892916858
+      ],
+      "repeatability": {
+        "at_1px": {
+          "correct": 1403,
+          "denominator": 4756,
+          "fraction": 0.29499579478553406
+        },
+        "at_2px": {
+          "correct": 2711,
+          "denominator": 4756,
+          "fraction": 0.5700168208578638
+        },
+        "at_5px": {
+          "correct": 3715,
+          "denominator": 4756,
+          "fraction": 0.7811185870479395
+        }
+      }
+    }
+  },
+  "summary_by_motion_mode": {
+    "affine": {
+      "tensor": {
+        "pair_count": 2,
+        "pair_detection_s_median": 0.002440660959109664,
+        "repeatability": {
+          "at_1px": {
+            "correct": 11,
+            "denominator": 253,
+            "fraction": 0.043478260869565216
+          },
+          "at_2px": {
+            "correct": 25,
+            "denominator": 253,
+            "fraction": 0.09881422924901186
+          },
+          "at_5px": {
+            "correct": 124,
+            "denominator": 253,
+            "fraction": 0.4901185770750988
+          }
+        }
+      },
+      "learned": {
+        "pair_count": 2,
+        "pair_detection_s_median": 0.004332913493271917,
+        "repeatability": {
+          "at_1px": {
+            "correct": 86,
+            "denominator": 359,
+            "fraction": 0.2395543175487465
+          },
+          "at_2px": {
+            "correct": 201,
+            "denominator": 359,
+            "fraction": 0.5598885793871866
+          },
+          "at_5px": {
+            "correct": 287,
+            "denominator": 359,
+            "fraction": 0.7994428969359332
+          }
+        }
+      }
+    },
+    "rigid": {
+      "tensor": {
+        "pair_count": 8,
+        "pair_detection_s_median": 0.0024232854484580457,
+        "repeatability": {
+          "at_1px": {
+            "correct": 123,
+            "denominator": 1302,
+            "fraction": 0.0944700460829493
+          },
+          "at_2px": {
+            "correct": 373,
+            "denominator": 1302,
+            "fraction": 0.28648233486943164
+          },
+          "at_5px": {
+            "correct": 828,
+            "denominator": 1302,
+            "fraction": 0.6359447004608295
+          }
+        }
+      },
+      "learned": {
+        "pair_count": 8,
+        "pair_detection_s_median": 0.003983550937846303,
+        "repeatability": {
+          "at_1px": {
+            "correct": 426,
+            "denominator": 1734,
+            "fraction": 0.24567474048442905
+          },
+          "at_2px": {
+            "correct": 935,
+            "denominator": 1734,
+            "fraction": 0.5392156862745098
+          },
+          "at_5px": {
+            "correct": 1334,
+            "denominator": 1734,
+            "fraction": 0.7693194925028836
+          }
+        }
+      }
+    },
+    "translation": {
+      "tensor": {
+        "pair_count": 7,
+        "pair_detection_s_median": 0.002340518869459629,
+        "repeatability": {
+          "at_1px": {
+            "correct": 176,
+            "denominator": 1170,
+            "fraction": 0.15042735042735042
+          },
+          "at_2px": {
+            "correct": 432,
+            "denominator": 1170,
+            "fraction": 0.36923076923076925
+          },
+          "at_5px": {
+            "correct": 782,
+            "denominator": 1170,
+            "fraction": 0.6683760683760683
+          }
+        }
+      },
+      "learned": {
+        "pair_count": 7,
+        "pair_detection_s_median": 0.004045260022394359,
+        "repeatability": {
+          "at_1px": {
+            "correct": 412,
+            "denominator": 1453,
+            "fraction": 0.28355127322780455
+          },
+          "at_2px": {
+            "correct": 792,
+            "denominator": 1453,
+            "fraction": 0.5450791465932553
+          },
+          "at_5px": {
+            "correct": 1113,
+            "denominator": 1453,
+            "fraction": 0.7660013764624914
+          }
+        }
+      }
+    },
+    "heterogeneous": {
+      "tensor": {
+        "pair_count": 2,
+        "pair_detection_s_median": 0.0023136345553211868,
+        "repeatability": {
+          "at_1px": {
+            "correct": 5,
+            "denominator": 203,
+            "fraction": 0.024630541871921183
+          },
+          "at_2px": {
+            "correct": 33,
+            "denominator": 203,
+            "fraction": 0.1625615763546798
+          },
+          "at_5px": {
+            "correct": 107,
+            "denominator": 203,
+            "fraction": 0.5270935960591133
+          }
+        }
+      },
+      "learned": {
+        "pair_count": 2,
+        "pair_detection_s_median": 0.004030003095977008,
+        "repeatability": {
+          "at_1px": {
+            "correct": 89,
+            "denominator": 286,
+            "fraction": 0.3111888111888112
+          },
+          "at_2px": {
+            "correct": 183,
+            "denominator": 286,
+            "fraction": 0.6398601398601399
+          },
+          "at_5px": {
+            "correct": 244,
+            "denominator": 286,
+            "fraction": 0.8531468531468531
+          }
+        }
+      }
+    },
+    "discontinuous": {
+      "tensor": {
+        "pair_count": 5,
+        "pair_detection_s_median": 0.002356291050091386,
+        "repeatability": {
+          "at_1px": {
+            "correct": 239,
+            "denominator": 829,
+            "fraction": 0.2882991556091677
+          },
+          "at_2px": {
+            "correct": 383,
+            "denominator": 829,
+            "fraction": 0.4620024125452352
+          },
+          "at_5px": {
+            "correct": 594,
+            "denominator": 829,
+            "fraction": 0.7165259348612787
+          }
+        }
+      },
+      "learned": {
+        "pair_count": 5,
+        "pair_detection_s_median": 0.004056539968587458,
+        "repeatability": {
+          "at_1px": {
+            "correct": 390,
+            "denominator": 924,
+            "fraction": 0.42207792207792205
+          },
+          "at_2px": {
+            "correct": 600,
+            "denominator": 924,
+            "fraction": 0.6493506493506493
+          },
+          "at_5px": {
+            "correct": 737,
+            "denominator": 924,
+            "fraction": 0.7976190476190477
+          }
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "texture_seed": 4000000,
+      "warp_seed": 5000000,
+      "motion_mode": "affine",
+      "visible_fraction": 0.7139739990234375,
+      "affine_matrix": [
+        [
+          0.6812767238053132,
+          0.8024852967892986
+        ],
+        [
+          -1.019316214953976,
+          0.8489015122500793
+        ]
+      ],
+      "translation_px": [
+        76.43134873124718,
+        49.62220664831577
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 228,
+          "target_keypoints": 149,
+          "result": {
+            "mutual": 91,
+            "denominator": 121,
+            "at_1px": 6,
+            "at_2px": 7,
+            "at_5px": 59,
+            "repeatability_1px": 0.049586776859504134,
+            "repeatability_2px": 0.05785123966942149,
+            "repeatability_5px": 0.48760330578512395
+          },
+          "reference_time_ms": {
+            "median_ms": 1.268547959625721,
+            "p10_ms": 1.2283368036150932,
+            "p90_ms": 1.5317040495574474,
+            "repeats_s": [
+              0.001597493072040379,
+              0.0012182840146124363,
+              0.001268547959625721
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.259988988749683,
+            "p10_ms": 1.2485162122175097,
+            "p90_ms": 1.4021529583260417,
+            "repeats_s": [
+              0.0012456480180844665,
+              0.001259988988749683,
+              0.0014376939507201314
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 309,
+          "target_keypoints": 213,
+          "result": {
+            "mutual": 150,
+            "denominator": 169,
+            "at_1px": 43,
+            "at_2px": 98,
+            "at_5px": 137,
+            "repeatability_1px": 0.25443786982248523,
+            "repeatability_2px": 0.5798816568047337,
+            "repeatability_5px": 0.8106508875739645
+          },
+          "reference_time_ms": {
+            "median_ms": 2.04162101726979,
+            "p10_ms": 2.0041034324094653,
+            "p90_ms": 2.486418536864221,
+            "repeats_s": [
+              0.00204162101726979,
+              0.002597617916762829,
+              0.001994724036194384
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.3428649874404073,
+            "p10_ms": 2.0851138280704618,
+            "p90_ms": 2.379657723940909,
+            "repeats_s": [
+              0.0023888559080660343,
+              0.0020206760382279754,
+              0.0023428649874404073
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 1,
+      "texture_seed": 4000001,
+      "warp_seed": 5000001,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.6803741455078125,
+      "affine_matrix": [
+        [
+          -0.03476027425891606,
+          -0.9993956790648261
+        ],
+        [
+          0.9993956790648261,
+          -0.03476027425891606
+        ]
+      ],
+      "translation_px": [
+        65.11072973078494,
+        -19.402988721144453
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 218,
+          "target_keypoints": 135,
+          "result": {
+            "mutual": 104,
+            "denominator": 135,
+            "at_1px": 7,
+            "at_2px": 31,
+            "at_5px": 80,
+            "repeatability_1px": 0.05185185185185185,
+            "repeatability_2px": 0.22962962962962963,
+            "repeatability_5px": 0.5925925925925926
+          },
+          "reference_time_ms": {
+            "median_ms": 1.3964520767331123,
+            "p10_ms": 1.3792792335152626,
+            "p90_ms": 1.4015824533998966,
+            "repeats_s": [
+              0.0014028650475665927,
+              0.0013749860227108002,
+              0.0013964520767331123
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.4247680082917213,
+            "p10_ms": 1.3799999840557575,
+            "p90_ms": 1.4656271785497665,
+            "repeats_s": [
+              0.0013688079779967666,
+              0.0014758419711142778,
+              0.0014247680082917213
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 375,
+          "target_keypoints": 275,
+          "result": {
+            "mutual": 211,
+            "denominator": 254,
+            "at_1px": 46,
+            "at_2px": 110,
+            "at_5px": 184,
+            "repeatability_1px": 0.18110236220472442,
+            "repeatability_2px": 0.4330708661417323,
+            "repeatability_5px": 0.7244094488188977
+          },
+          "reference_time_ms": {
+            "median_ms": 2.3399509955197573,
+            "p10_ms": 2.2933685686439276,
+            "p90_ms": 2.4038797710090876,
+            "repeats_s": [
+              0.00228172296192497,
+              0.0023399509955197573,
+              0.00241986196488142
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.33173999004066,
+            "p10_ms": 2.32337205670774,
+            "p90_ms": 2.3829528596252203,
+            "repeats_s": [
+              0.00233173999004066,
+              0.0023957560770213604,
+              0.00232128007337451
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 2,
+      "texture_seed": 4000002,
+      "warp_seed": 5000002,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.6912384033203125,
+      "affine_matrix": [
+        [
+          -0.6649274415609354,
+          -0.7469079578229361
+        ],
+        [
+          0.7469079578229361,
+          -0.6649274415609354
+        ]
+      ],
+      "translation_px": [
+        49.012225981483425,
+        -44.632940522478535
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 203,
+          "target_keypoints": 141,
+          "result": {
+            "mutual": 102,
+            "denominator": 141,
+            "at_1px": 15,
+            "at_2px": 42,
+            "at_5px": 86,
+            "repeatability_1px": 0.10638297872340426,
+            "repeatability_2px": 0.2978723404255319,
+            "repeatability_5px": 0.6099290780141844
+          },
+          "reference_time_ms": {
+            "median_ms": 1.4048099983483553,
+            "p10_ms": 1.40336356125772,
+            "p90_ms": 1.4418451581150293,
+            "repeats_s": [
+              0.0014511039480566978,
+              0.0014048099983483553,
+              0.0014030019519850612
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.383083057589829,
+            "p10_ms": 1.3500581728294492,
+            "p90_ms": 1.3999174581840634,
+            "repeats_s": [
+              0.001383083057589829,
+              0.0013418019516393542,
+              0.001404126058332622
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 232,
+          "target_keypoints": 157,
+          "result": {
+            "mutual": 136,
+            "denominator": 151,
+            "at_1px": 27,
+            "at_2px": 88,
+            "at_5px": 129,
+            "repeatability_1px": 0.17880794701986755,
+            "repeatability_2px": 0.5827814569536424,
+            "repeatability_5px": 0.8543046357615894
+          },
+          "reference_time_ms": {
+            "median_ms": 2.1563060581684113,
+            "p10_ms": 2.0006179809570312,
+            "p90_ms": 2.2057436406612396,
+            "repeats_s": [
+              0.0021563060581684113,
+              0.0022181030362844467,
+              0.0019616959616541862
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.099393983371556,
+            "p10_ms": 2.025649999268353,
+            "p90_ms": 2.1612163865938783,
+            "repeats_s": [
+              0.002176671987399459,
+              0.002099393983371556,
+              0.0020072140032425523
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 3,
+      "texture_seed": 4000003,
+      "warp_seed": 5000003,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.5620269775390625,
+      "affine_matrix": [
+        [
+          0.5859144358785227,
+          -0.8103729226900123
+        ],
+        [
+          0.8103729226900123,
+          0.5859144358785227
+        ]
+      ],
+      "translation_px": [
+        -64.99561150967396,
+        75.52520890644716
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 246,
+          "target_keypoints": 163,
+          "result": {
+            "mutual": 111,
+            "denominator": 147,
+            "at_1px": 14,
+            "at_2px": 40,
+            "at_5px": 94,
+            "repeatability_1px": 0.09523809523809523,
+            "repeatability_2px": 0.272108843537415,
+            "repeatability_5px": 0.6394557823129252
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1718490859493613,
+            "p10_ms": 1.1273130541667342,
+            "p90_ms": 1.2308154022321105,
+            "repeats_s": [
+              0.0012455569813027978,
+              0.0011161790462210774,
+              0.0011718490859493613
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.2297999346628785,
+            "p10_ms": 1.2074351543560624,
+            "p90_ms": 1.247339160181582,
+            "repeats_s": [
+              0.0012297999346628785,
+              0.0012517239665612578,
+              0.0012018439592793584
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 251,
+          "target_keypoints": 150,
+          "result": {
+            "mutual": 117,
+            "denominator": 140,
+            "at_1px": 40,
+            "at_2px": 85,
+            "at_5px": 112,
+            "repeatability_1px": 0.2857142857142857,
+            "repeatability_2px": 0.6071428571428571,
+            "repeatability_5px": 0.8
+          },
+          "reference_time_ms": {
+            "median_ms": 1.94027298130095,
+            "p10_ms": 1.9077602308243513,
+            "p90_ms": 2.2407745476812124,
+            "repeats_s": [
+              0.0018996320432052016,
+              0.002315899939276278,
+              0.00194027298130095
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0483280532062054,
+            "p10_ms": 1.9347752444446087,
+            "p90_ms": 2.116138394922018,
+            "repeats_s": [
+              0.0020483280532062054,
+              0.0021330909803509712,
+              0.0019063870422542095
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 4,
+      "texture_seed": 4000004,
+      "warp_seed": 5000004,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.765411376953125,
+      "affine_matrix": [
+        [
+          0.3943616088142812,
+          -0.9189553424913596
+        ],
+        [
+          0.9189553424913596,
+          0.3943616088142812
+        ]
+      ],
+      "translation_px": [
+        47.068585417181325,
+        -5.950508271363361
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 253,
+          "target_keypoints": 211,
+          "result": {
+            "mutual": 146,
+            "denominator": 198,
+            "at_1px": 13,
+            "at_2px": 51,
+            "at_5px": 129,
+            "repeatability_1px": 0.06565656565656566,
+            "repeatability_2px": 0.25757575757575757,
+            "repeatability_5px": 0.6515151515151515
+          },
+          "reference_time_ms": {
+            "median_ms": 1.229831948876381,
+            "p10_ms": 1.1802559718489647,
+            "p90_ms": 1.2556184083223343,
+            "repeats_s": [
+              0.0012620650231838226,
+              0.001229831948876381,
+              0.0011678619775921106
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.182012027129531,
+            "p10_ms": 1.1767583433538675,
+            "p90_ms": 1.4555007684975863,
+            "repeats_s": [
+              0.0011754449224099517,
+              0.001182012027129531,
+              0.0015238729538396
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 261,
+          "target_keypoints": 202,
+          "result": {
+            "mutual": 163,
+            "denominator": 199,
+            "at_1px": 55,
+            "at_2px": 113,
+            "at_5px": 149,
+            "repeatability_1px": 0.27638190954773867,
+            "repeatability_2px": 0.5678391959798995,
+            "repeatability_5px": 0.7487437185929648
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9821039168164134,
+            "p10_ms": 1.8747320165857673,
+            "p90_ms": 2.156838378868997,
+            "repeats_s": [
+              0.0018478890415281057,
+              0.002200521994382143,
+              0.0019821039168164134
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9963969243690372,
+            "p10_ms": 1.9612946314737203,
+            "p90_ms": 2.0120434230193496,
+            "repeats_s": [
+              0.0019525190582498908,
+              0.001996396924369037,
+              0.0020159550476819277
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 5,
+      "texture_seed": 4000005,
+      "warp_seed": 5000005,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.8034210205078125,
+      "affine_matrix": [
+        [
+          0.2790467262219446,
+          0.9602775247733413
+        ],
+        [
+          -0.9602775247733413,
+          0.2790467262219446
+        ]
+      ],
+      "translation_px": [
+        26.80112354852426,
+        27.528388610263434
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 196,
+          "target_keypoints": 164,
+          "result": {
+            "mutual": 127,
+            "denominator": 160,
+            "at_1px": 33,
+            "at_2px": 74,
+            "at_5px": 115,
+            "repeatability_1px": 0.20625,
+            "repeatability_2px": 0.4625,
+            "repeatability_5px": 0.71875
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1896019568666816,
+            "p10_ms": 1.1799411615356803,
+            "p90_ms": 1.2248867889866233,
+            "repeats_s": [
+              0.0011896019568666816,
+              0.00117752596270293,
+              0.0012337079970166087
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.245124964043498,
+            "p10_ms": 1.2423810083419085,
+            "p90_ms": 1.4327217359095812,
+            "repeats_s": [
+              0.001241695019416511,
+              0.001245124964043498,
+              0.001479620928876102
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 258,
+          "target_keypoints": 226,
+          "result": {
+            "mutual": 188,
+            "denominator": 219,
+            "at_1px": 66,
+            "at_2px": 141,
+            "at_5px": 183,
+            "repeatability_1px": 0.3013698630136986,
+            "repeatability_2px": 0.6438356164383562,
+            "repeatability_5px": 0.8356164383561644
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9775230903178453,
+            "p10_ms": 1.8845902290195227,
+            "p90_ms": 2.0506405737251043,
+            "repeats_s": [
+              0.0019775230903178453,
+              0.002068919944576919,
+              0.001861357013694942
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9208730664104223,
+            "p10_ms": 1.9197290297597647,
+            "p90_ms": 2.198852179571986,
+            "repeats_s": [
+              0.002268346957862377,
+              0.0019194430205971003,
+              0.0019208730664104223
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 6,
+      "texture_seed": 4000006,
+      "warp_seed": 5000006,
+      "motion_mode": "translation",
+      "visible_fraction": 0.56512451171875,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -58.01577146560237,
+        67.31394438639678
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 207,
+          "target_keypoints": 123,
+          "result": {
+            "mutual": 95,
+            "denominator": 123,
+            "at_1px": 19,
+            "at_2px": 46,
+            "at_5px": 83,
+            "repeatability_1px": 0.15447154471544716,
+            "repeatability_2px": 0.37398373983739835,
+            "repeatability_5px": 0.6747967479674797
+          },
+          "reference_time_ms": {
+            "median_ms": 1.4019530499354005,
+            "p10_ms": 1.3056234689429402,
+            "p90_ms": 1.488124975003302,
+            "repeats_s": [
+              0.0012815410736948252,
+              0.0014019530499354005,
+              0.0015096679562702775
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.3237509410828352,
+            "p10_ms": 1.2350181583315134,
+            "p90_ms": 1.4445445965975523,
+            "repeats_s": [
+              0.001212834962643683,
+              0.0014747430104762316,
+              0.0013237509410828352
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 275,
+          "target_keypoints": 176,
+          "result": {
+            "mutual": 139,
+            "denominator": 168,
+            "at_1px": 49,
+            "at_2px": 94,
+            "at_5px": 130,
+            "repeatability_1px": 0.2916666666666667,
+            "repeatability_2px": 0.5595238095238095,
+            "repeatability_5px": 0.7738095238095238
+          },
+          "reference_time_ms": {
+            "median_ms": 2.1305730333551764,
+            "p10_ms": 1.993018644861877,
+            "p90_ms": 2.278588223271072,
+            "repeats_s": [
+              0.0021305730333551764,
+              0.0023155920207500458,
+              0.001958630047738552
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0290249958634377,
+            "p10_ms": 1.9787849858403208,
+            "p90_ms": 2.1599650382995605,
+            "repeats_s": [
+              0.0021927000489085913,
+              0.0019662249833345413,
+              0.0020290249958634377
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 7,
+      "texture_seed": 4000007,
+      "warp_seed": 5000007,
+      "motion_mode": "affine",
+      "visible_fraction": 0.5280914306640625,
+      "affine_matrix": [
+        [
+          0.5412966296137545,
+          0.8801496478021062
+        ],
+        [
+          -0.6767003943225879,
+          0.2867303054827374
+        ]
+      ],
+      "translation_px": [
+        52.95577971626737,
+        57.38296163323251
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 267,
+          "target_keypoints": 132,
+          "result": {
+            "mutual": 97,
+            "denominator": 132,
+            "at_1px": 5,
+            "at_2px": 18,
+            "at_5px": 65,
+            "repeatability_1px": 0.03787878787878788,
+            "repeatability_2px": 0.13636363636363635,
+            "repeatability_5px": 0.49242424242424243
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1347390245646238,
+            "p10_ms": 1.104153459891677,
+            "p90_ms": 1.263674208894372,
+            "repeats_s": [
+              0.001295908004976809,
+              0.0010965070687234402,
+              0.0011347390245646238
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.2180459452793002,
+            "p10_ms": 1.1265611974522471,
+            "p90_ms": 1.3061459874734282,
+            "repeats_s": [
+              0.0012180459452793002,
+              0.0011036900104954839,
+              0.0013281709980219603
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 353,
+          "target_keypoints": 196,
+          "result": {
+            "mutual": 159,
+            "denominator": 190,
+            "at_1px": 43,
+            "at_2px": 103,
+            "at_5px": 150,
+            "repeatability_1px": 0.22631578947368422,
+            "repeatability_2px": 0.5421052631578948,
+            "repeatability_5px": 0.7894736842105263
+          },
+          "reference_time_ms": {
+            "median_ms": 2.188384998589754,
+            "p10_ms": 2.163348998874426,
+            "p90_ms": 2.231160271912813,
+            "repeats_s": [
+              0.002188384998589754,
+              0.002157089998945594,
+              0.002241854090243578
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0929559832438827,
+            "p10_ms": 2.0887728547677398,
+            "p90_ms": 2.3017144529148936,
+            "repeats_s": [
+              0.002087727072648704,
+              0.0020929559832438827,
+              0.0023539040703326464
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 8,
+      "texture_seed": 4000008,
+      "warp_seed": 5000008,
+      "motion_mode": "heterogeneous",
+      "visible_fraction": 0.845428466796875,
+      "affine_matrix": [
+        [
+          0.8137745863306887,
+          -1.1545323370720464
+        ],
+        [
+          1.1854210481945062,
+          0.6569021122397711
+        ]
+      ],
+      "translation_px": [
+        53.356097833381554,
+        -68.86807782629482
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 181,
+          "target_keypoints": 131,
+          "result": {
+            "mutual": 68,
+            "denominator": 84,
+            "at_1px": 2,
+            "at_2px": 12,
+            "at_5px": 43,
+            "repeatability_1px": 0.023809523809523808,
+            "repeatability_2px": 0.14285714285714285,
+            "repeatability_5px": 0.5119047619047619
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1660319287329912,
+            "p10_ms": 1.056125620380044,
+            "p90_ms": 1.2013695668429136,
+            "repeats_s": [
+              0.0011660319287329912,
+              0.0012102039763703942,
+              0.0010286490432918072
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1409950675442815,
+            "p10_ms": 1.126991049386561,
+            "p90_ms": 1.2076446088030934,
+            "repeats_s": [
+              0.0011409950675442815,
+              0.0012243069941177964,
+              0.0011234900448471308
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 254,
+          "target_keypoints": 148,
+          "result": {
+            "mutual": 121,
+            "denominator": 122,
+            "at_1px": 38,
+            "at_2px": 84,
+            "at_5px": 112,
+            "repeatability_1px": 0.3114754098360656,
+            "repeatability_2px": 0.6885245901639344,
+            "repeatability_5px": 0.9180327868852459
+          },
+          "reference_time_ms": {
+            "median_ms": 2.087330096401274,
+            "p10_ms": 2.070821193046868,
+            "p90_ms": 2.1396795520558953,
+            "repeats_s": [
+              0.0021527669159695506,
+              0.0020666939672082663,
+              0.002087330096401274
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.147700055502355,
+            "p10_ms": 2.0826792111620307,
+            "p90_ms": 2.19728562515229,
+            "repeats_s": [
+              0.0020664240000769496,
+              0.002147700055502355,
+              0.0022096820175647736
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 9,
+      "texture_seed": 4000009,
+      "warp_seed": 5000009,
+      "motion_mode": "discontinuous",
+      "visible_fraction": 0.744964599609375,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -25.193955571149964,
+        18.732580611947554
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 232,
+          "target_keypoints": 218,
+          "result": {
+            "mutual": 147,
+            "denominator": 183,
+            "at_1px": 29,
+            "at_2px": 74,
+            "at_5px": 126,
+            "repeatability_1px": 0.15846994535519127,
+            "repeatability_2px": 0.40437158469945356,
+            "repeatability_5px": 0.6885245901639344
+          },
+          "reference_time_ms": {
+            "median_ms": 1.260728924535215,
+            "p10_ms": 1.2231841450557113,
+            "p90_ms": 1.304140198044479,
+            "repeats_s": [
+              0.0012137979501858354,
+              0.001260728924535215,
+              0.0013149930164217949
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.333516906015575,
+            "p10_ms": 1.2768817832693458,
+            "p90_ms": 1.5014889417216182,
+            "repeats_s": [
+              0.0012627230025827885,
+              0.001333516906015575,
+              0.001543481950648129
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 225,
+          "target_keypoints": 200,
+          "result": {
+            "mutual": 141,
+            "denominator": 166,
+            "at_1px": 51,
+            "at_2px": 97,
+            "at_5px": 128,
+            "repeatability_1px": 0.3072289156626506,
+            "repeatability_2px": 0.5843373493975904,
+            "repeatability_5px": 0.7710843373493976
+          },
+          "reference_time_ms": {
+            "median_ms": 2.0868349820375443,
+            "p10_ms": 1.9239934161305428,
+            "p90_ms": 2.090106252580881,
+            "repeats_s": [
+              0.0020868349820375443,
+              0.0018832830246537924,
+              0.0020909240702167153
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0574278896674514,
+            "p10_ms": 1.9018959952518344,
+            "p90_ms": 2.05925356131047,
+            "repeats_s": [
+              0.0018630130216479301,
+              0.0020574278896674514,
+              0.002059709979221225
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 10,
+      "texture_seed": 4000010,
+      "warp_seed": 5000010,
+      "motion_mode": "translation",
+      "visible_fraction": 0.714111328125,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -47.727316160634686,
+        -30.975700174493724
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 231,
+          "target_keypoints": 181,
+          "result": {
+            "mutual": 140,
+            "denominator": 166,
+            "at_1px": 59,
+            "at_2px": 91,
+            "at_5px": 127,
+            "repeatability_1px": 0.35542168674698793,
+            "repeatability_2px": 0.5481927710843374,
+            "repeatability_5px": 0.7650602409638554
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1295280419290066,
+            "p10_ms": 1.097243931144476,
+            "p90_ms": 1.133834384381771,
+            "repeats_s": [
+              0.0011349109699949622,
+              0.0011295280419290066,
+              0.0010891729034483433
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.13703403621912,
+            "p10_ms": 1.085806731134653,
+            "p90_ms": 1.1452628299593925,
+            "repeats_s": [
+              0.00113703403621912,
+              0.0011473200283944607,
+              0.0010729999048635364
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 235,
+          "target_keypoints": 184,
+          "result": {
+            "mutual": 157,
+            "denominator": 176,
+            "at_1px": 95,
+            "at_2px": 121,
+            "at_5px": 147,
+            "repeatability_1px": 0.5397727272727273,
+            "repeatability_2px": 0.6875,
+            "repeatability_5px": 0.8352272727272727
+          },
+          "reference_time_ms": {
+            "median_ms": 2.211929066106677,
+            "p10_ms": 1.9943538587540388,
+            "p90_ms": 2.2264738101512194,
+            "repeats_s": [
+              0.0019399600569158792,
+              0.002211929066106677,
+              0.002230109996162355
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9997470080852509,
+            "p10_ms": 1.9161742180585861,
+            "p90_ms": 2.3460558615624905,
+            "repeats_s": [
+              0.001999747008085251,
+              0.0024326330749318004,
+              0.00189528102055192
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 11,
+      "texture_seed": 4000011,
+      "warp_seed": 5000011,
+      "motion_mode": "discontinuous",
+      "visible_fraction": 0.78277587890625,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -0.05646972466192324,
+        30.930006910419863
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 237,
+          "target_keypoints": 214,
+          "result": {
+            "mutual": 152,
+            "denominator": 192,
+            "at_1px": 33,
+            "at_2px": 85,
+            "at_5px": 140,
+            "repeatability_1px": 0.171875,
+            "repeatability_2px": 0.4427083333333333,
+            "repeatability_5px": 0.7291666666666666
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1031610192731023,
+            "p10_ms": 1.0856306413188577,
+            "p90_ms": 1.1948921950533986,
+            "repeats_s": [
+              0.0012178249889984727,
+              0.0010812480468302965,
+              0.0011031610192731023
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.156470039859414,
+            "p10_ms": 1.1469996068626642,
+            "p90_ms": 1.1971387546509504,
+            "repeats_s": [
+              0.001156470039859414,
+              0.0011446319986134768,
+              0.0012073059333488345
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 284,
+          "target_keypoints": 245,
+          "result": {
+            "mutual": 192,
+            "denominator": 218,
+            "at_1px": 105,
+            "at_2px": 155,
+            "at_5px": 186,
+            "repeatability_1px": 0.481651376146789,
+            "repeatability_2px": 0.7110091743119266,
+            "repeatability_5px": 0.8532110091743119
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9915919983759522,
+            "p10_ms": 1.887743198312819,
+            "p90_ms": 2.439330448396504,
+            "repeats_s": [
+              0.0018617809982970357,
+              0.002551265060901642,
+              0.0019915919983759522
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.064947970211506,
+            "p10_ms": 1.97115121409297,
+            "p90_ms": 2.072380017489195,
+            "repeats_s": [
+              0.002064947970211506,
+              0.002074238029308617,
+              0.001947702025063336
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 12,
+      "texture_seed": 4000012,
+      "warp_seed": 5000012,
+      "motion_mode": "discontinuous",
+      "visible_fraction": 0.5271148681640625,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        68.25432891021767,
+        20.306796394480216
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 246,
+          "target_keypoints": 159,
+          "result": {
+            "mutual": 119,
+            "denominator": 135,
+            "at_1px": 76,
+            "at_2px": 91,
+            "at_5px": 111,
+            "repeatability_1px": 0.562962962962963,
+            "repeatability_2px": 0.674074074074074,
+            "repeatability_5px": 0.8222222222222222
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1494889622554183,
+            "p10_ms": 1.0708321584388614,
+            "p90_ms": 1.3419506838545203,
+            "repeats_s": [
+              0.0013900661142542958,
+              0.0010511679574847221,
+              0.0011494889622554183
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.2068020878359675,
+            "p10_ms": 1.1821836000308394,
+            "p90_ms": 1.2428123271092772,
+            "repeats_s": [
+              0.0011760289780795574,
+              0.0012068020878359675,
+              0.0012518148869276047
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 239,
+          "target_keypoints": 163,
+          "result": {
+            "mutual": 104,
+            "denominator": 121,
+            "at_1px": 79,
+            "at_2px": 94,
+            "at_5px": 101,
+            "repeatability_1px": 0.6528925619834711,
+            "repeatability_2px": 0.7768595041322314,
+            "repeatability_5px": 0.8347107438016529
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9646940054371953,
+            "p10_ms": 1.9486435921862721,
+            "p90_ms": 2.0124555798247457,
+            "repeats_s": [
+              0.0019446309888735414,
+              0.0020243959734216332,
+              0.0019646940054371953
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.068636007606983,
+            "p10_ms": 1.998069602996111,
+            "p90_ms": 2.2628776729106903,
+            "repeats_s": [
+              0.002311438089236617,
+              0.001980428001843393,
+              0.002068636007606983
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 13,
+      "texture_seed": 4000013,
+      "warp_seed": 5000013,
+      "motion_mode": "translation",
+      "visible_fraction": 0.693511962890625,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -30.7902350367742,
+        -53.03067152483001
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 273,
+          "target_keypoints": 184,
+          "result": {
+            "mutual": 126,
+            "denominator": 184,
+            "at_1px": 9,
+            "at_2px": 28,
+            "at_5px": 90,
+            "repeatability_1px": 0.04891304347826087,
+            "repeatability_2px": 0.15217391304347827,
+            "repeatability_5px": 0.4891304347826087
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1986150639131665,
+            "p10_ms": 1.10402621794492,
+            "p90_ms": 1.254950207658112,
+            "repeats_s": [
+              0.0012690339935943484,
+              0.0010803790064528584,
+              0.0011986150639131665
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1343529913574457,
+            "p10_ms": 1.1132769752293825,
+            "p90_ms": 1.215517008677125,
+            "repeats_s": [
+              0.0011343529913574457,
+              0.0011080079711973667,
+              0.0012358080130070448
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 374,
+          "target_keypoints": 262,
+          "result": {
+            "mutual": 193,
+            "denominator": 252,
+            "at_1px": 49,
+            "at_2px": 117,
+            "at_5px": 180,
+            "repeatability_1px": 0.19444444444444445,
+            "repeatability_2px": 0.4642857142857143,
+            "repeatability_5px": 0.7142857142857143
+          },
+          "reference_time_ms": {
+            "median_ms": 1.8889490747824311,
+            "p10_ms": 1.8741945968940854,
+            "p90_ms": 2.0273777889087796,
+            "repeats_s": [
+              0.001870505977421999,
+              0.0020619849674403667,
+              0.0018889490747824311
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.8956699641421437,
+            "p10_ms": 1.8793371738865972,
+            "p90_ms": 1.9869595998898149,
+            "repeats_s": [
+              0.0018956699641421437,
+              0.0018752539763227105,
+              0.0020097820088267326
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 14,
+      "texture_seed": 4000014,
+      "warp_seed": 5000014,
+      "motion_mode": "discontinuous",
+      "visible_fraction": 0.6800994873046875,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        48.66169358961399,
+        -6.836671355713477
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 246,
+          "target_keypoints": 173,
+          "result": {
+            "mutual": 116,
+            "denominator": 163,
+            "at_1px": 11,
+            "at_2px": 29,
+            "at_5px": 89,
+            "repeatability_1px": 0.06748466257668712,
+            "repeatability_2px": 0.17791411042944785,
+            "repeatability_5px": 0.5460122699386503
+          },
+          "reference_time_ms": {
+            "median_ms": 1.2339960085228086,
+            "p10_ms": 1.1244200402870774,
+            "p90_ms": 1.3007439905777574,
+            "repeats_s": [
+              0.0013174309860914946,
+              0.0010970260482281446,
+              0.0012339960085228086
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1510159820318222,
+            "p10_ms": 1.1409783735871315,
+            "p90_ms": 1.3416863977909088,
+            "repeats_s": [
+              0.0011384689714759588,
+              0.0011510159820318222,
+              0.0013893540017306805
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 361,
+          "target_keypoints": 295,
+          "result": {
+            "mutual": 195,
+            "denominator": 255,
+            "at_1px": 49,
+            "at_2px": 132,
+            "at_5px": 182,
+            "repeatability_1px": 0.19215686274509805,
+            "repeatability_2px": 0.5176470588235295,
+            "repeatability_5px": 0.7137254901960784
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9194309134036303,
+            "p10_ms": 1.9128629472106695,
+            "p90_ms": 2.1410461980849504,
+            "repeats_s": [
+              0.0019112209556624293,
+              0.0021964500192552805,
+              0.0019194309134036303
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9351380178704858,
+            "p10_ms": 1.8636292079463601,
+            "p90_ms": 1.9609092036262155,
+            "repeats_s": [
+              0.0018457520054653287,
+              0.0019351380178704858,
+              0.001967352000065148
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 15,
+      "texture_seed": 4000015,
+      "warp_seed": 5000015,
+      "motion_mode": "heterogeneous",
+      "visible_fraction": 0.8092193603515625,
+      "affine_matrix": [
+        [
+          1.1547476590003274,
+          0.032351347647950876
+        ],
+        [
+          0.06867203407415537,
+          1.3467110614803848
+        ]
+      ],
+      "translation_px": [
+        68.20087527229968,
+        -17.981243789410442
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 236,
+          "target_keypoints": 179,
+          "result": {
+            "mutual": 96,
+            "denominator": 119,
+            "at_1px": 3,
+            "at_2px": 21,
+            "at_5px": 64,
+            "repeatability_1px": 0.025210084033613446,
+            "repeatability_2px": 0.17647058823529413,
+            "repeatability_5px": 0.5378151260504201
+          },
+          "reference_time_ms": {
+            "median_ms": 1.135912025347352,
+            "p10_ms": 1.1279936414211988,
+            "p90_ms": 1.3664631638675928,
+            "repeats_s": [
+              0.001424100948497653,
+              0.0011260140454396605,
+              0.001135912025347352
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1843300890177488,
+            "p10_ms": 1.1660740245133638,
+            "p90_ms": 1.2686604168266058,
+            "repeats_s": [
+              0.00128974299877882,
+              0.0011843300890177488,
+              0.0011615100083872676
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 296,
+          "target_keypoints": 219,
+          "result": {
+            "mutual": 145,
+            "denominator": 164,
+            "at_1px": 51,
+            "at_2px": 99,
+            "at_5px": 132,
+            "repeatability_1px": 0.31097560975609756,
+            "repeatability_2px": 0.6036585365853658,
+            "repeatability_5px": 0.8048780487804879
+          },
+          "reference_time_ms": {
+            "median_ms": 1.8795380601659417,
+            "p10_ms": 1.83940923307091,
+            "p90_ms": 1.9127804087474942,
+            "repeats_s": [
+              0.0018795380601659417,
+              0.0019210909958928823,
+              0.001829377026297152
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9454379798844457,
+            "p10_ms": 1.892243535257876,
+            "p90_ms": 2.0339275943115354,
+            "repeats_s": [
+              0.0020560499979183078,
+              0.0018789449241012335,
+              0.0019454379798844457
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 16,
+      "texture_seed": 4000016,
+      "warp_seed": 5000016,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.8279571533203125,
+      "affine_matrix": [
+        [
+          0.8635274872895805,
+          -0.5043017734406091
+        ],
+        [
+          0.5043017734406091,
+          0.8635274872895805
+        ]
+      ],
+      "translation_px": [
+        16.124200913829952,
+        -10.378846231550426
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 246,
+          "target_keypoints": 219,
+          "result": {
+            "mutual": 147,
+            "denominator": 208,
+            "at_1px": 9,
+            "at_2px": 31,
+            "at_5px": 118,
+            "repeatability_1px": 0.04326923076923077,
+            "repeatability_2px": 0.14903846153846154,
+            "repeatability_5px": 0.5673076923076923
+          },
+          "reference_time_ms": {
+            "median_ms": 1.2160820188000798,
+            "p10_ms": 1.192492456175387,
+            "p90_ms": 1.2749067740514874,
+            "repeats_s": [
+              0.0012896129628643394,
+              0.0011865950655192137,
+              0.0012160820188000798
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.2233989546075463,
+            "p10_ms": 1.2040781090036035,
+            "p90_ms": 1.2395117664709687,
+            "repeats_s": [
+              0.0012435399694368243,
+              0.0012233989546075463,
+              0.0011992478976026177
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 362,
+          "target_keypoints": 315,
+          "result": {
+            "mutual": 244,
+            "denominator": 306,
+            "at_1px": 72,
+            "at_2px": 147,
+            "at_5px": 224,
+            "repeatability_1px": 0.23529411764705882,
+            "repeatability_2px": 0.4803921568627451,
+            "repeatability_5px": 0.7320261437908496
+          },
+          "reference_time_ms": {
+            "median_ms": 2.136214985512197,
+            "p10_ms": 2.0022350130602717,
+            "p90_ms": 2.1945901913568377,
+            "repeats_s": [
+              0.002136214985512197,
+              0.0019687400199472904,
+              0.002209183992817998
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0399419590830803,
+            "p10_ms": 2.03382121399045,
+            "p90_ms": 2.1143867634236813,
+            "repeats_s": [
+              0.0020322910277172923,
+              0.0020399419590830803,
+              0.0021329979645088315
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 17,
+      "texture_seed": 4000017,
+      "warp_seed": 5000017,
+      "motion_mode": "discontinuous",
+      "visible_fraction": 0.6998291015625,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        35.866466789962715,
+        -3.7342147080401418
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 217,
+          "target_keypoints": 188,
+          "result": {
+            "mutual": 137,
+            "denominator": 156,
+            "at_1px": 90,
+            "at_2px": 104,
+            "at_5px": 128,
+            "repeatability_1px": 0.5769230769230769,
+            "repeatability_2px": 0.6666666666666666,
+            "repeatability_5px": 0.8205128205128205
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1640529846772552,
+            "p10_ms": 1.1303705861791968,
+            "p90_ms": 1.1986225610598922,
+            "repeats_s": [
+              0.0012072649551555514,
+              0.0011219499865546823,
+              0.0011640529846772552
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1624499456956983,
+            "p10_ms": 1.0788163403049111,
+            "p90_ms": 1.2336491839960217,
+            "repeats_s": [
+              0.0011624499456956983,
+              0.0010579079389572144,
+              0.0012514489935711026
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 230,
+          "target_keypoints": 197,
+          "result": {
+            "mutual": 147,
+            "denominator": 164,
+            "at_1px": 106,
+            "at_2px": 122,
+            "at_5px": 140,
+            "repeatability_1px": 0.6463414634146342,
+            "repeatability_2px": 0.7439024390243902,
+            "repeatability_5px": 0.8536585365853658
+          },
+          "reference_time_ms": {
+            "median_ms": 2.056848956272006,
+            "p10_ms": 1.9671545829623938,
+            "p90_ms": 2.1142226178199053,
+            "repeats_s": [
+              0.0019447309896349907,
+              0.00212856603320688,
+              0.002056848956272006
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0855029579252005,
+            "p10_ms": 2.0637078676372766,
+            "p90_ms": 2.093238150700927,
+            "repeats_s": [
+              0.0020582590950652957,
+              0.0020855029579252005,
+              0.0020951719488948584
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 18,
+      "texture_seed": 4000018,
+      "warp_seed": 5000018,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.766265869140625,
+      "affine_matrix": [
+        [
+          0.8779403004305567,
+          0.47877012112276157
+        ],
+        [
+          -0.47877012112276157,
+          0.8779403004305567
+        ]
+      ],
+      "translation_px": [
+        -46.173894043217615,
+        5.33642121757066
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 212,
+          "target_keypoints": 163,
+          "result": {
+            "mutual": 129,
+            "denominator": 163,
+            "at_1px": 16,
+            "at_2px": 55,
+            "at_5px": 111,
+            "repeatability_1px": 0.09815950920245399,
+            "repeatability_2px": 0.3374233128834356,
+            "repeatability_5px": 0.6809815950920245
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1305459775030613,
+            "p10_ms": 1.125373225659132,
+            "p90_ms": 1.1323579587042332,
+            "repeats_s": [
+              0.0011328109540045261,
+              0.0011305459775030613,
+              0.0011240800376981497
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1171610094606876,
+            "p10_ms": 1.0429009795188904,
+            "p90_ms": 1.1206706054508686,
+            "repeats_s": [
+              0.0011215480044484138,
+              0.0011171610094606876,
+              0.001024335972033441
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 296,
+          "target_keypoints": 241,
+          "result": {
+            "mutual": 194,
+            "denominator": 236,
+            "at_1px": 78,
+            "at_2px": 141,
+            "at_5px": 182,
+            "repeatability_1px": 0.3305084745762712,
+            "repeatability_2px": 0.597457627118644,
+            "repeatability_5px": 0.7711864406779662
+          },
+          "reference_time_ms": {
+            "median_ms": 1.8476479453966022,
+            "p10_ms": 1.8181008053943515,
+            "p90_ms": 2.1797272143885493,
+            "repeats_s": [
+              0.0018476479453966022,
+              0.002262747031636536,
+              0.0018107140203937888
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0046940771862864,
+            "p10_ms": 1.936481217853725,
+            "p90_ms": 2.0138771971687675,
+            "repeats_s": [
+              0.0020161729771643877,
+              0.0019194280030205846,
+              0.0020046940771862864
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 19,
+      "texture_seed": 4000019,
+      "warp_seed": 5000019,
+      "motion_mode": "translation",
+      "visible_fraction": 0.70843505859375,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        36.858633325432365,
+        -43.19291451365932
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 237,
+          "target_keypoints": 175,
+          "result": {
+            "mutual": 133,
+            "denominator": 168,
+            "at_1px": 39,
+            "at_2px": 82,
+            "at_5px": 123,
+            "repeatability_1px": 0.23214285714285715,
+            "repeatability_2px": 0.4880952380952381,
+            "repeatability_5px": 0.7321428571428571
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1891629546880722,
+            "p10_ms": 1.0982797481119633,
+            "p90_ms": 1.2156574055552483,
+            "repeats_s": [
+              0.0012222810182720423,
+              0.0011891629546880722,
+              0.001075558946467936
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.114350976422429,
+            "p10_ms": 1.1135941836982965,
+            "p90_ms": 1.12889907322824,
+            "repeats_s": [
+              0.001114350976422429,
+              0.0011134049855172634,
+              0.0011325360974296927
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 259,
+          "target_keypoints": 191,
+          "result": {
+            "mutual": 164,
+            "denominator": 189,
+            "at_1px": 83,
+            "at_2px": 125,
+            "at_5px": 154,
+            "repeatability_1px": 0.43915343915343913,
+            "repeatability_2px": 0.6613756613756614,
+            "repeatability_5px": 0.8148148148148148
+          },
+          "reference_time_ms": {
+            "median_ms": 2.0213890820741653,
+            "p10_ms": 1.8931674771010876,
+            "p90_ms": 2.1066137589514256,
+            "repeats_s": [
+              0.0018611120758578181,
+              0.0021279199281707406,
+              0.0020213890820741653
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0403069211170077,
+            "p10_ms": 1.8754701828584075,
+            "p90_ms": 2.09700136911124,
+            "repeats_s": [
+              0.0020403069211170077,
+              0.002111174981109798,
+              0.0018342609982937574
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 20,
+      "texture_seed": 4000020,
+      "warp_seed": 5000020,
+      "motion_mode": "translation",
+      "visible_fraction": 0.5657958984375,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -49.94208150016571,
+        -75.80234453926012
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 262,
+          "target_keypoints": 141,
+          "result": {
+            "mutual": 108,
+            "denominator": 141,
+            "at_1px": 16,
+            "at_2px": 55,
+            "at_5px": 97,
+            "repeatability_1px": 0.11347517730496454,
+            "repeatability_2px": 0.3900709219858156,
+            "repeatability_5px": 0.6879432624113475
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1896919459104538,
+            "p10_ms": 1.167392823845148,
+            "p90_ms": 1.2839999981224537,
+            "repeats_s": [
+              0.0011896919459104538,
+              0.0013075770111754537,
+              0.0011618180433288217
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1508269235491753,
+            "p10_ms": 1.1329294182360172,
+            "p90_ms": 1.4902821741998196,
+            "repeats_s": [
+              0.0011508269235491753,
+              0.0015751459868624806,
+              0.0011284550419077277
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 363,
+          "target_keypoints": 213,
+          "result": {
+            "mutual": 162,
+            "denominator": 205,
+            "at_1px": 30,
+            "at_2px": 94,
+            "at_5px": 148,
+            "repeatability_1px": 0.14634146341463414,
+            "repeatability_2px": 0.4585365853658537,
+            "repeatability_5px": 0.7219512195121951
+          },
+          "reference_time_ms": {
+            "median_ms": 1.7984670121222734,
+            "p10_ms": 1.7837134655565023,
+            "p90_ms": 2.0757494028657675,
+            "repeats_s": [
+              0.0017800250789150596,
+              0.002145070000551641,
+              0.0017984670121222734
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9976830808445811,
+            "p10_ms": 1.938129379414022,
+            "p90_ms": 2.042674249969423,
+            "repeats_s": [
+              0.0019232409540563822,
+              0.0020539220422506332,
+              0.001997683080844581
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 21,
+      "texture_seed": 4000021,
+      "warp_seed": 5000021,
+      "motion_mode": "rigid",
+      "visible_fraction": 0.6375274658203125,
+      "affine_matrix": [
+        [
+          -0.32364767888934354,
+          0.9461776682788177
+        ],
+        [
+          -0.9461776682788177,
+          -0.32364767888934354
+        ]
+      ],
+      "translation_px": [
+        61.19668184856421,
+        -48.664597435702305
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 233,
+          "target_keypoints": 161,
+          "result": {
+            "mutual": 120,
+            "denominator": 150,
+            "at_1px": 16,
+            "at_2px": 49,
+            "at_5px": 95,
+            "repeatability_1px": 0.10666666666666667,
+            "repeatability_2px": 0.32666666666666666,
+            "repeatability_5px": 0.6333333333333333
+          },
+          "reference_time_ms": {
+            "median_ms": 1.1419019429013133,
+            "p10_ms": 1.0937964310869575,
+            "p90_ms": 1.1552283307537436,
+            "repeats_s": [
+              0.0011585599277168512,
+              0.0010817700531333685,
+              0.0011419019429013133
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1019320227205753,
+            "p10_ms": 1.098924782127142,
+            "p90_ms": 1.1167784221470356,
+            "repeats_s": [
+              0.0011204900220036507,
+              0.0011019320227205753,
+              0.0010981729719787836
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 349,
+          "target_keypoints": 242,
+          "result": {
+            "mutual": 181,
+            "denominator": 229,
+            "at_1px": 42,
+            "at_2px": 110,
+            "at_5px": 171,
+            "repeatability_1px": 0.18340611353711792,
+            "repeatability_2px": 0.48034934497816595,
+            "repeatability_5px": 0.7467248908296943
+          },
+          "reference_time_ms": {
+            "median_ms": 1.941764960065484,
+            "p10_ms": 1.8954458180814981,
+            "p90_ms": 1.9701986107975245,
+            "repeats_s": [
+              0.0018838660325855017,
+              0.0019773070234805346,
+              0.001941764960065484
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.9829960074275732,
+            "p10_ms": 1.9503111485391855,
+            "p90_ms": 2.0205247681587934,
+            "repeats_s": [
+              0.0019421399338170886,
+              0.0020299069583415985,
+              0.001982996007427573
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 22,
+      "texture_seed": 4000022,
+      "warp_seed": 5000022,
+      "motion_mode": "translation",
+      "visible_fraction": 0.650665283203125,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        -48.457440006528216,
+        49.52421039596129
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 241,
+          "target_keypoints": 177,
+          "result": {
+            "mutual": 142,
+            "denominator": 167,
+            "at_1px": 23,
+            "at_2px": 79,
+            "at_5px": 128,
+            "repeatability_1px": 0.1377245508982036,
+            "repeatability_2px": 0.47305389221556887,
+            "repeatability_5px": 0.7664670658682635
+          },
+          "reference_time_ms": {
+            "median_ms": 1.194337964989245,
+            "p10_ms": 1.169256423600018,
+            "p90_ms": 1.235686824657023,
+            "repeats_s": [
+              0.001194337964989245,
+              0.0012460240395739675,
+              0.0011629860382527113
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.1720099719241261,
+            "p10_ms": 1.1431884253397584,
+            "p90_ms": 1.1756035732105374,
+            "repeats_s": [
+              0.0011359830386936665,
+              0.0011720099719241261,
+              0.0011765019735321403
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 239,
+          "target_keypoints": 176,
+          "result": {
+            "mutual": 143,
+            "denominator": 164,
+            "at_1px": 57,
+            "at_2px": 100,
+            "at_5px": 135,
+            "repeatability_1px": 0.3475609756097561,
+            "repeatability_2px": 0.6097560975609756,
+            "repeatability_5px": 0.823170731707317
+          },
+          "reference_time_ms": {
+            "median_ms": 2.002174034714699,
+            "p10_ms": 1.980377174913883,
+            "p90_ms": 2.042469196021557,
+            "repeats_s": [
+              0.0020525429863482714,
+              0.002002174034714699,
+              0.0019749279599636793
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0430859876796603,
+            "p10_ms": 2.02939638402313,
+            "p90_ms": 2.058475627563894,
+            "repeats_s": [
+              0.0020259739831089973,
+              0.0020430859876796603,
+              0.002062323037534952
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    },
+    {
+      "index": 23,
+      "texture_seed": 4000023,
+      "warp_seed": 5000023,
+      "motion_mode": "translation",
+      "visible_fraction": 0.8200531005859375,
+      "affine_matrix": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_px": [
+        14.251337314126715,
+        32.53075672218148
+      ],
+      "repeatability": {
+        "tensor": {
+          "reference_keypoints": 264,
+          "target_keypoints": 221,
+          "result": {
+            "mutual": 159,
+            "denominator": 221,
+            "at_1px": 11,
+            "at_2px": 51,
+            "at_5px": 134,
+            "repeatability_1px": 0.049773755656108594,
+            "repeatability_2px": 0.23076923076923078,
+            "repeatability_5px": 0.6063348416289592
+          },
+          "reference_time_ms": {
+            "median_ms": 1.2576350709423423,
+            "p10_ms": 1.212819735519588,
+            "p90_ms": 1.3439998729154468,
+            "repeats_s": [
+              0.0013655910734087229,
+              0.0012016159016638994,
+              0.0012576350709423423
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 1.2892979430034757,
+            "p10_ms": 1.2167699867859483,
+            "p90_ms": 1.2975516030564904,
+            "repeats_s": [
+              0.0011986379977315664,
+              0.0012996150180697441,
+              0.0012892979430034757
+            ]
+          },
+          "diagnostic": "minimum eigenvalue of the mean local gradient structure tensor; larger values indicate better-conditioned photometric gradients, not unique cross-image correspondences"
+        },
+        "learned": {
+          "reference_keypoints": 351,
+          "target_keypoints": 304,
+          "result": {
+            "mutual": 237,
+            "denominator": 299,
+            "at_1px": 49,
+            "at_2px": 141,
+            "at_5px": 219,
+            "repeatability_1px": 0.16387959866220736,
+            "repeatability_2px": 0.47157190635451507,
+            "repeatability_5px": 0.7324414715719063
+          },
+          "reference_time_ms": {
+            "median_ms": 1.9288149196654558,
+            "p10_ms": 1.8894142005592585,
+            "p90_ms": 2.3590053897351027,
+            "repeats_s": [
+              0.0018795640207827091,
+              0.0024665530072525144,
+              0.0019288149196654558
+            ]
+          },
+          "target_time_ms": {
+            "median_ms": 2.0158119732514024,
+            "p10_ms": 1.964861643500626,
+            "p90_ms": 2.084267162717879,
+            "repeats_s": [
+              0.002101380960084498,
+              0.001952124061062932,
+              0.0020158119732514024
+            ]
+          },
+          "diagnostic": "sigmoid learned score; trained with a structure-tensor teacher and analytic-flow equivariance, not IC-GN convergence"
+        }
+      }
+    }
+  ],
+  "scientific_limit": "Keypoint repeatability is not match precision, local-affine coverage, or IC-GN convergence. No descriptor is used in this detector-only comparison."
+}

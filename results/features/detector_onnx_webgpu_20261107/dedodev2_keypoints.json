@@ -1,0 +1,413 @@
+{
+  "method": "dedodev2",
+  "source": {
+    "reference_package": "DeDoDe",
+    "reference_package_version": "0.0.1",
+    "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+    "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+    "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+    "coordinates": "source-image pixel centres; integer values identify pixel centres",
+    "detector": "DeDoDe-v2-L",
+    "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+    "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+    "device": "cpu"
+  },
+  "input_output": {
+    "input_name": "image",
+    "input_layout": "NCHW float32 normalized RGB",
+    "output_mode": "keypoints",
+    "output_names": [
+      "keypoints",
+      "scores"
+    ],
+    "output_meaning": "normalized keypoint coordinates and detector confidence scores",
+    "max_keypoints": 1024,
+    "batch_size": 1,
+    "dynamic_spatial_axes": true,
+    "required_input_multiple_px": 8,
+    "export_shape_px": [
+      128,
+      128
+    ],
+    "test_shape_px": [
+      640,
+      360
+    ]
+  },
+  "export": {
+    "opset": 17,
+    "fused_batch_norm_count": 0,
+    "fusion_parity_max_abs": 0.0,
+    "fusion_parity_mean_abs": 0.0,
+    "onnx_sha256": "a62de67958710088b08dc508bfa71705e2254e47a720844d91feaf2d402267ea",
+    "onnx_bytes": 58218440,
+    "node_count": 409,
+    "operator_counts": {
+      "Add": 13,
+      "Cast": 20,
+      "Concat": 20,
+      "Constant": 113,
+      "Conv": 90,
+      "Div": 7,
+      "Gather": 11,
+      "MaxPool": 3,
+      "Mod": 1,
+      "Mul": 7,
+      "Pow": 1,
+      "ReduceSum": 1,
+      "Relu": 48,
+      "Reshape": 4,
+      "Resize": 6,
+      "Shape": 16,
+      "Slice": 15,
+      "Softmax": 1,
+      "Sub": 5,
+      "TopK": 1,
+      "Unsqueeze": 26
+    }
+  },
+  "runtime": {
+    "provider_requested": "WebGpuExecutionProvider",
+    "providers_used_by_ort": [
+      "WebGpuExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "onnxruntime_version": "1.31.1",
+    "adapter": {
+      "vendor_id": 32902,
+      "device_id": 25760
+    },
+    "session_initialization_s": 0.2891881730174646,
+    "warmup_calls": 1,
+    "timed_calls": 5,
+    "run_s": [
+      0.4003915359498933,
+      0.40565696195699275,
+      0.4075868979562074,
+      0.4052633609389886,
+      0.4030097920913249
+    ],
+    "median_run_s": 0.4052633609389886,
+    "output_bytes_returned_to_cpu": 12288,
+    "session_run_returns_cpu_numpy": true,
+    "profile_runtime": {
+      "onnxruntime_version": "1.31.1",
+      "adapter": {
+        "vendor_id": 32902,
+        "device_id": 25760
+      }
+    },
+    "profile": {
+      "node_event_count": 244,
+      "node_duration_us_by_provider": {
+        "WebGpuExecutionProvider": 409067,
+        "CPUExecutionProvider": 1034
+      },
+      "cpu_node_event_count": 64,
+      "cpu_node_duration_us": 1034,
+      "largest_cpu_nodes": [
+        {
+          "name": "Squeeze_token_434_kernel_time",
+          "op_type": "Squeeze",
+          "duration_us": 530,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Sub_2_kernel_time",
+          "op_type": "Sub",
+          "duration_us": 41,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/encoder/Gather_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 27,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Add_6_kernel_time",
+          "op_type": "Add",
+          "duration_us": 25,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Mod_kernel_time",
+          "op_type": "Mod",
+          "duration_us": 17,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Div_kernel_time",
+          "op_type": "Div",
+          "duration_us": 13,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_416_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 12,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_2_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 12,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_428_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 12,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Gather_3/GatherSliceToSplitFusion_kernel_time",
+          "op_type": "Split",
+          "duration_us": 12,
+          "output_type_shape": [
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 11,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_420_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 10,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Unsqueeze_22_kernel_time",
+          "op_type": "Unsqueeze",
+          "duration_us": 10,
+          "output_type_shape": [
+            {
+              "int64": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Add_5_kernel_time",
+          "op_type": "Add",
+          "duration_us": 10,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_1_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Squeeze_kernel_time",
+          "op_type": "Squeeze",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Concat_15_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Sub_1_kernel_time",
+          "op_type": "Sub",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Cast_18_kernel_time",
+          "op_type": "Cast",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "float": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_5_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "profile_path": "results/features/detector_onnx_webgpu_20261107/dedodev2_keypoints.ort-profile.json",
+    "host_ram_and_gpu_peak_memory": "not measured"
+  },
+  "numerical_parity_torch_vs_onnx_runtime": {
+    "keypoint_set": {
+      "metric": "one-way nearest-neighbour set distances; not a one-to-one assignment",
+      "reference_to_candidate_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "candidate_to_reference_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "reference_to_candidate_median_px": 0.0,
+      "candidate_to_reference_median_px": 0.0,
+      "reference_to_candidate_max_px": 4.376783181214705e-05,
+      "candidate_to_reference_max_px": 4.376783181214705e-05
+    },
+    "score_max_abs": 4.9112713895738125e-11,
+    "score_mean_abs": 9.488410057656438e-12
+  },
+  "custom_selection_vs_official_torch_detection": {
+    "keypoint_set": {
+      "metric": "one-way nearest-neighbour set distances; not a one-to-one assignment",
+      "reference_to_candidate_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "candidate_to_reference_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "reference_to_candidate_median_px": 9.5367431640625e-06,
+      "candidate_to_reference_median_px": 9.5367431640625e-06,
+      "reference_to_candidate_max_px": 2.1883915906073526e-05,
+      "candidate_to_reference_max_px": 2.1883915906073526e-05
+    },
+    "score_max_abs": 0.0
+  }
+}

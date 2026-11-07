@@ -2,7 +2,8 @@ Python API
 ==========
 
 The public package exports DeepMatching, HORG-DIC, and CPM-HOG through
-``WGPUMatching`` and their corresponding option records:
+``WGPUMatching``, plus a matcher-independent affine/Gaussian-RBF projection
+for direct point correspondences:
 
 The shared matcher defaults and coordinate conventions are recorded in
 ``python/src/wgpu_matching/matcher-contracts.json``. Python's option records
@@ -20,6 +21,12 @@ Matcher and device lifecycle
 
 .. autoclass:: wgpu_matching.WGPUMatching
    :members:
+
+.. autoclass:: wgpu_matching.DICDetectorOptions
+   :members:
+
+.. autoclass:: wgpu_matching.DICDetectorResult
+   :members:
    :special-members: __init__, __enter__, __exit__
 
 Option records
@@ -32,6 +39,21 @@ Option records
    :members:
 
 .. autoclass:: wgpu_matching.CPMOptions
+   :members:
+
+Correspondence projection
+-------------------------
+
+.. autoclass:: wgpu_matching.CorrespondenceSet
+   :members:
+
+.. autoclass:: wgpu_matching.ProjectionOptions
+   :members:
+
+.. autoclass:: wgpu_matching.ProjectionModel
+   :members:
+
+.. autoclass:: wgpu_matching.PatchInitialization
    :members:
 
 Results

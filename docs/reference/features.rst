@@ -1,0 +1,104 @@
+Feature detector contracts and API
+===================================
+
+For concepts and method assumptions, start with
+:doc:`../explanation/detector-principles`. For installation, exporting and
+benchmark commands, use :doc:`../how-to/run-learned-detectors`. The
+:doc:`../tutorials/first-detector` lesson needs no downloaded model weights.
+
+Coordinates and preprocessing
+-----------------------------
+
+``FeatureSet.xy`` contains floating-point ``(x, y)`` positions in the source
+image. Integer coordinates identify pixel centres, matching the convention in
+``matcher-contracts.json``. The adapters map the upstream normalized
+``grid_sample(align_corners=False)`` coordinates to source pixel centres and
+undo a common aspect-preserving resize. They replicate grayscale to RGB, use
+bicubic resizing, and apply ImageNet normalization. Each result records the
+input and model resolution so reduced-resolution detection is explicit.
+
+The optional ``roi_mask`` is applied after upstream top-K detection, so a mask
+can leave fewer than the requested number of points. The output metadata makes
+that behavior explicit.
+
+Execution and score contracts
+-----------------------------
+
+* DaD/DeDoDe v2 reference adapters use optional PyTorch packages.
+* ``OnnxWGPUKeypointDetector`` uses an external keypoint-mode ONNX model and
+  ONNX Runtime WebGPU. It returns CPU arrays, with no shared wgpu-py allocation.
+* Its graph has a fixed K capacity. A smaller requested budget slices that
+  output after inference; a larger request raises an error.
+* At K=1024 coordinates and scores occupy 12 KiB; at K=8192, 96 KiB.
+* DIC tensor scores are minimum gradient-tensor eigenvalues. Learned DIC
+  scores are sigmoid outputs, not calibrated correspondence probabilities.
+* DIC ROI support checks run before selection; DaD/DeDoDe ROI filtering is
+  applied after top-K and can leave fewer points than requested.
+* DeDoDe-B description and mutual cosine matching in the common benchmark
+  remain CPU reference stages. WGSL RANSAC alone does not make that pipeline
+  resident on GPU.
+
+API
+---
+
+.. autoclass:: wgpu_matching.FeatureSet
+   :members:
+
+.. autoclass:: wgpu_matching.DescribedFeatures
+   :members:
+
+.. autoclass:: wgpu_matching.DaDDetector
+   :members:
+
+.. autoclass:: wgpu_matching.DeDoDeV2Detector
+   :members:
+
+.. autoclass:: wgpu_matching.OnnxWGPUKeypointDetector
+   :members:
+
+.. autoclass:: wgpu_matching.DeDoDeBDescriptor
+   :members:
+
+.. autofunction:: wgpu_matching.mutual_nearest_cosine
+
+.. autoclass:: wgpu_matching.FeatureMatchField
+   :members:
+
+Measured evidence
+-----------------
+
+Training and WebGPU score-parity commands are in :doc:`../how-to/train-dic-detector`.
+The native-resolution tensor baseline measurements are stored in
+``results/features/dic_detector_tensor_baseline_20261107.md`` and the learned
+model training and score-parity runs in the adjacent dated result directory.
+
+The measured studies are also rendered through the documentation's result
+pages: :doc:`native 4K detector latency and repeatability
+<../_generated_results/features/dic_detector_native_4k_20261107>`,
+:doc:`DaD and DeDoDe v2 ONNX/WebGPU export audit
+<../_generated_results/features/detector_onnx_webgpu_20261107>`,
+:doc:`high-budget ONNX/WebGPU validation
+<../_generated_results/features/detector_onnx_high_budget_20261107>`,
+:doc:`60% tensile context across feature methods
+<../_generated_results/features/detector_modern_matchers_60pct_20261107>`,
+:doc:`ONNX/WebGPU versus PyTorch common-descriptor test at 60% traction
+<../_generated_results/features/detector_onnx_common_descriptor_60pct_20261107>`,
+:doc:`progressive tensile frames 040/100/199
+<../_generated_results/features/detector_onnx_progressive_20261107>`,
+:doc:`held-out synthetic repeatability
+<../_generated_results/features/dic_detector_heldout_20261107>`, and the
+:doc:`common-descriptor DaD/DeDoDe/HORG/DIC comparison
+<../_generated_results/features/detector_common_descriptor_20261107>`. A
+separate 60% stress report is linked from :doc:`the benchmark index
+<../benchmarks>`.
+
+The follow-up training set adds piecewise-discontinuous motion with an invalid
+gap. On 24 held-out generated pairs, the report separates repeatability by
+motion family and compares the checkpoint trained with discontinuities against
+the earlier checkpoint. This remains a detector-only experiment; it does not
+measure descriptor matching or IC-GN convergence:
+:doc:`discontinuous-motion training study
+<../_generated_results/features/dic_detector_discontinuous_training_20261107>`.
+The corresponding 4K WGSL/PyTorch score check is available as
+:doc:`raw parity data
+<../_generated_results/features/dic_detector_discontinuous_wgsl_parity_4k_20261107.json>`.

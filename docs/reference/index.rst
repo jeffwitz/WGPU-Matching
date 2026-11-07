@@ -7,5 +7,8 @@ This section describes the Python API and the fields returned by the matchers.
    :maxdepth: 2
 
    api
+   features
    result-fields
    benchmark-definitions
+
+   glossary

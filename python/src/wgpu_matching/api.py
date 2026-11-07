@@ -13,8 +13,22 @@ import numpy as np
 import wgpu
 
 from .contracts import validate_matcher_options
+from .dic_detector import DICDetectorBackend, DICDetectorOptions, DICDetectorResult
+from .features import (
+    DescribedFeatures,
+    FeatureCorrespondences,
+    FeatureSet,
+    mutual_nearest_cosine,
+)
 from .horg import HORGBackend
 from .images import load_gray
+from .projection import (
+    CorrespondenceSet,
+    ProjectionModel,
+    ProjectionOptions,
+    fit_initialization_field,
+    release_projection_pipelines,
+)
 
 _MATCHER_CONTRACT = json.loads(
     files("wgpu_matching").joinpath("matcher-contracts.json").read_text(encoding="utf-8")
@@ -88,7 +102,9 @@ class CPMOptions:
     reciprocal_threshold_px: float = _CPM_DEFAULTS["reciprocal_threshold_px"]
     minimum_similarity: float = _CPM_DEFAULTS["minimum_similarity"]
     seed_points: tuple[tuple[float, float], ...] | None = _CPM_DEFAULTS["seed_points"]
-    oracle_affine: tuple[float, float, float, float, float, float] | None = _CPM_DEFAULTS["oracle_affine"]
+    oracle_affine: tuple[float, float, float, float, float, float] | None = _CPM_DEFAULTS[
+        "oracle_affine"
+    ]
 
 
 @dataclass(slots=True)
@@ -177,6 +193,25 @@ class LocalAffineField:
         return [match for match in self.matches if match.usable]
 
 
+@dataclass(slots=True)
+class FeatureMatchField:
+    """Common descriptor matches and their WGSL local-affine initializations."""
+
+    correspondences: FeatureCorrespondences
+    initializations: LocalAffineField
+    minimum_cosine_similarity: float
+
+    @property
+    def matches(self) -> list[Match]:
+        """Return local affine estimates, including rejected seeds."""
+        return self.initializations.matches
+
+    @property
+    def accepted(self) -> list[Match]:
+        """Return local affine estimates accepted by the configured RANSAC checks."""
+        return self.initializations.accepted
+
+
 def _select_adapter(adapters: list[Any], device_type: str, power_preference: str) -> Any:
     if device_type not in {"auto", "gpu", "cpu"}:
         raise ValueError("device_type must be 'auto', 'gpu' or 'cpu'")
@@ -251,6 +286,7 @@ class WGPUMatching:
         self.adapter_info = dict(self.adapter.info)
         self.closed = False
         self._horg = HORGBackend(self.device)
+        self._dic_detector = DICDetectorBackend(self.device)
 
     @property
     def device_name(self) -> str:
@@ -262,6 +298,7 @@ class WGPUMatching:
         target: np.ndarray | str | Path,
         *,
         options: HORGOptions | None = None,
+        include_correspondences: bool = False,
         on_progress: Callable[[str], None] | None = None,
     ) -> MatchField:
         """Compute HORG initial displacements for a pair of grayscale images.
@@ -272,6 +309,8 @@ class WGPUMatching:
         ``field.accepted`` before using displacements downstream.
         """
         self._ensure_open()
+        if not isinstance(include_correspondences, bool):
+            raise TypeError("include_correspondences must be a boolean")
         settings = options or HORGOptions()
         ref = _as_gray(reference)
         tar = _as_gray(target)
@@ -288,9 +327,35 @@ class WGPUMatching:
             reduction=settings.reduction,
             max_features=settings.max_features,
             seed_points=settings.seed_points,
+            include_correspondences=include_correspondences,
             on_progress=on_progress,
         )
         return _field_from_dict(result)
+
+    def detect_horg(
+        self,
+        image: np.ndarray | str | Path,
+        *,
+        max_keypoints: int = 4096,
+        reduction: int = 4,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> FeatureSet:
+        """Return HORG/SIFT points for matching with a common descriptor.
+
+        The point extractor and the original HORG descriptor stage execute on
+        WebGPU. This adapter exposes only the floating-point locations, scores,
+        and scales so an experiment can describe them with DeDoDe-B.
+        """
+        self._ensure_open()
+        reference = _as_gray(image)
+        settings = HORGOptions(reduction=reduction, max_features=max_keypoints)
+        validate_matcher_options("horg", asdict(settings), reference.shape[1], reference.shape[0])
+        return self._horg.detect_keypoints(
+            reference,
+            max_keypoints=max_keypoints,
+            reduction=reduction,
+            on_progress=on_progress,
+        )
 
     def match_deepmatching(
         self,
@@ -349,6 +414,33 @@ class WGPUMatching:
         result = CPMBackend(self.device).compute(ref, tar, settings, on_progress=on_progress)
         return _field_from_dict(result)
 
+    def detect_dic(
+        self,
+        image: np.ndarray | str | Path,
+        *,
+        options: DICDetectorOptions | None = None,
+        roi_mask: np.ndarray | None = None,
+        learned_weights_path: str | Path | None = None,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> DICDetectorResult:
+        """Detect DIC texture points using the tensor or learned WGSL score model.
+
+        Without a weight path, local structure-tensor eigenvalues report
+        photometric conditioning, not cross-image uniqueness. Providing the
+        small NumPy weight bundle produced by ``train_dic_detector.py`` runs
+        its convolutional score network on WebGPU after the same tensor pass.
+        The returned feature set can be described separately and matched through
+        ``match_features``.
+        """
+        self._ensure_open()
+        return self._dic_detector.compute(
+            _as_gray(image),
+            options=options,
+            roi_mask=roi_mask,
+            learned_weights_path=learned_weights_path,
+            on_progress=on_progress,
+        )
+
     def fit_local_affine(
         self,
         correspondences: np.ndarray,
@@ -385,19 +477,110 @@ class WGPUMatching:
                 and item["inlier_fraction"] >= min_inlier_fraction
                 and item["residual"] <= threshold_px
             )
-            matches.append(Match(
-                x=item["x"], y=item["y"], dx=item["dx"], dy=item["dy"], usable=usable,
-                score=item["inlier_fraction"], second_score=item["residual"],
-                margin=item["inlier_fraction"], inliers=item["inliers"],
-                candidates=item["candidates"], inlier_fraction=item["inlier_fraction"],
-                residual=item["residual"],
-            ))
+            matches.append(
+                Match(
+                    x=item["x"],
+                    y=item["y"],
+                    dx=item["dx"],
+                    dy=item["dy"],
+                    usable=usable,
+                    score=item["inlier_fraction"],
+                    second_score=item["residual"],
+                    margin=item["inlier_fraction"],
+                    inliers=item["inliers"],
+                    candidates=item["candidates"],
+                    inlier_fraction=item["inlier_fraction"],
+                    residual=item["residual"],
+                )
+            )
         return LocalAffineField(
             matches=matches,
             correspondence_count=len(correspondences),
             radius_px=radius_px,
             threshold_px=threshold_px,
             gpu_compute_ms=result["gpu_compute_ms"],
+        )
+
+    def match_features(
+        self,
+        reference_features: DescribedFeatures,
+        target_features: DescribedFeatures,
+        seed_points: np.ndarray,
+        *,
+        min_cosine_similarity: float = 0.0,
+        radius_px: float = 256.0,
+        threshold_px: float = 3.0,
+        min_inliers: int = 6,
+        min_candidates: int = 8,
+        min_inlier_fraction: float = 0.2,
+        max_iterations: int = 256,
+    ) -> FeatureMatchField:
+        """Match a common descriptor and fit local affine seeds on WebGPU.
+
+        Descriptor comparison currently uses a bounded-memory CPU reference
+        implementation of mutual cosine nearest neighbours. The returned pairs
+        are passed to the existing WGSL local-affine RANSAC. This method lets
+        benchmark different detectors with the same descriptor, matcher, and
+        geometric acceptance criteria while the matching kernel is developed.
+        """
+        self._ensure_open()
+        pairs = mutual_nearest_cosine(
+            reference_features,
+            target_features,
+            min_cosine_similarity=min_cosine_similarity,
+        )
+        if len(pairs.points) >= 3:
+            initialization = self.fit_local_affine(
+                pairs.points,
+                seed_points,
+                radius_px=radius_px,
+                threshold_px=threshold_px,
+                min_inliers=min_inliers,
+                min_candidates=min_candidates,
+                min_inlier_fraction=min_inlier_fraction,
+                max_iterations=max_iterations,
+            )
+        else:
+            centers = np.ascontiguousarray(seed_points, dtype=np.float32)
+            if centers.ndim != 2 or centers.shape[1] != 2 or not len(centers):
+                raise ValueError("seed_points must be a non-empty Nx2 array")
+            if not np.isfinite(centers).all():
+                raise ValueError("seed_points must contain finite coordinates")
+            initialization = LocalAffineField(
+                matches=[
+                    Match(x=float(x), y=float(y), dx=0.0, dy=0.0, usable=False) for x, y in centers
+                ],
+                correspondence_count=len(pairs.points),
+                radius_px=radius_px,
+                threshold_px=threshold_px,
+                gpu_compute_ms=0.0,
+            )
+        return FeatureMatchField(
+            correspondences=pairs,
+            initializations=initialization,
+            minimum_cosine_similarity=min_cosine_similarity,
+        )
+
+    def fit_initialization_field(
+        self,
+        correspondences: np.ndarray | CorrespondenceSet,
+        image_size: tuple[int, int],
+        *,
+        options: ProjectionOptions | None = None,
+    ) -> ProjectionModel:
+        """Project direct feature correspondences onto an affine/RBF field.
+
+        Accept a provenance-aware :class:`CorrespondenceSet`, or an ``Nx4``
+        array ordered ``(x_reference, y_reference, x_target, y_target)``.
+        Coordinates are native image pixels. With this matcher,
+        robust fitting and patch projection run on its WebGPU device; bounded
+        Gaussian-RBF candidate selection currently runs on the float64 host.
+        """
+        self._ensure_open()
+        settings = options or ProjectionOptions()
+        validate_matcher_options("projection", asdict(settings), image_size[0], image_size[1])
+        return fit_initialization_field(
+            correspondences, image_size, options=settings, device=self.device
         )
 
     def _ensure_open(self) -> None:
@@ -407,6 +590,7 @@ class WGPUMatching:
     def close(self) -> None:
         """Release the owned WebGPU device; repeated calls are safe."""
         if not self.closed:
+            release_projection_pipelines(self.device)
             self.device.destroy()
             self.closed = True
 
@@ -420,7 +604,17 @@ class WGPUMatching:
 
 def _field_from_dict(result: dict[str, Any]) -> MatchField:
     matches = [Match(**item) for item in result.pop("matches")]
-    base = {name: result.pop(name) for name in (
-        "algorithm", "width", "height", "patch_size", "stride", "scale", "grid_width", "grid_height"
-    )}
+    base = {
+        name: result.pop(name)
+        for name in (
+            "algorithm",
+            "width",
+            "height",
+            "patch_size",
+            "stride",
+            "scale",
+            "grid_width",
+            "grid_height",
+        )
+    }
     return MatchField(**base, matches=matches, metadata=result)

@@ -19,6 +19,7 @@ release = version
 extensions = [
     "myst_parser",
     "result_pages",
+    "define_acronyms",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
@@ -32,6 +33,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 root_doc = "index"
 nitpicky = True
+nitpick_ignore = [("py:class", "wgpu_matching.features._TorchKeypointDetector")]
 autosummary_generate = True
 autodoc_typehints = "none"
 autodoc_member_order = "bysource"

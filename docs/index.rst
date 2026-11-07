@@ -5,6 +5,10 @@ WGPU-Matching
 
 WGPU-Matching provides three Python methods for finding correspondences between a reference image and a deformed image: DeepMatching, HORG-DIC, and the experimental CPM-HOG initializer. Their compute kernels are written in WGSL and run through ``wgpu-py`` on a native WebGPU adapter. Installing the package does not compile a project-specific extension.
 
+An optional Python projection layer accepts direct matches from these or
+external methods, fits an affine or Gaussian-RBF displacement field, and
+produces six-parameter affine initializers for requested DIC windows.
+
 These methods provide **initial displacement estimates** at points of interest. They do not compute a full DIC field or perform IC-GN refinement.
 
 .. image:: _static/pipeline.svg
@@ -16,7 +20,7 @@ Choose a path
 
 * :doc:`Tutorial <tutorials/first-matches>` — install the package, create a reproducible speckle pair, and compute your first displacements.
 * :doc:`How-to guides <how-to/index>` — select an adapter, pass explicit seeds, run a benchmark, or inspect uncertain initializations.
-* :doc:`Explanations <explanation/index>` — learn how the correlation hierarchy, HORG descriptors, and CPM-HOG PatchMatch work, how they fit into DIC, and what the measurements show.
+* :doc:`Explanations <explanation/index>` — learn how detection, description, learned feature models, the correlation hierarchy, HORG and CPM-HOG work, how they fit into DIC, and what the measurements show.
 * :doc:`Reference <reference/index>` — look up the Python API, options, result fields, metrics, and raw reports.
 * :doc:`Reports and raw data <_generated_results/index>` — browse rendered experiment reports, CSV previews, and complete data downloads.
 
@@ -26,6 +30,13 @@ Headline results
 On three Live-DIC tensile frames, the current comparison accepts **87/96** POIs with HORG and **88/96** with DeepMatching. Of accepted points, **85/87** HORG matches and **79/88** DeepMatching matches are within 2 px of the analytic truth. Their pooled RMSE values are **0.557 px** and **1.378 px**, respectively. On this protocol's native Python runs, mean repeated call times are about **0.151 s** for HORG and **1.319 s** for DeepMatching.
 
 These figures describe three frames, one seed grid, and one adapter. They do not summarize every deformation regime: at frame 199, DeepMatching retains more accurate POIs, while HORG is faster and has lower pooled RMSE. The :doc:`benchmark report and protocol <benchmarks>` provide per-frame results and limitations.
+
+An experimental detector study also compares DaD and DeDoDe v2 with HORG/SIFT
+and a trained speckle-specific detector under a common DeDoDe-B descriptor and
+affine RANSAC protocol. The learned DIC detector runs in WGSL at native 4K;
+matching quality and IC-GN convergence remain separate, explicitly reported
+criteria. See the :doc:`feature detector reference <reference/features>` and
+the links to raw measurements in the benchmark report.
 
 Install
 -------

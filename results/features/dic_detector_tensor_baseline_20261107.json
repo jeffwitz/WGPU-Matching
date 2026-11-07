@@ -1,0 +1,3438 @@
+{
+  "protocol": "native-resolution WGSL structure-tensor baseline; analytic one-to-one mutual-nearest repeatability; image load excluded; first detector call used as warm-up",
+  "adapter": "Vulkan (Intel(R) Graphics (LNL))",
+  "image_size_scope": "source images retained at their native dimensions; no resizing or tiling",
+  "implementation": "DICDetectorBackend WGSL response, NMS, and per-tile score quotas",
+  "timing_repeats": 3,
+  "cases": [
+    {
+      "name": "progressive_040",
+      "source": "Live-DIC progressive tensile, read-only external dataset",
+      "frame": 40,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.0011196739864576635,
+        "stretch_x": 1.0011196739864576,
+        "stretch_y": 0.999664342060021
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.0,
+            "points_per_dic_window_p10": 11.0,
+            "points_per_dic_window_p90": 20.900000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 512,
+            "target_visible_points": 512,
+            "one_to_one_mutual_pairs": 309,
+            "denominator_min_visible": 512,
+            "at_1px": 121,
+            "at_2px": 172,
+            "at_5px": 191,
+            "repeatability_1px": 0.236328125,
+            "repeatability_2px": 0.3359375,
+            "repeatability_5px": 0.373046875
+          },
+          "reference_detection": {
+            "median_s": 0.012686052010394633,
+            "p10_s": 0.012063283217139542,
+            "p90_s": 0.01277825201395899,
+            "all_s": [
+              0.01280130201485008,
+              0.01190759101882577,
+              0.012686052010394633
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.013297441066242754,
+            "p10_s": 0.01155481704045087,
+            "p90_s": 0.014006023411639035,
+            "all_s": [
+              0.014183168997988105,
+              0.0111191610340029,
+              0.013297441066242754
+            ]
+          },
+          "pair_detection_s_median": 0.025983493076637387,
+          "pair_fps": 38.48597249994585,
+          "reference_full_detection_wall_ms": 10.2481470676139,
+          "target_full_detection_wall_ms": 11.118127033114433,
+          "reference_dispatch_and_readback_ms": 8.887907955795527,
+          "target_dispatch_and_readback_ms": 10.31308202072978,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 32.0,
+            "points_per_dic_window_p10": 22.4,
+            "points_per_dic_window_p90": 40.900000000000006
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1024,
+            "target_visible_points": 1024,
+            "one_to_one_mutual_pairs": 646,
+            "denominator_min_visible": 1024,
+            "at_1px": 286,
+            "at_2px": 418,
+            "at_5px": 475,
+            "repeatability_1px": 0.279296875,
+            "repeatability_2px": 0.408203125,
+            "repeatability_5px": 0.4638671875
+          },
+          "reference_detection": {
+            "median_s": 0.017081203986890614,
+            "p10_s": 0.016697823279537262,
+            "p90_s": 0.01724143766332418,
+            "all_s": [
+              0.017081203986890614,
+              0.016601978102698922,
+              0.017281496082432568
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.01672967302147299,
+            "p10_s": 0.01623788506258279,
+            "p90_s": 0.016805532132275404,
+            "all_s": [
+              0.01672967302147299,
+              0.016824496909976006,
+              0.01611493807286024
+            ]
+          },
+          "pair_detection_s_median": 0.033810877008363605,
+          "pair_fps": 29.57628102201063,
+          "reference_full_detection_wall_ms": 14.521028031595051,
+          "target_full_detection_wall_ms": 14.057827997021377,
+          "reference_dispatch_and_readback_ms": 13.4518250124529,
+          "target_dispatch_and_readback_ms": 13.056783005595207,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 67.0,
+            "points_per_dic_window_p10": 41.300000000000004,
+            "points_per_dic_window_p90": 80.80000000000001
+          },
+          "detector_repeatability": {
+            "source_visible_points": 2048,
+            "target_visible_points": 2048,
+            "one_to_one_mutual_pairs": 1332,
+            "denominator_min_visible": 2048,
+            "at_1px": 604,
+            "at_2px": 912,
+            "at_5px": 1086,
+            "repeatability_1px": 0.294921875,
+            "repeatability_2px": 0.4453125,
+            "repeatability_5px": 0.5302734375
+          },
+          "reference_detection": {
+            "median_s": 0.024695631000213325,
+            "p10_s": 0.024536357424221934,
+            "p90_s": 0.026376907038502394,
+            "all_s": [
+              0.024695631000213325,
+              0.024496539030224085,
+              0.026797226048074663
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.023264572024345398,
+            "p10_s": 0.02300536325201392,
+            "p90_s": 0.023995425645262004,
+            "all_s": [
+              0.023264572024345398,
+              0.022940561058931053,
+              0.024178139050491154
+            ]
+          },
+          "pair_detection_s_median": 0.04796020302455872,
+          "pair_fps": 20.850620659131394,
+          "reference_full_detection_wall_ms": 24.13019898813218,
+          "target_full_detection_wall_ms": 21.93476597312838,
+          "reference_dispatch_and_readback_ms": 23.232521954923868,
+          "target_dispatch_and_readback_ms": 21.102748927660286,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.5,
+            "points_per_dic_window_p10": 85.8,
+            "points_per_dic_window_p90": 156.8
+          },
+          "detector_repeatability": {
+            "source_visible_points": 4096,
+            "target_visible_points": 4096,
+            "one_to_one_mutual_pairs": 2808,
+            "denominator_min_visible": 4096,
+            "at_1px": 1319,
+            "at_2px": 2020,
+            "at_5px": 2461,
+            "repeatability_1px": 0.322021484375,
+            "repeatability_2px": 0.4931640625,
+            "repeatability_5px": 0.600830078125
+          },
+          "reference_detection": {
+            "median_s": 0.03731336607597768,
+            "p10_s": 0.03698054035194218,
+            "p90_s": 0.04022125243209303,
+            "all_s": [
+              0.03731336607597768,
+              0.04094822402112186,
+              0.036897333920933306
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.037815149989910424,
+            "p10_s": 0.0377830107929185,
+            "p90_s": 0.04082741721067577,
+            "all_s": [
+              0.03777497599367052,
+              0.037815149989910424,
+              0.041580484015867114
+            ]
+          },
+          "pair_detection_s_median": 0.0751285160658881,
+          "pair_fps": 13.310525115696345,
+          "reference_full_detection_wall_ms": 34.97107303701341,
+          "target_full_detection_wall_ms": 37.91813692077994,
+          "reference_dispatch_and_readback_ms": 34.057537908665836,
+          "target_dispatch_and_readback_ms": 36.858872044831514,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 263.5,
+            "points_per_dic_window_p10": 171.20000000000002,
+            "points_per_dic_window_p90": 314.50000000000006
+          },
+          "detector_repeatability": {
+            "source_visible_points": 8192,
+            "target_visible_points": 8192,
+            "one_to_one_mutual_pairs": 6028,
+            "denominator_min_visible": 8192,
+            "at_1px": 2876,
+            "at_2px": 4425,
+            "at_5px": 5501,
+            "repeatability_1px": 0.35107421875,
+            "repeatability_2px": 0.5401611328125,
+            "repeatability_5px": 0.6715087890625
+          },
+          "reference_detection": {
+            "median_s": 0.06713077297899872,
+            "p10_s": 0.06651868347544224,
+            "p90_s": 0.07051847858820111,
+            "all_s": [
+              0.06713077297899872,
+              0.06636566109955311,
+              0.0713654049905017
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06832607905380428,
+            "p10_s": 0.06697607175447047,
+            "p90_s": 0.07275966866873204,
+            "all_s": [
+              0.06663856992963701,
+              0.06832607905380428,
+              0.07386806607246399
+            ]
+          },
+          "pair_detection_s_median": 0.135456852032803,
+          "pair_fps": 7.382424624468863,
+          "reference_full_detection_wall_ms": 68.69972601998597,
+          "target_full_detection_wall_ms": 69.71532793249935,
+          "reference_dispatch_and_readback_ms": 67.76262202765793,
+          "target_dispatch_and_readback_ms": 68.18692397791892,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "progressive_100",
+      "source": "Live-DIC progressive tensile, read-only external dataset",
+      "frame": 100,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.03843300455760572,
+        "stretch_x": 1.0384330045576058,
+        "stretch_y": 0.9817227188104968
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.5,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 20.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 494,
+            "target_visible_points": 507,
+            "one_to_one_mutual_pairs": 283,
+            "denominator_min_visible": 494,
+            "at_1px": 38,
+            "at_2px": 78,
+            "at_5px": 108,
+            "repeatability_1px": 0.07692307692307693,
+            "repeatability_2px": 0.15789473684210525,
+            "repeatability_5px": 0.21862348178137653
+          },
+          "reference_detection": {
+            "median_s": 0.013079719035886228,
+            "p10_s": 0.011793737369589507,
+            "p90_s": 0.014000891777686774,
+            "all_s": [
+              0.014231184963136911,
+              0.013079719035886228,
+              0.011472241953015327
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.01332014799118042,
+            "p10_s": 0.012410707212984562,
+            "p90_s": 0.014370506349951028,
+            "all_s": [
+              0.014633095939643681,
+              0.012183347018435597,
+              0.01332014799118042
+            ]
+          },
+          "pair_detection_s_median": 0.026399867027066648,
+          "pair_fps": 37.87897866965553,
+          "reference_full_detection_wall_ms": 9.546463028527796,
+          "target_full_detection_wall_ms": 11.675110086798668,
+          "reference_dispatch_and_readback_ms": 8.670115028508008,
+          "target_dispatch_and_readback_ms": 10.744987986981869,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 18.8,
+            "points_per_dic_window_p90": 39.900000000000006
+          },
+          "detector_repeatability": {
+            "source_visible_points": 981,
+            "target_visible_points": 1011,
+            "one_to_one_mutual_pairs": 566,
+            "denominator_min_visible": 981,
+            "at_1px": 95,
+            "at_2px": 204,
+            "at_5px": 290,
+            "repeatability_1px": 0.09683995922528033,
+            "repeatability_2px": 0.20795107033639143,
+            "repeatability_5px": 0.29561671763506625
+          },
+          "reference_detection": {
+            "median_s": 0.016833379049785435,
+            "p10_s": 0.01668964058626443,
+            "p90_s": 0.01696997901890427,
+            "all_s": [
+              0.017004129011183977,
+              0.01665370597038418,
+              0.016833379049785435
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.016879671020433307,
+            "p10_s": 0.01668253098614514,
+            "p90_s": 0.017472793394699693,
+            "all_s": [
+              0.01762107398826629,
+              0.016633245977573097,
+              0.016879671020433307
+            ]
+          },
+          "pair_detection_s_median": 0.03371305007021874,
+          "pair_fps": 29.66210407890014,
+          "reference_full_detection_wall_ms": 14.3481669947505,
+          "target_full_detection_wall_ms": 14.27639601752162,
+          "reference_dispatch_and_readback_ms": 13.51411105133593,
+          "target_dispatch_and_readback_ms": 13.259289087727666,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 67.0,
+            "points_per_dic_window_p10": 38.7,
+            "points_per_dic_window_p90": 78.9
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1971,
+            "target_visible_points": 2018,
+            "one_to_one_mutual_pairs": 1178,
+            "denominator_min_visible": 1971,
+            "at_1px": 217,
+            "at_2px": 486,
+            "at_5px": 723,
+            "repeatability_1px": 0.11009639776763064,
+            "repeatability_2px": 0.2465753424657534,
+            "repeatability_5px": 0.3668188736681887
+          },
+          "reference_detection": {
+            "median_s": 0.02472676197066903,
+            "p10_s": 0.02404453158378601,
+            "p90_s": 0.02526518199592829,
+            "all_s": [
+              0.023873973987065256,
+              0.02472676197066903,
+              0.0253997870022431
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.023920362000353634,
+            "p10_s": 0.023420100403018295,
+            "p90_s": 0.024189814017154275,
+            "all_s": [
+              0.023920362000353634,
+              0.02329503500368446,
+              0.024257177021354437
+            ]
+          },
+          "pair_detection_s_median": 0.048647123971022666,
+          "pair_fps": 20.55619979910146,
+          "reference_full_detection_wall_ms": 23.665515007451177,
+          "target_full_detection_wall_ms": 21.9655130058527,
+          "reference_dispatch_and_readback_ms": 22.651942912489176,
+          "target_dispatch_and_readback_ms": 20.83598601166159,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 131.5,
+            "points_per_dic_window_p10": 79.0,
+            "points_per_dic_window_p90": 157.5
+          },
+          "detector_repeatability": {
+            "source_visible_points": 3943,
+            "target_visible_points": 4029,
+            "one_to_one_mutual_pairs": 2455,
+            "denominator_min_visible": 3943,
+            "at_1px": 548,
+            "at_2px": 1191,
+            "at_5px": 1811,
+            "repeatability_1px": 0.13898047172203906,
+            "repeatability_2px": 0.30205427339589147,
+            "repeatability_5px": 0.4592949530814101
+          },
+          "reference_detection": {
+            "median_s": 0.03821151494048536,
+            "p10_s": 0.03819913505576551,
+            "p90_s": 0.04052152610383928,
+            "all_s": [
+              0.03821151494048536,
+              0.04109902889467776,
+              0.03819604008458555
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.038598823943175375,
+            "p10_s": 0.0370876143919304,
+            "p90_s": 0.04030805120710283,
+            "all_s": [
+              0.038598823943175375,
+              0.03670981200411916,
+              0.0407353580230847
+            ]
+          },
+          "pair_detection_s_median": 0.07681033888366073,
+          "pair_fps": 13.019080693220614,
+          "reference_full_detection_wall_ms": 36.02897108066827,
+          "target_full_detection_wall_ms": 38.01906493026763,
+          "reference_dispatch_and_readback_ms": 34.87691504415125,
+          "target_dispatch_and_readback_ms": 37.05800697207451,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 260.5,
+            "points_per_dic_window_p10": 169.4,
+            "points_per_dic_window_p90": 308.9
+          },
+          "detector_repeatability": {
+            "source_visible_points": 7886,
+            "target_visible_points": 8078,
+            "one_to_one_mutual_pairs": 5296,
+            "denominator_min_visible": 7886,
+            "at_1px": 1299,
+            "at_2px": 2851,
+            "at_5px": 4421,
+            "repeatability_1px": 0.1647222926705554,
+            "repeatability_2px": 0.36152675627694647,
+            "repeatability_5px": 0.5606137458787726
+          },
+          "reference_detection": {
+            "median_s": 0.06992577493656427,
+            "p10_s": 0.06866181420627981,
+            "p90_s": 0.07037200864870101,
+            "all_s": [
+              0.06992577493656427,
+              0.0704835670767352,
+              0.0683458240237087
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06901342200580984,
+            "p10_s": 0.06738111239392311,
+            "p90_s": 0.06971970603335649,
+            "all_s": [
+              0.06901342200580984,
+              0.06697303499095142,
+              0.06989627704024315
+            ]
+          },
+          "pair_detection_s_median": 0.1389391969423741,
+          "pair_fps": 7.197392974818734,
+          "reference_full_detection_wall_ms": 66.11974199768156,
+          "target_full_detection_wall_ms": 66.88954506535083,
+          "reference_dispatch_and_readback_ms": 64.82291594147682,
+          "target_dispatch_and_readback_ms": 65.943194902502,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "progressive_199",
+      "source": "Live-DIC progressive tensile, read-only external dataset",
+      "frame": 199,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.1,
+        "stretch_x": 1.1,
+        "stretch_y": 0.9539017454387002
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 9.1,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 466,
+            "target_visible_points": 492,
+            "one_to_one_mutual_pairs": 261,
+            "denominator_min_visible": 466,
+            "at_1px": 22,
+            "at_2px": 65,
+            "at_5px": 99,
+            "repeatability_1px": 0.04721030042918455,
+            "repeatability_2px": 0.13948497854077252,
+            "repeatability_5px": 0.21244635193133046
+          },
+          "reference_detection": {
+            "median_s": 0.01963843801058829,
+            "p10_s": 0.014956464385613799,
+            "p90_s": 0.02155532515607774,
+            "all_s": [
+              0.022034546942450106,
+              0.01963843801058829,
+              0.013785970979370177
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.014316256041638553,
+            "p10_s": 0.01235134161543101,
+            "p90_s": 0.018917968845926225,
+            "all_s": [
+              0.020068397046998143,
+              0.011860113008879125,
+              0.014316256041638553
+            ]
+          },
+          "pair_detection_s_median": 0.03395469405222684,
+          "pair_fps": 29.451008996336906,
+          "reference_full_detection_wall_ms": 11.323132086545229,
+          "target_full_detection_wall_ms": 12.710207025520504,
+          "reference_dispatch_and_readback_ms": 10.293032974004745,
+          "target_dispatch_and_readback_ms": 11.912973946891725,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.5,
+            "points_per_dic_window_p10": 18.8,
+            "points_per_dic_window_p90": 39.800000000000004
+          },
+          "detector_repeatability": {
+            "source_visible_points": 932,
+            "target_visible_points": 981,
+            "one_to_one_mutual_pairs": 517,
+            "denominator_min_visible": 932,
+            "at_1px": 64,
+            "at_2px": 163,
+            "at_5px": 268,
+            "repeatability_1px": 0.06866952789699571,
+            "repeatability_2px": 0.17489270386266095,
+            "repeatability_5px": 0.2875536480686695
+          },
+          "reference_detection": {
+            "median_s": 0.017008493072353303,
+            "p10_s": 0.016917109838686883,
+            "p90_s": 0.01751385859679431,
+            "all_s": [
+              0.017640199977904558,
+              0.017008493072353303,
+              0.01689426403027028
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.017792492057196796,
+            "p10_s": 0.017548189568333327,
+            "p90_s": 0.018107975996099413,
+            "all_s": [
+              0.017792492057196796,
+              0.01748711394611746,
+              0.018186846980825067
+            ]
+          },
+          "pair_detection_s_median": 0.0348009851295501,
+          "pair_fps": 28.734818749452103,
+          "reference_full_detection_wall_ms": 13.941421988420188,
+          "target_full_detection_wall_ms": 15.674478025175631,
+          "reference_dispatch_and_readback_ms": 13.088350999169052,
+          "target_dispatch_and_readback_ms": 14.581016032025218,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.0,
+            "points_per_dic_window_p10": 40.5,
+            "points_per_dic_window_p90": 77.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1862,
+            "target_visible_points": 1966,
+            "one_to_one_mutual_pairs": 1090,
+            "denominator_min_visible": 1862,
+            "at_1px": 168,
+            "at_2px": 406,
+            "at_5px": 672,
+            "repeatability_1px": 0.09022556390977443,
+            "repeatability_2px": 0.21804511278195488,
+            "repeatability_5px": 0.3609022556390977
+          },
+          "reference_detection": {
+            "median_s": 0.023099720012396574,
+            "p10_s": 0.022760226391255856,
+            "p90_s": 0.023401605617254972,
+            "all_s": [
+              0.023099720012396574,
+              0.022675352985970676,
+              0.023477077018469572
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.02683591900859028,
+            "p10_s": 0.026263462961651385,
+            "p90_s": 0.02755549263674766,
+            "all_s": [
+              0.02683591900859028,
+              0.02612034894991666,
+              0.027735386043787003
+            ]
+          },
+          "pair_detection_s_median": 0.049935639020986855,
+          "pair_fps": 20.025777573001957,
+          "reference_full_detection_wall_ms": 21.447804989293218,
+          "target_full_detection_wall_ms": 24.766000919044018,
+          "reference_dispatch_and_readback_ms": 20.52060898859054,
+          "target_dispatch_and_readback_ms": 23.946544039063156,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 83.0,
+            "points_per_dic_window_p90": 156.70000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 3727,
+            "target_visible_points": 3923,
+            "one_to_one_mutual_pairs": 2306,
+            "denominator_min_visible": 3727,
+            "at_1px": 368,
+            "at_2px": 954,
+            "at_5px": 1636,
+            "repeatability_1px": 0.09873893211698417,
+            "repeatability_2px": 0.25596994902066006,
+            "repeatability_5px": 0.4389589482157231
+          },
+          "reference_detection": {
+            "median_s": 0.038852614001370966,
+            "p10_s": 0.0374141012551263,
+            "p90_s": 0.04162001556251198,
+            "all_s": [
+              0.03705447306856513,
+              0.038852614001370966,
+              0.042311865952797234
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.03828400501515716,
+            "p10_s": 0.037148731364868584,
+            "p90_s": 0.040462915389798584,
+            "all_s": [
+              0.041007642983458936,
+              0.03828400501515716,
+              0.036864912952296436
+            ]
+          },
+          "pair_detection_s_median": 0.07713661901652813,
+          "pair_fps": 12.964011292557808,
+          "reference_full_detection_wall_ms": 39.26832904107869,
+          "target_full_detection_wall_ms": 34.75663100834936,
+          "reference_dispatch_and_readback_ms": 38.267037947662175,
+          "target_dispatch_and_readback_ms": 33.83642993867397,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 260.5,
+            "points_per_dic_window_p10": 170.4,
+            "points_per_dic_window_p90": 313.8
+          },
+          "detector_repeatability": {
+            "source_visible_points": 7444,
+            "target_visible_points": 7846,
+            "one_to_one_mutual_pairs": 4997,
+            "denominator_min_visible": 7444,
+            "at_1px": 837,
+            "at_2px": 2255,
+            "at_5px": 3986,
+            "repeatability_1px": 0.11243954862976895,
+            "repeatability_2px": 0.30292853304674905,
+            "repeatability_5px": 0.5354648038688877
+          },
+          "reference_detection": {
+            "median_s": 0.0692180679179728,
+            "p10_s": 0.0673110255971551,
+            "p90_s": 0.06979136876761913,
+            "all_s": [
+              0.06993469398003072,
+              0.0692180679179728,
+              0.06683426501695067
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06795342196710408,
+            "p10_s": 0.06783646284602582,
+            "p90_s": 0.07035629716701805,
+            "all_s": [
+              0.07095701596699655,
+              0.06780722306575626,
+              0.06795342196710408
+            ]
+          },
+          "pair_detection_s_median": 0.13717148988507688,
+          "pair_fps": 7.290144627267709,
+          "reference_full_detection_wall_ms": 64.61603799834847,
+          "target_full_detection_wall_ms": 64.68918698374182,
+          "reference_dispatch_and_readback_ms": 63.61208693124354,
+          "target_dispatch_and_readback_ms": 63.31365404184908,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_10pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 66,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.09904979018993,
+        "stretch_x": 1.09904979018993,
+        "stretch_y": 0.9543134908259364
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.5,
+            "points_per_dic_window_p10": 9.3,
+            "points_per_dic_window_p90": 20.900000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 467,
+            "target_visible_points": 500,
+            "one_to_one_mutual_pairs": 274,
+            "denominator_min_visible": 467,
+            "at_1px": 23,
+            "at_2px": 66,
+            "at_5px": 97,
+            "repeatability_1px": 0.04925053533190578,
+            "repeatability_2px": 0.14132762312633834,
+            "repeatability_5px": 0.20770877944325483
+          },
+          "reference_detection": {
+            "median_s": 0.014398977044038475,
+            "p10_s": 0.013076537731103599,
+            "p90_s": 0.015295215393416583,
+            "all_s": [
+              0.014398977044038475,
+              0.01551927498076111,
+              0.01274592790286988
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.013527231989428401,
+            "p10_s": 0.011714222421869636,
+            "p90_s": 0.014075328828766942,
+            "all_s": [
+              0.013527231989428401,
+              0.014212353038601577,
+              0.011260970029979944
+            ]
+          },
+          "pair_detection_s_median": 0.027926209033466876,
+          "pair_fps": 35.80865554653681,
+          "reference_full_detection_wall_ms": 10.497445007786155,
+          "target_full_detection_wall_ms": 9.548995061777532,
+          "reference_dispatch_and_readback_ms": 9.714571991935372,
+          "target_dispatch_and_readback_ms": 8.82672902662307,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 39.800000000000004
+          },
+          "detector_repeatability": {
+            "source_visible_points": 933,
+            "target_visible_points": 997,
+            "one_to_one_mutual_pairs": 554,
+            "denominator_min_visible": 933,
+            "at_1px": 67,
+            "at_2px": 176,
+            "at_5px": 277,
+            "repeatability_1px": 0.07181136120042872,
+            "repeatability_2px": 0.18863879957127547,
+            "repeatability_5px": 0.29689174705251875
+          },
+          "reference_detection": {
+            "median_s": 0.016735912999138236,
+            "p10_s": 0.016341684153303504,
+            "p90_s": 0.018020513793453576,
+            "all_s": [
+              0.016735912999138236,
+              0.01624312694184482,
+              0.01834166399203241
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.018521322985179722,
+            "p10_s": 0.017006533429957928,
+            "p90_s": 0.019066210952587426,
+            "all_s": [
+              0.016627836041152477,
+              0.018521322985179722,
+              0.01920243294443935
+            ]
+          },
+          "pair_detection_s_median": 0.03525723598431796,
+          "pair_fps": 28.362972084504563,
+          "reference_full_detection_wall_ms": 14.847890939563513,
+          "target_full_detection_wall_ms": 15.524946036748588,
+          "reference_dispatch_and_readback_ms": 13.252204051241279,
+          "target_dispatch_and_readback_ms": 14.098312938585877,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 65.0,
+            "points_per_dic_window_p10": 39.7,
+            "points_per_dic_window_p90": 79.80000000000001
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1864,
+            "target_visible_points": 1981,
+            "one_to_one_mutual_pairs": 1124,
+            "denominator_min_visible": 1864,
+            "at_1px": 156,
+            "at_2px": 405,
+            "at_5px": 679,
+            "repeatability_1px": 0.08369098712446352,
+            "repeatability_2px": 0.217274678111588,
+            "repeatability_5px": 0.3642703862660944
+          },
+          "reference_detection": {
+            "median_s": 0.0265212639933452,
+            "p10_s": 0.025280019151978195,
+            "p90_s": 0.02697680804412812,
+            "all_s": [
+              0.02709069405682385,
+              0.0265212639933452,
+              0.024969707941636443
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.026526405941694975,
+            "p10_s": 0.026108872331678867,
+            "p90_s": 0.028111205156892537,
+            "all_s": [
+              0.02850740496069193,
+              0.02600448892917484,
+              0.026526405941694975
+            ]
+          },
+          "pair_detection_s_median": 0.053047669935040176,
+          "pair_fps": 18.8509693493523,
+          "reference_full_detection_wall_ms": 21.56640705652535,
+          "target_full_detection_wall_ms": 22.406271076761186,
+          "reference_dispatch_and_readback_ms": 20.108412019908428,
+          "target_dispatch_and_readback_ms": 20.919535076245666,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.5,
+            "points_per_dic_window_p10": 82.8,
+            "points_per_dic_window_p90": 158.70000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 3730,
+            "target_visible_points": 3938,
+            "one_to_one_mutual_pairs": 2332,
+            "denominator_min_visible": 3730,
+            "at_1px": 357,
+            "at_2px": 960,
+            "at_5px": 1664,
+            "repeatability_1px": 0.09571045576407507,
+            "repeatability_2px": 0.257372654155496,
+            "repeatability_5px": 0.446112600536193
+          },
+          "reference_detection": {
+            "median_s": 0.04052845295518637,
+            "p10_s": 0.03884685859084129,
+            "p90_s": 0.04103921055793762,
+            "all_s": [
+              0.038426459999755025,
+              0.04052845295518637,
+              0.041166899958625436
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.042255643056705594,
+            "p10_s": 0.0421515557449311,
+            "p90_s": 0.042470794962719084,
+            "all_s": [
+              0.042524582939222455,
+              0.04212553391698748,
+              0.042255643056705594
+            ]
+          },
+          "pair_detection_s_median": 0.08278409601189196,
+          "pair_fps": 12.079614904007041,
+          "reference_full_detection_wall_ms": 37.98741893842816,
+          "target_full_detection_wall_ms": 38.96969894412905,
+          "reference_dispatch_and_readback_ms": 36.4638949977234,
+          "target_dispatch_and_readback_ms": 37.39751596003771,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.0,
+            "points_per_dic_window_p10": 166.9,
+            "points_per_dic_window_p90": 316.7
+          },
+          "detector_repeatability": {
+            "source_visible_points": 7454,
+            "target_visible_points": 7893,
+            "one_to_one_mutual_pairs": 5014,
+            "denominator_min_visible": 7454,
+            "at_1px": 869,
+            "at_2px": 2288,
+            "at_5px": 4073,
+            "repeatability_1px": 0.1165817011000805,
+            "repeatability_2px": 0.30694928897236384,
+            "repeatability_5px": 0.546418030587604
+          },
+          "reference_detection": {
+            "median_s": 0.07006765296682715,
+            "p10_s": 0.06955306585878133,
+            "p90_s": 0.07142363218590617,
+            "all_s": [
+              0.07176262699067593,
+              0.06942441908176988,
+              0.07006765296682715
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06979046203196049,
+            "p10_s": 0.06699550114572048,
+            "p90_s": 0.07035224037244917,
+            "all_s": [
+              0.06629676092416048,
+              0.06979046203196049,
+              0.07049268495757133
+            ]
+          },
+          "pair_detection_s_median": 0.13985811499878764,
+          "pair_fps": 7.1501035174731795,
+          "reference_full_detection_wall_ms": 65.76451798900962,
+          "target_full_detection_wall_ms": 64.63178701233119,
+          "reference_dispatch_and_readback_ms": 64.33282198850065,
+          "target_dispatch_and_readback_ms": 63.06528393179178,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_20pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 93,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.2007464493243051,
+        "stretch_x": 1.2007464493243052,
+        "stretch_y": 0.9130464032558431
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.0,
+            "points_per_dic_window_p10": 10.3,
+            "points_per_dic_window_p90": 20.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 429,
+            "target_visible_points": 481,
+            "one_to_one_mutual_pairs": 236,
+            "denominator_min_visible": 429,
+            "at_1px": 8,
+            "at_2px": 23,
+            "at_5px": 59,
+            "repeatability_1px": 0.018648018648018648,
+            "repeatability_2px": 0.053613053613053616,
+            "repeatability_5px": 0.13752913752913754
+          },
+          "reference_detection": {
+            "median_s": 0.012669298914261162,
+            "p10_s": 0.011957143736071884,
+            "p90_s": 0.012708797422237694,
+            "all_s": [
+              0.012718672049231827,
+              0.012669298914261162,
+              0.011779104941524565
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.01249016693327576,
+            "p10_s": 0.012241781339980662,
+            "p90_s": 0.013117037457413971,
+            "all_s": [
+              0.013273755088448524,
+              0.01249016693327576,
+              0.012179684941656888
+            ]
+          },
+          "pair_detection_s_median": 0.02515946584753692,
+          "pair_fps": 39.74647180746481,
+          "reference_full_detection_wall_ms": 9.47247096337378,
+          "target_full_detection_wall_ms": 10.427252971567214,
+          "reference_dispatch_and_readback_ms": 8.656317950226367,
+          "target_dispatch_and_readback_ms": 9.565374930389225,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 32.0,
+            "points_per_dic_window_p10": 19.900000000000002,
+            "points_per_dic_window_p90": 39.7
+          },
+          "detector_repeatability": {
+            "source_visible_points": 858,
+            "target_visible_points": 941,
+            "one_to_one_mutual_pairs": 486,
+            "denominator_min_visible": 858,
+            "at_1px": 12,
+            "at_2px": 54,
+            "at_5px": 165,
+            "repeatability_1px": 0.013986013986013986,
+            "repeatability_2px": 0.06293706293706294,
+            "repeatability_5px": 0.19230769230769232
+          },
+          "reference_detection": {
+            "median_s": 0.017636573989875615,
+            "p10_s": 0.016978409164585172,
+            "p90_s": 0.017641027574427426,
+            "all_s": [
+              0.017636573989875615,
+              0.01764214097056538,
+              0.016813867958262563
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.016851085936650634,
+            "p10_s": 0.016545679559931158,
+            "p90_s": 0.01688810042105615,
+            "all_s": [
+              0.016851085936650634,
+              0.01646932796575129,
+              0.01689735404215753
+            ]
+          },
+          "pair_detection_s_median": 0.03448765992652625,
+          "pair_fps": 28.995878587600203,
+          "reference_full_detection_wall_ms": 14.571517007425427,
+          "target_full_detection_wall_ms": 14.284743927419186,
+          "reference_dispatch_and_readback_ms": 13.591547962278128,
+          "target_dispatch_and_readback_ms": 13.368664076551795,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 65.0,
+            "points_per_dic_window_p10": 41.1,
+            "points_per_dic_window_p90": 76.80000000000001
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1705,
+            "target_visible_points": 1896,
+            "one_to_one_mutual_pairs": 977,
+            "denominator_min_visible": 1705,
+            "at_1px": 42,
+            "at_2px": 151,
+            "at_5px": 438,
+            "repeatability_1px": 0.02463343108504399,
+            "repeatability_2px": 0.08856304985337243,
+            "repeatability_5px": 0.256891495601173
+          },
+          "reference_detection": {
+            "median_s": 0.02510826801881194,
+            "p10_s": 0.024549988843500615,
+            "p90_s": 0.025835562404245137,
+            "all_s": [
+              0.02510826801881194,
+              0.024410419049672782,
+              0.026017386000603437
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.023179371957667172,
+            "p10_s": 0.022833631956018507,
+            "p90_s": 0.023351166327483953,
+            "all_s": [
+              0.023179371957667172,
+              0.023394114919938147,
+              0.02274719695560634
+            ]
+          },
+          "pair_detection_s_median": 0.04828763997647911,
+          "pair_fps": 20.709233263151802,
+          "reference_full_detection_wall_ms": 23.09235802385956,
+          "target_full_detection_wall_ms": 20.73925407603383,
+          "reference_dispatch_and_readback_ms": 22.146675968542695,
+          "target_dispatch_and_readback_ms": 19.824221963062882,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 129.5,
+            "points_per_dic_window_p10": 84.10000000000001,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 3411,
+            "target_visible_points": 3770,
+            "one_to_one_mutual_pairs": 2046,
+            "denominator_min_visible": 3411,
+            "at_1px": 124,
+            "at_2px": 441,
+            "at_5px": 1180,
+            "repeatability_1px": 0.03635297566695984,
+            "repeatability_2px": 0.12928759894459102,
+            "repeatability_5px": 0.34593960715332744
+          },
+          "reference_detection": {
+            "median_s": 0.03886869002599269,
+            "p10_s": 0.03880499715451151,
+            "p90_s": 0.0398140347795561,
+            "all_s": [
+              0.04005037096794695,
+              0.03886869002599269,
+              0.038789073936641216
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.03913602000102401,
+            "p10_s": 0.03781400881707668,
+            "p90_s": 0.04012823598459363,
+            "all_s": [
+              0.03913602000102401,
+              0.040376289980486035,
+              0.03748350602108985
+            ]
+          },
+          "pair_detection_s_median": 0.0780047100270167,
+          "pair_fps": 12.819738701081677,
+          "reference_full_detection_wall_ms": 35.641938098706305,
+          "target_full_detection_wall_ms": 34.865373047068715,
+          "reference_dispatch_and_readback_ms": 34.67656404245645,
+          "target_dispatch_and_readback_ms": 33.9547909097746,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 261.0,
+            "points_per_dic_window_p10": 167.5,
+            "points_per_dic_window_p90": 315.20000000000005
+          },
+          "detector_repeatability": {
+            "source_visible_points": 6827,
+            "target_visible_points": 7537,
+            "one_to_one_mutual_pairs": 4362,
+            "denominator_min_visible": 6827,
+            "at_1px": 368,
+            "at_2px": 1182,
+            "at_5px": 3065,
+            "repeatability_1px": 0.05390361798740296,
+            "repeatability_2px": 0.17313607733997363,
+            "repeatability_5px": 0.44895268785703824
+          },
+          "reference_detection": {
+            "median_s": 0.06745930400211364,
+            "p10_s": 0.06702429598663003,
+            "p90_s": 0.06763621198479086,
+            "all_s": [
+              0.06768043898046017,
+              0.06745930400211364,
+              0.06691554398275912
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06695972697343677,
+            "p10_s": 0.06623910216148943,
+            "p90_s": 0.067578858952038,
+            "all_s": [
+              0.06605894595850259,
+              0.06695972697343677,
+              0.0677336419466883
+            ]
+          },
+          "pair_detection_s_median": 0.1344190309755504,
+          "pair_fps": 7.439422771779174,
+          "reference_full_detection_wall_ms": 62.895143986679614,
+          "target_full_detection_wall_ms": 63.11391794588417,
+          "reference_dispatch_and_readback_ms": 61.48666702210903,
+          "target_dispatch_and_readback_ms": 61.77172309253365,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_30pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 119,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.29867656552777744,
+        "stretch_x": 1.2986765655277774,
+        "stretch_y": 0.877969519213963
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.5,
+            "points_per_dic_window_p10": 9.3,
+            "points_per_dic_window_p90": 20.900000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 395,
+            "target_visible_points": 450,
+            "one_to_one_mutual_pairs": 240,
+            "denominator_min_visible": 395,
+            "at_1px": 0,
+            "at_2px": 9,
+            "at_5px": 29,
+            "repeatability_1px": 0.0,
+            "repeatability_2px": 0.02278481012658228,
+            "repeatability_5px": 0.07341772151898734
+          },
+          "reference_detection": {
+            "median_s": 0.013041749014519155,
+            "p10_s": 0.012234460259787739,
+            "p90_s": 0.013319193827919662,
+            "all_s": [
+              0.013041749014519155,
+              0.013388555031269789,
+              0.012032638071104884
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.012834124034270644,
+            "p10_s": 0.012174640828743578,
+            "p90_s": 0.013809659937396645,
+            "all_s": [
+              0.014053543913178146,
+              0.01200977002736181,
+              0.012834124034270644
+            ]
+          },
+          "pair_detection_s_median": 0.0258758730487898,
+          "pair_fps": 38.646039038546355,
+          "reference_full_detection_wall_ms": 9.913734975270927,
+          "target_full_detection_wall_ms": 10.971017996780574,
+          "reference_dispatch_and_readback_ms": 9.034542948938906,
+          "target_dispatch_and_readback_ms": 9.961806004866958,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 18.7,
+            "points_per_dic_window_p90": 39.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 788,
+            "target_visible_points": 890,
+            "one_to_one_mutual_pairs": 432,
+            "denominator_min_visible": 788,
+            "at_1px": 3,
+            "at_2px": 24,
+            "at_5px": 90,
+            "repeatability_1px": 0.0038071065989847717,
+            "repeatability_2px": 0.030456852791878174,
+            "repeatability_5px": 0.11421319796954314
+          },
+          "reference_detection": {
+            "median_s": 0.016538872965611517,
+            "p10_s": 0.01591081146616489,
+            "p90_s": 0.017187157855369152,
+            "all_s": [
+              0.016538872965611517,
+              0.01734922907780856,
+              0.01575379609130323
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.017384421080350876,
+            "p10_s": 0.017173774540424347,
+            "p90_s": 0.017976345773786307,
+            "all_s": [
+              0.017384421080350876,
+              0.018124326947145164,
+              0.017121112905442715
+            ]
+          },
+          "pair_detection_s_median": 0.03392329404596239,
+          "pair_fps": 29.478269375760153,
+          "reference_full_detection_wall_ms": 13.252604054287076,
+          "target_full_detection_wall_ms": 14.489739085547626,
+          "reference_dispatch_and_readback_ms": 12.286323006264865,
+          "target_dispatch_and_readback_ms": 13.626685016788542,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 65.5,
+            "points_per_dic_window_p10": 37.9,
+            "points_per_dic_window_p90": 75.9
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1575,
+            "target_visible_points": 1801,
+            "one_to_one_mutual_pairs": 886,
+            "denominator_min_visible": 1575,
+            "at_1px": 14,
+            "at_2px": 67,
+            "at_5px": 290,
+            "repeatability_1px": 0.008888888888888889,
+            "repeatability_2px": 0.04253968253968254,
+            "repeatability_5px": 0.18412698412698414
+          },
+          "reference_detection": {
+            "median_s": 0.025333182071335614,
+            "p10_s": 0.0242648788029328,
+            "p90_s": 0.025448390864767134,
+            "all_s": [
+              0.025477193063125014,
+              0.023997802985832095,
+              0.025333182071335614
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.025440732017159462,
+            "p10_s": 0.025098641589283942,
+            "p90_s": 0.02573149362578988,
+            "all_s": [
+              0.025440732017159462,
+              0.025804184027947485,
+              0.025013118982315063
+            ]
+          },
+          "pair_detection_s_median": 0.050773914088495076,
+          "pair_fps": 19.695152874310143,
+          "reference_full_detection_wall_ms": 23.138029035180807,
+          "target_full_detection_wall_ms": 23.138844990171492,
+          "reference_dispatch_and_readback_ms": 22.191699012182653,
+          "target_dispatch_and_readback_ms": 22.344126016832888,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 131.5,
+            "points_per_dic_window_p10": 78.0,
+            "points_per_dic_window_p90": 154.60000000000002
+          },
+          "detector_repeatability": {
+            "source_visible_points": 3157,
+            "target_visible_points": 3614,
+            "one_to_one_mutual_pairs": 1833,
+            "denominator_min_visible": 3157,
+            "at_1px": 58,
+            "at_2px": 209,
+            "at_5px": 806,
+            "repeatability_1px": 0.018371872030408617,
+            "repeatability_2px": 0.06620209059233449,
+            "repeatability_5px": 0.2553056699398163
+          },
+          "reference_detection": {
+            "median_s": 0.041462189983576536,
+            "p10_s": 0.04046632284298539,
+            "p90_s": 0.04361623963341117,
+            "all_s": [
+              0.04415475204586983,
+              0.041462189983576536,
+              0.040217356057837605
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.04004680702928454,
+            "p10_s": 0.03996806221548468,
+            "p90_s": 0.040312626981176436,
+            "all_s": [
+              0.04004680702928454,
+              0.04037908196914941,
+              0.039948376012034714
+            ]
+          },
+          "pair_detection_s_median": 0.08150899701286107,
+          "pair_fps": 12.268584286986293,
+          "reference_full_detection_wall_ms": 37.99214505124837,
+          "target_full_detection_wall_ms": 37.996707018464804,
+          "reference_dispatch_and_readback_ms": 36.97235102299601,
+          "target_dispatch_and_readback_ms": 37.00311295688152,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 260.0,
+            "points_per_dic_window_p10": 162.3,
+            "points_per_dic_window_p90": 314.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 6315,
+            "target_visible_points": 7245,
+            "one_to_one_mutual_pairs": 3893,
+            "denominator_min_visible": 6315,
+            "at_1px": 175,
+            "at_2px": 616,
+            "at_5px": 2261,
+            "repeatability_1px": 0.027711797307996833,
+            "repeatability_2px": 0.09754552652414886,
+            "repeatability_5px": 0.35803642121931906
+          },
+          "reference_detection": {
+            "median_s": 0.07238478900399059,
+            "p10_s": 0.06959370418917388,
+            "p90_s": 0.07317409624811262,
+            "all_s": [
+              0.07337142305914313,
+              0.07238478900399059,
+              0.0688959329854697
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.07367698405869305,
+            "p10_s": 0.06804232248105109,
+            "p90_s": 0.07468518163077534,
+            "all_s": [
+              0.07367698405869305,
+              0.0749372310237959,
+              0.0666336570866406
+            ]
+          },
+          "pair_detection_s_median": 0.14606177306268364,
+          "pair_fps": 6.8464183272021595,
+          "reference_full_detection_wall_ms": 65.46766904648393,
+          "target_full_detection_wall_ms": 62.92462500277907,
+          "reference_dispatch_and_readback_ms": 64.06052701640874,
+          "target_dispatch_and_readback_ms": 61.51790590956807,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_40pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 146,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.4003732246621526,
+        "stretch_x": 1.4003732246621525,
+        "stretch_y": 0.8455061970313845
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.0,
+            "points_per_dic_window_p10": 12.0,
+            "points_per_dic_window_p90": 20.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 363,
+            "target_visible_points": 431,
+            "one_to_one_mutual_pairs": 215,
+            "denominator_min_visible": 363,
+            "at_1px": 0,
+            "at_2px": 2,
+            "at_5px": 20,
+            "repeatability_1px": 0.0,
+            "repeatability_2px": 0.005509641873278237,
+            "repeatability_5px": 0.05509641873278237
+          },
+          "reference_detection": {
+            "median_s": 0.015976388938724995,
+            "p10_s": 0.015516640152782202,
+            "p90_s": 0.01648353775963187,
+            "all_s": [
+              0.015401702956296504,
+              0.01661032496485859,
+              0.015976388938724995
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.016833444009535015,
+            "p10_s": 0.01621792323421687,
+            "p90_s": 0.017112232721410693,
+            "all_s": [
+              0.016833444009535015,
+              0.01718192989937961,
+              0.016064043040387332
+            ]
+          },
+          "pair_detection_s_median": 0.03280983294826001,
+          "pair_fps": 30.478667830371645,
+          "reference_full_detection_wall_ms": 14.085781993344426,
+          "target_full_detection_wall_ms": 13.78778403159231,
+          "reference_dispatch_and_readback_ms": 13.043869053944945,
+          "target_dispatch_and_readback_ms": 12.796716997399926,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 32.0,
+            "points_per_dic_window_p10": 20.5,
+            "points_per_dic_window_p90": 39.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 724,
+            "target_visible_points": 854,
+            "one_to_one_mutual_pairs": 402,
+            "denominator_min_visible": 724,
+            "at_1px": 1,
+            "at_2px": 7,
+            "at_5px": 57,
+            "repeatability_1px": 0.0013812154696132596,
+            "repeatability_2px": 0.009668508287292817,
+            "repeatability_5px": 0.0787292817679558
+          },
+          "reference_detection": {
+            "median_s": 0.018635696033015847,
+            "p10_s": 0.018325092876330017,
+            "p90_s": 0.019632891984656453,
+            "all_s": [
+              0.01824744208715856,
+              0.018635696033015847,
+              0.019882190972566605
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.018839884898625314,
+            "p10_s": 0.01849134264048189,
+            "p90_s": 0.01899855851661414,
+            "all_s": [
+              0.018839884898625314,
+              0.018404207075946033,
+              0.019038226921111345
+            ]
+          },
+          "pair_detection_s_median": 0.03747558093164116,
+          "pair_fps": 26.684042652309785,
+          "reference_full_detection_wall_ms": 16.46363001782447,
+          "target_full_detection_wall_ms": 15.624338993802667,
+          "reference_dispatch_and_readback_ms": 14.866909012198448,
+          "target_dispatch_and_readback_ms": 13.976144953630865,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.0,
+            "points_per_dic_window_p10": 38.4,
+            "points_per_dic_window_p90": 77.50000000000001
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1447,
+            "target_visible_points": 1730,
+            "one_to_one_mutual_pairs": 791,
+            "denominator_min_visible": 1447,
+            "at_1px": 8,
+            "at_2px": 29,
+            "at_5px": 179,
+            "repeatability_1px": 0.0055286800276434,
+            "repeatability_2px": 0.020041465100207326,
+            "repeatability_5px": 0.12370421561852107
+          },
+          "reference_detection": {
+            "median_s": 0.026273695984855294,
+            "p10_s": 0.025416248803958298,
+            "p90_s": 0.028181304084137083,
+            "all_s": [
+              0.025201887008734047,
+              0.026273695984855294,
+              0.02865820610895753
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.025730825029313564,
+            "p10_s": 0.02558640418574214,
+            "p90_s": 0.026415643375366928,
+            "all_s": [
+              0.025550298974849284,
+              0.026586847961880267,
+              0.025730825029313564
+            ]
+          },
+          "pair_detection_s_median": 0.05200452101416886,
+          "pair_fps": 19.22909740342663,
+          "reference_full_detection_wall_ms": 23.167381063103676,
+          "target_full_detection_wall_ms": 21.713875932618976,
+          "reference_dispatch_and_readback_ms": 21.533755003474653,
+          "target_dispatch_and_readback_ms": 20.135963917709887,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 132.5,
+            "points_per_dic_window_p10": 77.0,
+            "points_per_dic_window_p90": 153.4
+          },
+          "detector_repeatability": {
+            "source_visible_points": 2905,
+            "target_visible_points": 3465,
+            "one_to_one_mutual_pairs": 1652,
+            "denominator_min_visible": 2905,
+            "at_1px": 33,
+            "at_2px": 121,
+            "at_5px": 551,
+            "repeatability_1px": 0.011359724612736662,
+            "repeatability_2px": 0.04165232358003442,
+            "repeatability_5px": 0.18967297762478486
+          },
+          "reference_detection": {
+            "median_s": 0.03891130303964019,
+            "p10_s": 0.038257718272507193,
+            "p90_s": 0.03965248139575124,
+            "all_s": [
+              0.03809432208072394,
+              0.039837775984779,
+              0.03891130303964019
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.04019417893141508,
+            "p10_s": 0.038863079715520145,
+            "p90_s": 0.04281085254624486,
+            "all_s": [
+              0.043465020949952304,
+              0.04019417893141508,
+              0.03853030491154641
+            ]
+          },
+          "pair_detection_s_median": 0.07910548197105527,
+          "pair_fps": 12.641348931618928,
+          "reference_full_detection_wall_ms": 35.71523807477206,
+          "target_full_detection_wall_ms": 35.200120066292584,
+          "reference_dispatch_and_readback_ms": 34.06401805114001,
+          "target_dispatch_and_readback_ms": 33.76757202204317,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 262.5,
+            "points_per_dic_window_p10": 153.3,
+            "points_per_dic_window_p90": 309.3
+          },
+          "detector_repeatability": {
+            "source_visible_points": 5828,
+            "target_visible_points": 6940,
+            "one_to_one_mutual_pairs": 3519,
+            "denominator_min_visible": 5828,
+            "at_1px": 101,
+            "at_2px": 382,
+            "at_5px": 1709,
+            "repeatability_1px": 0.017330130404941663,
+            "repeatability_2px": 0.06554564172958133,
+            "repeatability_5px": 0.29323953328757724
+          },
+          "reference_detection": {
+            "median_s": 0.06743678299244493,
+            "p10_s": 0.06738449099939317,
+            "p90_s": 0.06948182776104658,
+            "all_s": [
+              0.069993088953197,
+              0.06737141800113022,
+              0.06743678299244493
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06665962899569422,
+            "p10_s": 0.06636968899983912,
+            "p90_s": 0.06719174908939748,
+            "all_s": [
+              0.06665962899569422,
+              0.06732477911282331,
+              0.06629720400087535
+            ]
+          },
+          "pair_detection_s_median": 0.13409641198813915,
+          "pair_fps": 7.457321080958155,
+          "reference_full_detection_wall_ms": 65.0443610502407,
+          "target_full_detection_wall_ms": 64.33378101792186,
+          "reference_dispatch_and_readback_ms": 64.14445105474442,
+          "target_dispatch_and_readback_ms": 63.36936296429485,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_50pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 172,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.49830334086562494,
+        "stretch_x": 1.498303340865625,
+        "stretch_y": 0.8174204251753675
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 16.5,
+            "points_per_dic_window_p10": 10.1,
+            "points_per_dic_window_p90": 20.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 343,
+            "target_visible_points": 427,
+            "one_to_one_mutual_pairs": 201,
+            "denominator_min_visible": 343,
+            "at_1px": 0,
+            "at_2px": 0,
+            "at_5px": 14,
+            "repeatability_1px": 0.0,
+            "repeatability_2px": 0.0,
+            "repeatability_5px": 0.04081632653061224
+          },
+          "reference_detection": {
+            "median_s": 0.0132362189469859,
+            "p10_s": 0.012696087057702244,
+            "p90_s": 0.014636953338049352,
+            "all_s": [
+              0.014987136935815215,
+              0.012561054085381329,
+              0.0132362189469859
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.013653903966769576,
+            "p10_s": 0.012304368754848838,
+            "p90_s": 0.014157968061044812,
+            "all_s": [
+              0.014283984084613621,
+              0.011966984951868653,
+              0.013653903966769576
+            ]
+          },
+          "pair_detection_s_median": 0.026890122913755476,
+          "pair_fps": 37.18837594038874,
+          "reference_full_detection_wall_ms": 10.79631200991571,
+          "target_full_detection_wall_ms": 12.212428962811828,
+          "reference_dispatch_and_readback_ms": 9.890730027109385,
+          "target_dispatch_and_readback_ms": 11.405094992369413,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 34.0,
+            "points_per_dic_window_p10": 22.3,
+            "points_per_dic_window_p90": 39.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 681,
+            "target_visible_points": 834,
+            "one_to_one_mutual_pairs": 369,
+            "denominator_min_visible": 681,
+            "at_1px": 0,
+            "at_2px": 4,
+            "at_5px": 35,
+            "repeatability_1px": 0.0,
+            "repeatability_2px": 0.005873715124816446,
+            "repeatability_5px": 0.0513950073421439
+          },
+          "reference_detection": {
+            "median_s": 0.017278006998822093,
+            "p10_s": 0.016796734975650908,
+            "p90_s": 0.017444751830771564,
+            "all_s": [
+              0.017486438038758934,
+              0.01667641696985811,
+              0.017278006998822093
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.016297032008878887,
+            "p10_s": 0.016207859269343317,
+            "p90_s": 0.016855600732378663,
+            "all_s": [
+              0.016185566084459424,
+              0.016297032008878887,
+              0.016995242913253605
+            ]
+          },
+          "pair_detection_s_median": 0.03357503900770098,
+          "pair_fps": 29.78403092162108,
+          "reference_full_detection_wall_ms": 14.71411599777639,
+          "target_full_detection_wall_ms": 14.297310030087829,
+          "reference_dispatch_and_readback_ms": 13.771255034953356,
+          "target_dispatch_and_readback_ms": 13.29957798589021,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 43.6,
+            "points_per_dic_window_p90": 78.50000000000001
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1359,
+            "target_visible_points": 1688,
+            "one_to_one_mutual_pairs": 735,
+            "denominator_min_visible": 1359,
+            "at_1px": 4,
+            "at_2px": 18,
+            "at_5px": 129,
+            "repeatability_1px": 0.0029433406916850625,
+            "repeatability_2px": 0.013245033112582781,
+            "repeatability_5px": 0.09492273730684327
+          },
+          "reference_detection": {
+            "median_s": 0.025654055061750114,
+            "p10_s": 0.02555717739742249,
+            "p90_s": 0.025956240552477538,
+            "all_s": [
+              0.025532957981340587,
+              0.026031786925159395,
+              0.025654055061750114
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.026481231907382607,
+            "p10_s": 0.025408890331164002,
+            "p90_s": 0.0277984359767288,
+            "all_s": [
+              0.02514080493710935,
+              0.026481231907382607,
+              0.028127736994065344
+            ]
+          },
+          "pair_detection_s_median": 0.05213528696913272,
+          "pair_fps": 19.180866897156644,
+          "reference_full_detection_wall_ms": 21.508986013941467,
+          "target_full_detection_wall_ms": 22.553876042366028,
+          "reference_dispatch_and_readback_ms": 19.9544740607962,
+          "target_dispatch_and_readback_ms": 20.994643913581967,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 132.0,
+            "points_per_dic_window_p10": 89.4,
+            "points_per_dic_window_p90": 153.5
+          },
+          "detector_repeatability": {
+            "source_visible_points": 2721,
+            "target_visible_points": 3376,
+            "one_to_one_mutual_pairs": 1542,
+            "denominator_min_visible": 2721,
+            "at_1px": 17,
+            "at_2px": 83,
+            "at_5px": 427,
+            "repeatability_1px": 0.006247703050349137,
+            "repeatability_2px": 0.030503491363469314,
+            "repeatability_5px": 0.15692760014700477
+          },
+          "reference_detection": {
+            "median_s": 0.04083671688567847,
+            "p10_s": 0.0402440921170637,
+            "p90_s": 0.04216628659050912,
+            "all_s": [
+              0.04249867901671678,
+              0.04009593592491001,
+              0.04083671688567847
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.04024709900841117,
+            "p10_s": 0.0377734350040555,
+            "p90_s": 0.04158117426559329,
+            "all_s": [
+              0.04191469307988882,
+              0.03715501900296658,
+              0.04024709900841117
+            ]
+          },
+          "pair_detection_s_median": 0.08108381589408964,
+          "pair_fps": 12.332917351918708,
+          "reference_full_detection_wall_ms": 36.559892003424466,
+          "target_full_detection_wall_ms": 36.53972700703889,
+          "reference_dispatch_and_readback_ms": 35.079748020507395,
+          "target_dispatch_and_readback_ms": 34.92366196587682,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 261.0,
+            "points_per_dic_window_p10": 184.5,
+            "points_per_dic_window_p90": 310.5
+          },
+          "detector_repeatability": {
+            "source_visible_points": 5438,
+            "target_visible_points": 6755,
+            "one_to_one_mutual_pairs": 3273,
+            "denominator_min_visible": 5438,
+            "at_1px": 69,
+            "at_2px": 286,
+            "at_5px": 1376,
+            "repeatability_1px": 0.012688488414858404,
+            "repeatability_2px": 0.052592865023905845,
+            "repeatability_5px": 0.2530342037513792
+          },
+          "reference_detection": {
+            "median_s": 0.06994807999581099,
+            "p10_s": 0.0684432303532958,
+            "p90_s": 0.0700514167547226,
+            "all_s": [
+              0.06806701794266701,
+              0.06994807999581099,
+              0.0700772509444505
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.06813141098245978,
+            "p10_s": 0.06665228372439742,
+            "p90_s": 0.06870882865041494,
+            "all_s": [
+              0.06628250190988183,
+              0.06885318306740373,
+              0.06813141098245978
+            ]
+          },
+          "pair_detection_s_median": 0.13807949097827077,
+          "pair_fps": 7.2422051451317095,
+          "reference_full_detection_wall_ms": 65.34243503119797,
+          "target_full_detection_wall_ms": 64.09457698464394,
+          "reference_dispatch_and_readback_ms": 63.890069955959916,
+          "target_dispatch_and_readback_ms": 62.44749599136412,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "synthetic_60pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 199,
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "truth": {
+        "engineering_axial": 0.6,
+        "stretch_x": 1.6,
+        "stretch_y": 0.7910265877644076
+      },
+      "budgets": {
+        "512": {
+          "requested_keypoints": 512,
+          "reference_keypoints": 512,
+          "target_keypoints": 512,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 19.900000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 17.0,
+            "points_per_dic_window_p10": 10.2,
+            "points_per_dic_window_p90": 20.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 320,
+            "target_visible_points": 420,
+            "one_to_one_mutual_pairs": 191,
+            "denominator_min_visible": 320,
+            "at_1px": 0,
+            "at_2px": 1,
+            "at_5px": 5,
+            "repeatability_1px": 0.0,
+            "repeatability_2px": 0.003125,
+            "repeatability_5px": 0.015625
+          },
+          "reference_detection": {
+            "median_s": 0.012891188031062484,
+            "p10_s": 0.012545016827061772,
+            "p90_s": 0.013273172033950686,
+            "all_s": [
+              0.013368668034672737,
+              0.012891188031062484,
+              0.012458474026061594
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.014178782003000379,
+            "p10_s": 0.012422503577545286,
+            "p90_s": 0.014271307596936822,
+            "all_s": [
+              0.011983433971181512,
+              0.014294438995420933,
+              0.014178782003000379
+            ]
+          },
+          "pair_detection_s_median": 0.027069970034062862,
+          "pair_fps": 36.941304284477354,
+          "reference_full_detection_wall_ms": 10.710834991186857,
+          "target_full_detection_wall_ms": 11.233146069571376,
+          "reference_dispatch_and_readback_ms": 9.827967965975404,
+          "target_dispatch_and_readback_ms": 9.875164018012583,
+          "reference_eigenvalue_median": 0.015622377395629883,
+          "reference_condition_p95": 1.3048241138458252,
+          "readback_bytes_per_image": 8192,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "1024": {
+          "requested_keypoints": 1024,
+          "reference_keypoints": 1024,
+          "target_keypoints": 1024,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 33.0,
+            "points_per_dic_window_p10": 19.8,
+            "points_per_dic_window_p90": 38.800000000000004
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 32.5,
+            "points_per_dic_window_p10": 21.4,
+            "points_per_dic_window_p90": 38.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 640,
+            "target_visible_points": 827,
+            "one_to_one_mutual_pairs": 345,
+            "denominator_min_visible": 640,
+            "at_1px": 1,
+            "at_2px": 4,
+            "at_5px": 22,
+            "repeatability_1px": 0.0015625,
+            "repeatability_2px": 0.00625,
+            "repeatability_5px": 0.034375
+          },
+          "reference_detection": {
+            "median_s": 0.018692327896133065,
+            "p10_s": 0.018339402368292214,
+            "p90_s": 0.020859501557424664,
+            "all_s": [
+              0.021401294972747564,
+              0.018251170986332,
+              0.018692327896133065
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.01862560398876667,
+            "p10_s": 0.01841000160202384,
+            "p90_s": 0.01870297435671091,
+            "all_s": [
+              0.01862560398876667,
+              0.01872231694869697,
+              0.018356101005338132
+            ]
+          },
+          "pair_detection_s_median": 0.037317931884899735,
+          "pair_fps": 26.79676899256677,
+          "reference_full_detection_wall_ms": 15.41077601723373,
+          "target_full_detection_wall_ms": 15.360916033387184,
+          "reference_dispatch_and_readback_ms": 13.967000064440072,
+          "target_dispatch_and_readback_ms": 13.927774038165808,
+          "reference_eigenvalue_median": 0.015218900516629219,
+          "reference_condition_p95": 1.3366851806640625,
+          "readback_bytes_per_image": 16384,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "2048": {
+          "requested_keypoints": 2048,
+          "reference_keypoints": 2048,
+          "target_keypoints": 2048,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 66.5,
+            "points_per_dic_window_p10": 44.300000000000004,
+            "points_per_dic_window_p90": 77.0
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 65.5,
+            "points_per_dic_window_p10": 44.5,
+            "points_per_dic_window_p90": 75.9
+          },
+          "detector_repeatability": {
+            "source_visible_points": 1280,
+            "target_visible_points": 1653,
+            "one_to_one_mutual_pairs": 700,
+            "denominator_min_visible": 1280,
+            "at_1px": 2,
+            "at_2px": 12,
+            "at_5px": 91,
+            "repeatability_1px": 0.0015625,
+            "repeatability_2px": 0.009375,
+            "repeatability_5px": 0.07109375
+          },
+          "reference_detection": {
+            "median_s": 0.02752560400404036,
+            "p10_s": 0.02589489598758519,
+            "p90_s": 0.028601937601342796,
+            "all_s": [
+              0.025487218983471394,
+              0.028871021000668406,
+              0.02752560400404036
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.026445175055414438,
+            "p10_s": 0.025107643008232115,
+            "p90_s": 0.028618067782372237,
+            "all_s": [
+              0.024773259996436536,
+              0.026445175055414438,
+              0.029161290964111686
+            ]
+          },
+          "pair_detection_s_median": 0.0539707790594548,
+          "pair_fps": 18.52854484272664,
+          "reference_full_detection_wall_ms": 24.30734399240464,
+          "target_full_detection_wall_ms": 26.04643499944359,
+          "reference_dispatch_and_readback_ms": 22.71989011205733,
+          "target_dispatch_and_readback_ms": 24.636975955218077,
+          "reference_eigenvalue_median": 0.014715198427438736,
+          "reference_condition_p95": 1.3616158962249756,
+          "readback_bytes_per_image": 32768,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "4096": {
+          "requested_keypoints": 4096,
+          "reference_keypoints": 4096,
+          "target_keypoints": 4096,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 130.0,
+            "points_per_dic_window_p10": 86.5,
+            "points_per_dic_window_p90": 153.60000000000002
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 129.5,
+            "points_per_dic_window_p10": 90.60000000000001,
+            "points_per_dic_window_p90": 149.9
+          },
+          "detector_repeatability": {
+            "source_visible_points": 2560,
+            "target_visible_points": 3295,
+            "one_to_one_mutual_pairs": 1437,
+            "denominator_min_visible": 2560,
+            "at_1px": 11,
+            "at_2px": 52,
+            "at_5px": 321,
+            "repeatability_1px": 0.004296875,
+            "repeatability_2px": 0.0203125,
+            "repeatability_5px": 0.125390625
+          },
+          "reference_detection": {
+            "median_s": 0.042468735948204994,
+            "p10_s": 0.04215568555518985,
+            "p90_s": 0.04304616153240204,
+            "all_s": [
+              0.042468735948204994,
+              0.04207742295693606,
+              0.0431905179284513
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.041366707999259233,
+            "p10_s": 0.04133128877729177,
+            "p90_s": 0.04152483120560646,
+            "all_s": [
+              0.04156436200719327,
+              0.04132243397179991,
+              0.041366707999259233
+            ]
+          },
+          "pair_detection_s_median": 0.08383544394746423,
+          "pair_fps": 11.928129117162587,
+          "reference_full_detection_wall_ms": 39.79323501698673,
+          "target_full_detection_wall_ms": 37.996117025613785,
+          "reference_dispatch_and_readback_ms": 38.17663306836039,
+          "target_dispatch_and_readback_ms": 36.59771697130054,
+          "reference_eigenvalue_median": 0.014135025441646576,
+          "reference_condition_p95": 1.4047309160232544,
+          "readback_bytes_per_image": 65536,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        },
+        "8192": {
+          "requested_keypoints": 8192,
+          "reference_keypoints": 8192,
+          "target_keypoints": 8192,
+          "reference_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 259.5,
+            "points_per_dic_window_p10": 172.3,
+            "points_per_dic_window_p90": 312.9
+          },
+          "target_repeatability_distribution": {
+            "coverage_cells_occupied": 144,
+            "coverage_cells_total": 144,
+            "dic_grid_windows_with_points": 32,
+            "dic_grid_windows_total": 32,
+            "points_per_dic_window_median": 261.5,
+            "points_per_dic_window_p10": 176.6,
+            "points_per_dic_window_p90": 305.0
+          },
+          "detector_repeatability": {
+            "source_visible_points": 5120,
+            "target_visible_points": 6567,
+            "one_to_one_mutual_pairs": 3059,
+            "denominator_min_visible": 5120,
+            "at_1px": 45,
+            "at_2px": 202,
+            "at_5px": 1110,
+            "repeatability_1px": 0.0087890625,
+            "repeatability_2px": 0.039453125,
+            "repeatability_5px": 0.216796875
+          },
+          "reference_detection": {
+            "median_s": 0.06757709197700024,
+            "p10_s": 0.0660511207766831,
+            "p90_s": 0.0688770311884582,
+            "all_s": [
+              0.0656696279766038,
+              0.0692020159913227,
+              0.06757709197700024
+            ]
+          },
+          "target_detection": {
+            "median_s": 0.0681628449819982,
+            "p10_s": 0.0668682393617928,
+            "p90_s": 0.06867957459762693,
+            "all_s": [
+              0.06654458795674145,
+              0.0688087570015341,
+              0.0681628449819982
+            ]
+          },
+          "pair_detection_s_median": 0.13573993695899844,
+          "pair_fps": 7.367028616655831,
+          "reference_full_detection_wall_ms": 64.95351705234498,
+          "target_full_detection_wall_ms": 65.43823098763824,
+          "reference_dispatch_and_readback_ms": 63.80081991665065,
+          "target_dispatch_and_readback_ms": 64.36555192340165,
+          "reference_eigenvalue_median": 0.013426507823169231,
+          "reference_condition_p95": 1.4691004753112793,
+          "readback_bytes_per_image": 131072,
+          "settings": {
+            "stride_px": 4,
+            "tensor_radius_px": 6,
+            "minimum_eigenvalue": 1e-05,
+            "quota_tiles": [
+              16,
+              9
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

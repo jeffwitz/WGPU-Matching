@@ -1,0 +1,250 @@
+{
+  "pair": {
+    "reference": "/home/jeff/CNRS/DIC/AdrienVariational/img_000000_0.09422.tiff",
+    "target": "/home/jeff/CNRS/DIC/AdrienVariational/img_000075_1608.88508.tiff"
+  },
+  "original_size_px": [
+    7920,
+    6004
+  ],
+  "network_content_size_px": [
+    640,
+    485
+  ],
+  "network_padded_size_px": [
+    640,
+    512
+  ],
+  "scale_original_px_per_network_px": [
+    12.375,
+    12.37938117980957
+  ],
+  "mask_valid_fraction": 0.6352330769386065,
+  "image_decode_and_resize_s": {
+    "reference": 0.33166319504380226,
+    "target": 0.3615801880368963
+  },
+  "models": [
+    {
+      "name": "RaCo original",
+      "model_sha256": "575e1746138204e19027cb37541cd840c7fc9f2c932b844e9685354a3913bda1",
+      "runtime_providers": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "session_init_s": 0.6954211039701477,
+      "inference_repeat_times_s": [
+        2.399029192980379,
+        2.5815071099204943,
+        2.5137821710668504,
+        2.3569302399409935,
+        2.3920797239989042
+      ],
+      "inference_median_s": 2.399029192980379,
+      "postprocess_global_affine_ransac_cpu_s": 0.16911903396248817,
+      "reported_features_or_matches": {
+        "count": 701,
+        "finite_in_image": 701,
+        "roi_matches": 680,
+        "confidence_median": 0.9959388375282288,
+        "global_affine_ransac_roi": {
+          "inliers": 677,
+          "fraction": 0.9955882352941177,
+          "median_residual_px": 7.652071509581787,
+          "rmse_inliers_px": 10.098356709767332,
+          "matrix": [
+            [
+              1.0920556300188728,
+              -0.0047573829569887705,
+              -368.159089433806
+            ],
+            [
+              0.006336972328472292,
+              0.9549975228721768,
+              93.70084075978517
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      "graph_transform": null,
+      "inference_mad_s": 0.04209895303938538,
+      "repeat_count": 5,
+      "warmup_calls": 1
+    },
+    {
+      "name": "RaCo SELU\u2192WebGPU",
+      "model_sha256": "575e1746138204e19027cb37541cd840c7fc9f2c932b844e9685354a3913bda1",
+      "runtime_providers": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "session_init_s": 0.6243865959113464,
+      "inference_repeat_times_s": [
+        1.3894217939814553,
+        1.413652517949231,
+        1.3792790020816028,
+        1.4332334529608488,
+        1.3897025339538231
+      ],
+      "inference_median_s": 1.3897025339538231,
+      "postprocess_global_affine_ransac_cpu_s": 0.09696573100518435,
+      "reported_features_or_matches": {
+        "count": 701,
+        "finite_in_image": 701,
+        "roi_matches": 680,
+        "confidence_median": 0.995939314365387,
+        "global_affine_ransac_roi": {
+          "inliers": 677,
+          "fraction": 0.9955882352941177,
+          "median_residual_px": 7.6520773912679365,
+          "rmse_inliers_px": 10.098356129664266,
+          "matrix": [
+            [
+              1.0920556284804326,
+              -0.004757384357324923,
+              -368.15908138899636
+            ],
+            [
+              0.0063369721041436474,
+              0.9549975233081982,
+              93.70084163724725
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      "graph_transform": {
+        "rewritten_operator": "Selu",
+        "rewritten_node_count": 83,
+        "replacement_ops_per_node": [
+          "Exp",
+          "Sub",
+          "Mul",
+          "Greater",
+          "Where",
+          "Mul"
+        ],
+        "output_path": "/tmp/adrien-raco-selu-y4g5i4rn/raco_aliked_lightglue_pipeline_k1024.onnx",
+        "source_sha256": "575e1746138204e19027cb37541cd840c7fc9f2c932b844e9685354a3913bda1",
+        "optimized_sha256": "f4d3109557f60bb81688fc0b267f2d7bd6c04f718fcb954e9beaeb398a42d6d0"
+      },
+      "inference_mad_s": 0.010423531872220337,
+      "repeat_count": 5,
+      "warmup_calls": 1
+    },
+    {
+      "name": "EfficientLoFTR",
+      "model_sha256": "a2cbdcfef0ddb5cdab062ae34bf7b09da6cac79baf97fc5155033c8cb1eab602",
+      "runtime_providers": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "session_init_s": 0.9766689901007339,
+      "inference_repeat_times_s": [
+        1.5575077120447531,
+        1.5786059009842575,
+        1.5548114590346813,
+        1.6332453209906816,
+        1.624634099076502
+      ],
+      "inference_median_s": 1.5786059009842575,
+      "postprocess_global_affine_ransac_cpu_s": 0.16880522400606424,
+      "reported_features_or_matches": {
+        "count": 3272,
+        "finite_in_image": 3255,
+        "roi_matches": 2675,
+        "confidence_median": 33.81818771362305,
+        "global_affine_ransac_roi": {
+          "inliers": 2673,
+          "fraction": 0.9992523364485981,
+          "median_residual_px": 6.879566237766137,
+          "rmse_inliers_px": 8.8730282359959,
+          "matrix": [
+            [
+              1.0920625082569564,
+              -0.004938387056625582,
+              -367.8346153191707
+            ],
+            [
+              0.006679555017605404,
+              0.955378083113302,
+              91.348390451249
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ]
+        }
+      },
+      "graph_transform": null,
+      "inference_mad_s": 0.02379444194957614,
+      "repeat_count": 5,
+      "warmup_calls": 1
+    }
+  ],
+  "notes": [
+    "No analytic ground truth is available for this TIFF pair. Affine RANSAC is a geometric consistency diagnostic, not an accuracy measurement.",
+    "All timings exclude initial TIFF decode/resize; first call is warm-up, then three inference repeats. RANSAC is timed separately on CPU.",
+    "Only inputs and mask were read; no files in the image directory were modified."
+  ],
+  "input_sha256": {
+    "img_000000_0.09422.tiff": "9d612a1e7e68419208ae6230f9e2d5faa9af7589a3098ca3b48ffc118d42d9b1",
+    "img_000075_1608.88508.tiff": "67f1c70365f93831135f12187968a32190327421e4a69d49502fe90ff4f17ef7",
+    "Mask.tiff": "4c084ef0cad9df782b1fb02f5a5bc8475a1b0506beb17b24660a4633bf07f675"
+  },
+  "timing_repeatability": {
+    "protocol": "One warm-up followed by five timed session.run repetitions for each method at identical 640x512 input. Session creation and image resize excluded. CPU RANSAC postprocessing excluded.",
+    "raco_original": {
+      "times_s": [
+        2.399029192980379,
+        2.5815071099204943,
+        2.5137821710668504,
+        2.3569302399409935,
+        2.3920797239989042
+      ],
+      "median_s": 2.399029192980379,
+      "mad_s": 0.04209895303938538
+    },
+    "raco_selu_decomposed": {
+      "times_s": [
+        1.3894217939814553,
+        1.413652517949231,
+        1.3792790020816028,
+        1.4332334529608488,
+        1.3897025339538231
+      ],
+      "median_s": 1.3897025339538231,
+      "mad_s": 0.010423531872220337
+    },
+    "time_reduction_percent": 42.07229582615633,
+    "efficientloftr": {
+      "times_s": [
+        1.5575077120447531,
+        1.5786059009842575,
+        1.5548114590346813,
+        1.6332453209906816,
+        1.624634099076502
+      ],
+      "median_s": 1.5786059009842575,
+      "mad_s": 0.02379444194957614
+    }
+  },
+  "protocol": {
+    "input_order": "image_000000 reference \u2192 image_000075 target",
+    "resampling": "preserve aspect ratio; set width=640, content height=485, zero-pad bottom to 512; normalize 8-bit to [0,1]",
+    "postprocess": "CPU affine RANSAC on ROI-filtered returned matches; deterministic 1024 hypotheses; 30 px inlier threshold in original coordinates",
+    "mask_use": "Mask.tiff channel 0 used only to count matches with both endpoints in the ROI; images passed to the models were not masked",
+    "measurement_boundary": "session.run includes ONNX Runtime host/device transfers and model inference; CPU geometric RANSAC is reported separately; TIFF decode/resize and session creation excluded from inference timings"
+  }
+}

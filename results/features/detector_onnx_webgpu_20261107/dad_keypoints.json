@@ -1,0 +1,435 @@
+{
+  "method": "dad",
+  "source": {
+    "reference_package": "dad-detector",
+    "reference_package_version": "0.2.1",
+    "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+    "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dad.pth",
+    "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+    "coordinates": "source-image pixel centres; integer values identify pixel centres",
+    "detector": "DaD",
+    "device": "cpu",
+    "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+    "checkpoint_revision": "v0.1.0 release asset dad.pth"
+  },
+  "input_output": {
+    "input_name": "image",
+    "input_layout": "NCHW float32 normalized RGB",
+    "output_mode": "keypoints",
+    "output_names": [
+      "keypoints",
+      "scores"
+    ],
+    "output_meaning": "normalized keypoint coordinates and detector confidence scores",
+    "max_keypoints": 1024,
+    "batch_size": 1,
+    "dynamic_spatial_axes": true,
+    "required_input_multiple_px": 8,
+    "export_shape_px": [
+      128,
+      128
+    ],
+    "test_shape_px": [
+      640,
+      360
+    ]
+  },
+  "export": {
+    "opset": 17,
+    "fused_batch_norm_count": 22,
+    "fusion_parity_max_abs": 0.007933616638183594,
+    "fusion_parity_mean_abs": 0.0009801129344850779,
+    "onnx_sha256": "f68a6bae97bbbc9745bf81693fc375f31f5bf396434ea5a990d9795bd88384fe",
+    "onnx_bytes": 13019380,
+    "node_count": 400,
+    "operator_counts": {
+      "Add": 17,
+      "Cast": 30,
+      "Concat": 24,
+      "Constant": 129,
+      "Conv": 42,
+      "Div": 8,
+      "Equal": 1,
+      "Gather": 11,
+      "GatherElements": 2,
+      "MaxPool": 4,
+      "Mod": 1,
+      "Mul": 14,
+      "Reciprocal": 2,
+      "ReduceSum": 3,
+      "Relu": 22,
+      "Reshape": 8,
+      "Resize": 6,
+      "Shape": 16,
+      "Slice": 15,
+      "Softmax": 2,
+      "Sub": 5,
+      "TopK": 1,
+      "Transpose": 1,
+      "Unsqueeze": 36
+    }
+  },
+  "runtime": {
+    "provider_requested": "WebGpuExecutionProvider",
+    "providers_used_by_ort": [
+      "WebGpuExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "onnxruntime_version": "1.31.1",
+    "adapter": {
+      "vendor_id": 32902,
+      "device_id": 25760
+    },
+    "session_initialization_s": 0.09453659399878234,
+    "warmup_calls": 1,
+    "timed_calls": 5,
+    "run_s": [
+      0.12070941494312137,
+      0.12098202994093299,
+      0.11753540008794516,
+      0.11962633999064565,
+      0.11853824998252094
+    ],
+    "median_run_s": 0.11962633999064565,
+    "output_bytes_returned_to_cpu": 12288,
+    "session_run_returns_cpu_numpy": true,
+    "profile_runtime": {
+      "onnxruntime_version": "1.31.1",
+      "adapter": {
+        "vendor_id": 32902,
+        "device_id": 25760
+      }
+    },
+    "profile": {
+      "node_event_count": 245,
+      "node_duration_us_by_provider": {
+        "WebGpuExecutionProvider": 120153,
+        "CPUExecutionProvider": 516
+      },
+      "cpu_node_event_count": 73,
+      "cpu_node_duration_us": 516,
+      "largest_cpu_nodes": [
+        {
+          "name": "/Sub_2_kernel_time",
+          "op_type": "Sub",
+          "duration_us": 38,
+          "output_type_shape": [
+            {
+              "int64": []
+            }
+          ]
+        },
+        {
+          "name": "/Add_6_kernel_time",
+          "op_type": "Add",
+          "duration_us": 24,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024,
+                9
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Add_8_kernel_time",
+          "op_type": "Add",
+          "duration_us": 18,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024,
+                9
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Add_7_kernel_time",
+          "op_type": "Add",
+          "duration_us": 16,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024,
+                9
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Mul_5_kernel_time",
+          "op_type": "Mul",
+          "duration_us": 14,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024,
+                9
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Div_kernel_time",
+          "op_type": "Div",
+          "duration_us": 13,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Mod_kernel_time",
+          "op_type": "Mod",
+          "duration_us": 13,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_233_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 11,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 11,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Add_4_kernel_time",
+          "op_type": "Add",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Cast_21_kernel_time",
+          "op_type": "Cast",
+          "duration_us": 9,
+          "output_type_shape": [
+            {
+              "float": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Concat_1_kernel_time",
+          "op_type": "Concat",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Gather_3/GatherSliceToSplitFusion_kernel_time",
+          "op_type": "Split",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            },
+            {
+              "int64": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Unsqueeze_28_kernel_time",
+          "op_type": "Unsqueeze",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Reshape_6_kernel_time",
+          "op_type": "Reshape",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                9216
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Mul_4_kernel_time",
+          "op_type": "Mul",
+          "duration_us": 8,
+          "output_type_shape": [
+            {
+              "int64": [
+                1,
+                1024
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_237_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "name": "/Slice_2_kernel_time",
+          "op_type": "Slice",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Gather_token_241_kernel_time",
+          "op_type": "Gather",
+          "duration_us": 7,
+          "output_type_shape": [
+            {
+              "int64": [
+                4
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "profile_path": "results/features/detector_onnx_webgpu_20261107/dad_keypoints.ort-profile.json",
+    "host_ram_and_gpu_peak_memory": "not measured"
+  },
+  "numerical_parity_torch_vs_onnx_runtime": {
+    "keypoint_set": {
+      "metric": "one-way nearest-neighbour set distances; not a one-to-one assignment",
+      "reference_to_candidate_count_within_px": {
+        "0.1": 1003,
+        "0.5": 1008,
+        "1.0": 1012,
+        "2.0": 1012,
+        "5.0": 1018
+      },
+      "candidate_to_reference_count_within_px": {
+        "0.1": 1003,
+        "0.5": 1008,
+        "1.0": 1012,
+        "2.0": 1017,
+        "5.0": 1019
+      },
+      "reference_to_candidate_median_px": 0.0022444152273237705,
+      "candidate_to_reference_median_px": 0.0022444152273237705,
+      "reference_to_candidate_max_px": 12.160615921020508,
+      "candidate_to_reference_max_px": 17.389869689941406
+    },
+    "score_max_abs": 4.99527232022956e-07,
+    "score_mean_abs": 4.34013607275574e-08
+  },
+  "custom_selection_vs_official_torch_detection": {
+    "keypoint_set": {
+      "metric": "one-way nearest-neighbour set distances; not a one-to-one assignment",
+      "reference_to_candidate_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "candidate_to_reference_count_within_px": {
+        "0.1": 1024,
+        "0.5": 1024,
+        "1.0": 1024,
+        "2.0": 1024,
+        "5.0": 1024
+      },
+      "reference_to_candidate_median_px": 9.5367431640625e-06,
+      "candidate_to_reference_median_px": 9.5367431640625e-06,
+      "reference_to_candidate_max_px": 2.1883915906073526e-05,
+      "candidate_to_reference_max_px": 2.1883915906073526e-05
+    },
+    "score_max_abs": 0.0
+  }
+}

@@ -7,3 +7,5 @@ These guided lessons introduce the Python package. The first builds its own dete
    :maxdepth: 2
 
    first-matches
+
+   first-detector

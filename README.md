@@ -2,6 +2,8 @@
 
 WebGPU feature matchers for initializing digital image correlation (DIC). The Python package provides DeepMatching, HORG-DIC, and CPM-HOG through `wgpu-py`; compute kernels run as WGSL shaders, with no project-specific native extension to compile.
 
+An experimental speckle-specific keypoint detector is also available in the Python API. Its structure-tensor baseline and trained compact score model run in WGSL; DaD and DeDoDe v2 are included as optional PyTorch reference adapters. These detector experiments are separate from the three established pair matchers and do not yet measure downstream IC-GN convergence.
+
 These methods estimate initial correspondences at points of interest. They do not compute a complete DIC displacement field or perform IC-GN refinement.
 
 DeepMatching, HORG, and CPM have browser and native Python frontends. They load the same canonical WGSL sources from `python/src/wgpu_matching/shaders/`; the Python package embeds them as resources, while the browser fetches them from the repository's static tree. Their shared option defaults, constraints, and coordinate conventions live in `python/src/wgpu_matching/matcher-contracts.json`. A deterministic Python/browser parity check covers translation, a mild affine warp, irregular manual seeds, and invalid-option rejection: `node tests/run_matcher_parity.mjs`. This is a small integration control; Live-DIC analytic benchmarks remain the scientific comparison.

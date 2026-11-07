@@ -145,6 +145,46 @@
         "seed_points": { "python": "seed_points", "javascript": "seedPoints" },
         "oracle_affine": { "python": "oracle_affine", "javascript": "cpmOracleAffine" }
       }
+    },
+    "projection": {
+      "defaults": {
+        "basis": "gaussian_rbf",
+        "center_counts": [16, 32, 64],
+        "width_factors": [1.0, 2.0, 4.0],
+        "ridge_values": [0.000001, 0.0001, 0.01],
+        "folds": 3,
+        "max_irls_iterations": 20,
+        "irls_tolerance": 0.0001,
+        "irls_damping": 0.0,
+        "huber_delta": 1.345,
+        "minimum_scale_px": 0.05,
+        "density_cells": [16, 12],
+        "random_seed": 20261106
+      },
+      "constraints": {
+        "basis": { "type": "enum", "values": ["affine", "gaussian_rbf"] },
+        "folds": { "type": "integer", "minimum": 2, "maximum": 8 },
+        "max_irls_iterations": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "irls_tolerance": { "type": "number", "minimum": 0 },
+        "irls_damping": { "type": "number", "minimum": 0, "maximum": 0.999999 },
+        "huber_delta": { "type": "number", "minimum": 0 },
+        "minimum_scale_px": { "type": "number", "minimum": 0 },
+        "random_seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+      },
+      "option_keys": {
+        "basis": { "python": "basis", "javascript": null },
+        "center_counts": { "python": "center_counts", "javascript": null },
+        "width_factors": { "python": "width_factors", "javascript": null },
+        "ridge_values": { "python": "ridge_values", "javascript": null },
+        "folds": { "python": "folds", "javascript": null },
+        "max_irls_iterations": { "python": "max_irls_iterations", "javascript": null },
+        "irls_tolerance": { "python": "irls_tolerance", "javascript": null },
+        "irls_damping": { "python": "irls_damping", "javascript": null },
+        "huber_delta": { "python": "huber_delta", "javascript": null },
+        "minimum_scale_px": { "python": "minimum_scale_px", "javascript": null },
+        "density_cells": { "python": "density_cells", "javascript": null },
+        "random_seed": { "python": "random_seed", "javascript": null }
+      }
     }
   }
 }

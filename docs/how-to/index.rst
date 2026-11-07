@@ -8,4 +8,8 @@ Each guide addresses a practical task. For the reasoning behind thresholds and s
 
    choose-adapter
    seeds-and-fields
+   project-correspondences
+   train-dic-detector
    reproduce-benchmarks
+
+   run-learned-detectors

@@ -95,6 +95,43 @@ This is a local fallback, not a replacement for the global field: excluded roots
 Reports and raw data
 --------------------
 
+**Feature-detector experiments**
+
+The DaD, DeDoDe v2-L, HORG/SIFT, and DIC-Detector experiments use a shared
+DeDoDe-B descriptor, reciprocal cosine matching, and the same WGSL local-affine
+RANSAC criteria. The reference learned models and DeDoDe-B descriptor run in
+optional PyTorch on CPU; only HORG/DIC detection and affine RANSAC use WebGPU
+in that comparison. These timings are therefore reference-pipeline timings,
+not a GPU-port benchmark. The companion native 4K study isolates DIC detector
+inference, and the held-out synthetic study reports detector repeatability.
+
+* :doc:`Shared-descriptor comparison, four tensile cases
+  <_generated_results/features/detector_common_descriptor_20261107>` and
+  :doc:`raw results <_generated_results/features/detector_common_descriptor_20261107.json>`
+* :doc:`Detector and full-pipeline comparison summary
+  <_generated_results/features/detector_method_comparison_20261107>`
+* :doc:`Shared-descriptor 60% stress run with global top-K and spatial quotas
+  <_generated_results/features/detector_common_descriptor_60pct_20261107>`
+  and :doc:`raw results <_generated_results/features/detector_common_descriptor_60pct_20261107.json>`
+* :doc:`Shared-descriptor 60% budget sweep, 512–8192 points
+  <_generated_results/features/detector_budget_sweep_60pct_20261107>` with
+  :doc:`low-budget raw results
+  <_generated_results/features/detector_common_descriptor_60pct_budgets_low_20261107.json>`
+  and :doc:`high-budget raw results
+  <_generated_results/features/detector_common_descriptor_60pct_budgets_20261107.json>`
+* :doc:`DIC-Detector native 4K latency and repeatability
+  <_generated_results/features/dic_detector_native_4k_20261107>`
+* :doc:`Held-out synthetic DIC-Detector repeatability
+  <_generated_results/features/dic_detector_heldout_20261107>`
+* :doc:`DIC-Detector training and WGSL/PyTorch score-parity data
+  <_generated_results/features/dic_detector_training_20261107/training_report.json>`
+* :doc:`Discontinuity-aware DIC-Detector training and held-out comparison
+  <_generated_results/features/dic_detector_discontinuous_training_20261107>`
+  with :doc:`4K WGSL/PyTorch score parity data
+  <_generated_results/features/dic_detector_discontinuous_wgsl_parity_4k_20261107.json>`
+
+The :doc:`affine/RBF projection study <_generated_results/projection/matcher_projection_experiments_20261107>` compares EfficientLoFTR and RaCo-ALIKED-LightGlue+ on analytic tensile images from 10% to 60% and on the Adrien experimental pair. It includes per-case quality/timing tables, flicker GIFs, links to complete JSON/CSV outputs, and a stage-level account of which parts run in WGSL, ONNX WebGPU, or on the CPU. For these tensile trials, affine projection is the most reliable initialization across the tested strain range; the RBF comparisons and their convergence flags are reported alongside it.
+
 The native Python benchmark measures HORG and DeepMatching separately on Live-DIC frames 040, 100, and 199 using `wgpu-py`. Its protocol differs from the earlier browser benchmark.
 
 * :doc:`DeepMatching–HORG accuracy and timing report <_generated_results/uniaxial/deepmatching_horg_current_comparison>`

@@ -5,7 +5,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import pytest
-from wgpu_matching import CPMOptions, DeepMatchingOptions, HORGOptions
+from wgpu_matching import CPMOptions, DeepMatchingOptions, HORGOptions, ProjectionOptions
 from wgpu_matching.contracts import validate_matcher_options
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +17,7 @@ def test_contract_constraints_cover_every_declared_option() -> None:
         "deepmatching": asdict(DeepMatchingOptions()),
         "horg": asdict(HORGOptions()),
         "cpm": asdict(CPMOptions()),
+        "projection": asdict(ProjectionOptions()),
     }
     for algorithm, spec in contract["algorithms"].items():
         assert set(spec["constraints"]) <= set(spec["defaults"])
@@ -38,6 +39,9 @@ def test_contract_constraints_cover_every_declared_option() -> None:
         ("cpm", {**asdict(CPMOptions()), "matching_support_px": 4}, "matching_support_px"),
         ("cpm", {**asdict(CPMOptions()), "initial_hypotheses": 65}, "initial_hypotheses"),
         ("cpm", {**asdict(CPMOptions()), "seed": 2**32}, "seed"),
+        ("projection", {**asdict(ProjectionOptions()), "basis": "thin_plate"}, "basis"),
+        ("projection", {**asdict(ProjectionOptions()), "max_irls_iterations": 0}, "max_irls_iterations"),
+        ("projection", {**asdict(ProjectionOptions()), "irls_damping": 1.0}, "irls_damping"),
     ],
 )
 def test_invalid_options_are_rejected_by_the_shared_contract(

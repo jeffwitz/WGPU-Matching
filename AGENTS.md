@@ -36,6 +36,39 @@ Ces méthodes sont des pistes à adapter, pas des gains présumés. La contraint
 - **Indicateurs de confiance, étude exploratoire :** le leave-one-out affine à huit voisins réduit les faux positifs de 17 à 7 sur 18 frames de contrôle, mais rate encore sept erreurs et écarte six points corrects. Le seuil ≥10 inliers ne laisse passer aucune erreur dans ce contrôle, au prix d’une perte de couverture. Garder ces indicateurs comme diagnostics tant qu’ils ne sont pas validés sur DIC hétérogène et images expérimentales. Détails : `results/uniaxial/horg_quality_indicators.md`.
 - **À faire ensuite :** évaluer une contrainte spatiale inspirée de GMS, adaptée aux gradients de déplacement DIC, comme score de diagnostic avant tout rejet. Puis paralléliser les hypothèses RANSAC par POI et profiler chaque noyau/transfert. Garder la recherche guidée par affine ou multi-échelle conditionnelle aux régions difficiles. Les sources INRIA et les fixtures externes restent hors modification.
 
+# Learned detector and speckle-specific detector contract
+
+## Objective
+
+Evaluate DaD (official 2025 detector), DeDoDe v2-L, and a lightweight DIC-specific detector for initializing DIC on speckle images with large displacement and affine or heterogeneous deformation. Compare detector quality separately from descriptors, matching, geometric verification, and IC-GN convergence. Preserve DeepMatching, HORG, CPM, XFeat, and EfficientLoFTR behavior and all historical measurements.
+
+## Required sequence
+
+1. **P0 reference adapters:** add a shared floating-point keypoint result contract; use official DaD weights and the official DeDoDe v2-L detector checkpoint. Keep PyTorch, model code, and weights optional and outside the core install and Git history. Record upstream revision, checkpoint URL, and SHA-256 for every run. Verify model output and coordinate conversion against upstream conventions. Use DeDoDe-B as the common descriptor; permit sampling it at points from DaD, DeDoDe v2, HORG/SIFT, and DIC-Detector.
+2. **P1 detector and matcher comparison:** measure repeatability at 1, 2, and 5 px, point coverage, spatial distribution, points per DIC window, match precision, false positives, local-affine coverage, and extraction/matching time. Include budgets 512, 1024, 2048, 4096, and 8192 and compare global top-K with spatial quotas. Use shared seeds, common descriptors, common reciprocal matching, and the same WGSL affine RANSAC criteria. Keep full original pipelines as separate baselines.
+3. **P2 WGSL non-learned baseline:** implement local structure-tensor scoring, non-maximum suppression, ROI-aware point selection, and spatial quotas in WGSL. Report conditioning metrics as local IC-GN information indicators, not as evidence of correspondence uniqueness.
+4. **P3/P4 DIC-Detector:** provide a small trainable convolutional model and deterministic speckle/warp data-generation pipeline. Separate train/validation/test textures and deformation fields. Begin with repeatability and descriptor-discrimination supervision; add an IC-GN-success reliability target only when a compatible solver is available. Never claim that an untrained model is validated.
+5. **P5 WebGPU:** use PyTorch as an optional oracle. Test ONNX/WebGPU where graph operators allow it, and port DIC-Detector inference and the WGSL baseline to WebGPU. Measure CPU fallbacks, transfers, memory, UHD tiling, reference caching, and paired versus cached-reference latency. Do not label execution GPU-resident without profile evidence.
+6. **P6 descriptor:** train a compact affine-aware DIC descriptor only if common DeDoDe-B results show that descriptor discrimination limits the detector comparison.
+7. **P7 qualification:** compare HORG, DeepMatching, XFeat, EfficientLoFTR, DaD + DeDoDe-B, DeDoDe v2 + DeDoDe-B, DIC-Detector + DeDoDe-B, and any later DIC descriptor using the same criteria. Include progressive Live-DIC frames 040/100/199, synthetic 10–60% tension, and held-out heterogeneous fields/rotations. Report accepted coverage and correct coverage over all visible seeds separately, including error thresholds ≤2 px and <5 px, timing scope, memory, and model resolution.
+
+## License and reproducibility constraints
+
+- Do not copy third-party implementations into the repository. Depend on or adapt through the official projects and keep their license notices.
+- The DaD repository and the DeDoDe detector/DeDoDe-B code and weights state MIT licensing. DeDoDe's DINOv2-based descriptor-G has a separate Apache-2.0 license; it is outside the initial protocol.
+- Do not commit learned weights. Download them to an external cache or explicit user path and write their SHA-256 to raw benchmark results.
+- PyTorch and upstream model packages remain optional; `pip install wgpu-matching` must not install them.
+- Treat the external `tests_gpuio` and `DIC_CODEC` trees as read-only. Do not copy their implementation or alter their files.
+
+## Acceptance and scientific limitations
+
+- A detector-only repeatability gain is not a matching or DIC-initialization gain.
+- Report measured keypoints separately from interpolated or fitted DIC seed estimates.
+- Do not tune thresholds on the held-out final test cases or change baseline parameters to make a new detector look better.
+- Validate seed coordinates, pixel-centre conventions, ROI filtering, chunked matching determinism, and descriptor parity.
+- The final scientific target is correctly converged DIC windows per second. If IC-GN is not available in this repository without invasive work, explicitly report that convergence remains unmeasured and retain error-to-analytic-truth metrics.
+- Retain negative results and explain cross-domain limits: DaD/DeDoDe pretraining targets natural-image local matching, not speckle textures.
+
 ## Sparse DeepMatching study (November 2026)
 
 - **Finding:** explicit `seed_points` currently limit only returned POIs. The default INRIA-style path still evaluates the complete image root grid (40 roots on the tested UHD images).
@@ -282,3 +315,653 @@ Run available tests, fix observed failures, and document anything not run. Never
 - **CI:** the software-Vulkan browser job runs parity for all three methods before the CPM smoke test, verifies visible app defaults, and checks rejection of invalid options. Python unit tests cover the shared constraints. CPM browser smoke passes 3/3 with 0 px error.
 - **Latest validation:** 25 Python tests pass, Ruff is clean, Sphinx strict build succeeds, and the rebuilt wheel installs with `cpm.py`, the contract JSON, and all 20 WGSL files. Cross-frontend parity, CPM smoke, and the all-method Python quickstart pass. Historical 60% results predate the work-grid correction and need rerunning before they are treated as current CPM measurements.
 - **Remaining architecture work:** algorithm orchestration and some result assembly are still duplicated between JavaScript and Python; the option-key mapping is declared once, but frontend-specific key names remain. The parity fixture is an initial regression guard, not proof of full algorithm equivalence across datasets or adapters. Avoid expanding it by loosening thresholds; add additional controlled transforms and validated method contracts incrementally.
+
+
+# Active implementation contract: shared affine / Gaussian-RBF initialization
+
+**Requested by the user on 2026-11-06. Status: Python/WGPU affine and Gaussian-RBF projection prototype implemented; scientific qualification and browser integration remain in progress.**
+The designated implementation agent is Luna. This section defines its work; it does
+not authorize claiming that any of the implementation or validation below already exists.
+For this feature, this contract supersedes earlier proposals requiring crack-aware
+segmentation or native-resolution photometric refinement before initialization.
+Historical matcher contracts and results remain applicable to their own methods.
+
+## 1. Objective and scope
+
+Provide one method-independent layer that converts measured image correspondences
+into a smooth displacement initializer and then into the six affine parameters of
+each requested DIC patch. Offer two user-selectable bases:
+
+- `affine`: a robust global affine displacement field;
+- `gaussian_rbf`: a robust regularized Gaussian-RBF displacement field with an
+  unpenalized affine component and automatic hyperparameter selection.
+
+Support every existing correspondence-producing method: DeepMatching (including
+sparse modes), HORG, CPM, XFeat, RaCo/ALIKED/LightGlue variants, and EfficientLoFTR.
+A detector alone does not provide displacement observations: its corresponding
+matcher must supply source/target pairs. Optional external models remain optional.
+
+The initializer is not the final mechanical measurement. IC-GN receives the patch
+parameters and remains free to converge independently on original image pixels.
+Do not warp entire images as part of the production API. Do not add an IC-GN solver,
+photometric refinement, fracture detection, discontinuity segmentation, separate
+motion branches, or physical constitutive constraints in this first version.
+Continuous heterogeneous deformation and localization are in scope. A localization
+may be under-resolved by the initializer; report its consequences rather than
+claiming the reconstructed field is the true deformation. Crack handling is deferred.
+
+Python / wgpu-py is the primary interface. Perform the expensive projection and
+patch evaluation on WebGPU; retain a small independent float64 CPU reference for
+validation. Preserve all existing matcher behavior unless projection is explicitly
+requested. Do not change historical results or external datasets/repositories.
+
+## 2. Inspect and reuse before implementation
+
+Read `api.py`, `horg.py`, `deepmatching.py`, `cpm.py`, their browser counterparts,
+`matcher-contracts.json`, the feature benchmark adapters and shared WGSL directory.
+Use the codebase graph tools for discovery if available; otherwise document that
+fallback and inspect sources. Identify where each backend still has actual measured
+pairs before local affine fitting, interpolation, or seed association.
+
+The current `MatchField`/`LocalAffineField` APIs must remain backward compatible.
+In particular, do not feed a field already reconstructed from a handful of seed
+fits back into projection and represent it as thousands of independent matches.
+Prefer an opt-in correspondence export at the actual measurement stage.
+
+## 3. Common correspondence contract and provenance
+
+Define a documented `CorrespondenceSet` (name may follow repository conventions):
+
+- reference and target coordinates, floating point, shape `(N,2)` each;
+- stable match identifiers, extractor/matcher identity and run metadata;
+- native image dimensions and complete resize/padding/crop coordinate mappings;
+- raw method score, reciprocal diagnostics and original acceptance/rejection flags;
+- `measurement_kind`, distinguishing directly measured from previously inferred points;
+- optional explicitly calibrated confidence or covariance; absence must be supported.
+
+All projection coordinates are native original-image pixels, with the repository's
+pixel-center convention. Respect separate x/y resize factors and padding offsets.
+Never assume that multiplication by a single downscale factor is sufficient.
+Validate these mappings on controlled coordinates, including fractional centers.
+
+Default fitting input consists of direct, finite, in-image correspondences passing
+the backend's documented descriptor/reciprocity checks. Preserve excluded rows and
+reasons. Do not introduce a mandatory global-affine RANSAC gate: real non-affine
+motion must remain eligible for the RBF fit. Legacy affine rejection may be recorded
+as a diagnostic without becoming an irreversible input filter for the new layer.
+
+Do not compare raw confidence scales across matchers or interpret arbitrary scores
+as probabilities. Initial score weighting is uniform unless a documented calibration
+is available. Deduplicate identical source/target pairs deterministically; retain
+provenance and identify incompatible duplicate-source observations. Use bounded
+spatial-density weights so one dense feature cluster cannot dominate the field;
+publish the weighting rule and its effect. Do not fuse different matchers by default.
+
+Allow host-array inputs and same-device GPU-buffer inputs with explicit ownership,
+layout and lifetime. ONNX-to-wgpu interoperability is not assumed; record any actual
+host round trip. The common adapter must not label externally computed outputs as
+resident in wgpu memory without evidence.
+
+## 4. Coordinate system and mathematical model
+
+Fit displacement `d_i = y_i - x_i`, not absolute target positions. Choose one
+reference-coordinate normalization `z=(x-o)/s` with isotropic scalar `s>0` derived
+from the reference ROI/image extent. Store it with the fitted model. Normalize
+displacements by the same `s`. Do not independently normalize source and target
+without explicitly restoring the induced affine transformation.
+
+Affine model in normalized units:
+
+`v(z) = b + A z`, with `u(x) = s v((x-o)/s)`.
+
+Gaussian-RBF model:
+
+`v(z) = b + A z + sum_k c_k exp(-||z-q_k||^2 / (2 ell^2))`.
+
+The affine component is unpenalized. RBF centers `q_k` are a bounded, spatially
+representative subset of training source locations, selected deterministically
+(e.g. farthest-point sampling over occupied spatial cells). Center selection must
+not depend on analytic truth or validation target displacements. Avoid an N-by-N
+kernel solve over all feature points. The center count is a tunable capacity limit.
+
+Use an explicitly normalized robust regression objective, for example:
+
+`sum_i w_i rho(||v(z_i)-d_i/s|| / sigma) / sum_i w_i + lambda ||C||_F^2`.
+
+Here sigma is a robust positive residual scale with a documented lower floor,
+rho is a vector-residual Huber loss, and lambda penalizes only RBF coefficients.
+Specify exact Huber tuning, scale update and stopping conditions in the shared
+contract. Freeze the selected loss settings across benchmark methods.
+This finite-basis ridge model is an adaptation inspired by RKHS approaches;
+it is not an exact FG-GMM implementation or an assertion that coefficient ridge
+is identical to the paper's RKHS norm penalty.
+
+Resolve affine/RBF collinearity explicitly through a stable weighted projection,
+QR/SVD in the CPU reference, or an equivalent constrained/regularized formulation.
+The prediction must retain unpenalized affine reproduction. Document how any
+basis orthogonalization is carried into evaluation at new points. Never stabilize
+by silently penalizing the affine coefficients or rounding displacements.
+
+Use IRLS with bounded iteration count and monitored convergence. Severe outlier
+contamination can defeat this estimator; include that failure mode in validation.
+Existing RANSAC may provide an optional starting hypothesis, but must not permanently
+remove non-affine observations. Preserve final robust weights and residuals per pair.
+
+Gaussian RBFs are the selected first implementation because of their analytic
+values/derivatives and controllable length scale. Do not add an assortment of
+kernels without measured evidence of a Gaussian failure. A later kernel substitution
+requires a separately reported comparison using the same data and evaluation seeds.
+
+## 5. Automatic selection: bounded and reproducible, not an optimality claim
+
+`gaussian_rbf` supports fixed and automatic `(center_count, ell, lambda)` settings.
+Automatic is the normal user path. Record the full candidate table, validation
+errors, failures and selection decision. "Optimal" means selected within this
+finite search, never a guarantee of the globally best function or kernel.
+
+Start with a bounded candidate family: center counts 16/32/64 (capped by available
+training information), widths 1/2/4 times the typical center spacing, and normalized
+ridge strengths 1e-6/1e-4/1e-2. These are initial engineering search bounds, not
+validated defaults. Allow explicit overrides; expansions must have a time/memory
+budget and be reported. Include affine as a baseline candidate and expose an
+optional automatic simplicity fallback. If RBF mode returns an affine fallback,
+return `effective_basis='affine'` and a reason, never hide the fallback.
+
+Use deterministic spatial block cross-validation (initially 3 folds), balancing
+coverage and checking training rank. Select centers, robust weights and residual
+scale using training rows only; no geometric filtering fitted on validation data.
+Ensure block size reflects the intended interpolation distance; an entire missing
+half-image tests extrapolation and must not be confused with local interpolation.
+
+Score every eligible held-out observation using a fixed robust criterion with a
+validation residual scale shared across candidates, derived from training data.
+Do not let each candidate discard its own hard validation points or inflate its
+own evaluation scale. Also publish uncapped median/P95 errors and counts. Select
+the least complex candidate within the estimated fold-score uncertainty of the
+best; define the tie-break rule deterministically. If folds cannot support a
+meaningful comparison, report `selection_unavailable` and use a documented fixed
+configuration or affine fallback with explicit status.
+
+Cross-validation residuals include feature localization noise and outliers. They
+are not analytic field error and are not calibrated confidence intervals. Use
+synthetic truth only to evaluate this selection procedure, never to choose the
+model during a production call.
+
+## 6. Derive each patch's affine initialization from the fitted field
+
+Separate fitting the common field from producing parameters for requested patches.
+Keep requested fractional centers exactly. Default to `patch_projection='support_fit'`:
+fit the local affine displacement approximation to samples of the predicted field
+throughout each patch, keeping its center displacement exact.
+
+For center `xc`, offsets `r_j` covering the patch, solve the small weighted problem:
+
+`u_c = u(xc)`
+
+`G_c = argmin_G sum_j omega_j ||u(xc+r_j) - u_c - G r_j||^2`.
+
+Use a fixed symmetric tensor grid initially (e.g. 5x5 quadrature/sample points),
+with coordinates based on `(patch_width-1)/2` and `(patch_height-1)/2`; specify
+weights and handling of non-square patches. This is projection of the predicted
+field, with no image interpolation and no patch-specific rematching/RANSAC.
+
+Return the following explicit parameter order:
+
+`[u_c.x, u_c.y, G_c[0,0], G_c[0,1], G_c[1,0], G_c[1,1]]`
+
+corresponding to `[u,v,du/dx,du/dy,dv/dx,dv/dy]`. The coordinate map is
+`x_target = xc + u_c + (I+G_c)(x-xc)`.
+
+Also offer `patch_projection='taylor'` using the analytic gradient at the center,
+as a documented alternative and validation reference. For a Gaussian basis,
+`grad_z phi = -(z-q)/ell^2 * phi`. Because both positions and displacements use
+the same scalar normalization, `grad_x u = grad_z v`; do not add an extra scale.
+
+Report patch-support approximation RMS/max residual, center prediction,
+support/extrapolation diagnostics and status. For an exactly affine input field,
+both projection modes must reproduce the same six parameters. For curved fields,
+the two modes can differ; benchmark their initialization errors separately.
+
+Respect an existing ROI mask for requested patches and observations using its
+explicit coordinate frame. A reference mask is not automatically a target mask.
+Reject or flag patches crossing known invalid support according to a documented
+policy. Do not invent crack detection or automatically split motion fields.
+
+## 7. API, frontend integration and result semantics
+
+Provide a Python-first API equivalent to:
+
+```python
+pairs = ...  # CorrespondenceSet supplied by any supported matcher adapter
+model = matcher.fit_initialization_field(pairs, basis='gaussian_rbf', options=options)
+initialization = model.initialize_patches(seed_points, patch_size=128,
+                                        projection='support_fit')
+```
+
+Names may follow existing conventions. Keep fitting reusable for multiple seed
+sets/patch sizes without rerunning feature extraction. Do not silently cache the
+same field for a different target image. Expose evaluation at arbitrary points,
+optional analytic gradients, coefficient serialization and safe resource cleanup.
+
+For each requested patch return its original ID/center, six parameters, finite
+status, support diagnostics, approximation residual and acceptance reason.
+Always mark these as `estimated_from_field`, not directly measured matches.
+Return failed patches too, with explicit unavailable parameters rather than a
+fake zero displacement. Separate `computable` from validated IC-GN convergence;
+field-fit success alone must not claim a patch converged or is correct.
+
+Model metadata includes requested/effective basis, centers/normalization,
+hyperparameters and search bounds, robust fit status, condition/solver diagnostics,
+input counts, full timings, execution backend and any CPU transfers/fallbacks.
+Preserve matcher scores separately from projection residuals.
+
+Browser native matchers must use the same projection contract and shared WGSL.
+Expose basis selection independently of extraction method and export all six
+parameters in CSV/JSON. External ONNX matchers currently available only in Python
+need Python adapters; this task does not require porting their inference to the
+browser. Document actual frontend support rather than pretending it is identical.
+Store defaults, parameter ordering and option mappings in the shared contract.
+
+## 8. WebGPU execution and numerical requirements
+
+Implement basis evaluation, residuals/IRLS weights, batched reductions, bounded
+linear solves, field evaluation and per-patch projection on GPU where feasible.
+Keep intermediate N-by-K arrays/weights resident and reuse buffers and pipelines.
+Batch model candidates when it improves measured performance within a bounded
+memory budget. Respect device limits and release temporary resources.
+
+Avoid an all-source/all-target correspondence matrix and a mandatory N-by-N RBF
+system. Report the memory complexity and measured/estimated allocation sizes.
+Use normalized coordinates and FP32 GPU accumulation with stable reduction order;
+compare with independent float64 CPU fitting. If normal equations are used,
+acknowledge squared conditioning and monitor solve residual/rank. A Cholesky failure,
+non-finite coefficient or condition failure must produce an explicit diagnostic
+and documented fallback, not silently clamped coefficients.
+
+An initial CPU solve/orchestration fallback may be used while validating the GPU
+path, but cannot be described as the final GPU implementation. Report how many
+host synchronizations occur per fit/IRLS iteration. Small candidate selection and
+metadata decisions may stay on CPU. Do not introduce required CUDA, PyTorch,
+TensorRT, Rust or compiled Python extensions. Keep pip installation viable.
+
+Canonical shaders remain in `python/src/wgpu_matching/shaders/`; no manual copies.
+Python and browser parity must cover the same fixed parameters and correspondence
+fixtures. Keep feature inference time separate from projection time and total time.
+
+## 9. Required validation and acceptance experiments
+
+First test the projection independently of detectors using known point pairs:
+
+- exact translations, rotation, shear and affine stretches including 60%;
+- smooth non-affine fields and continuous localized deformation;
+- varying density, clustered features, missing regions and boundary extrapolation;
+- noise and isolated/clustered outliers, including coherent false displacement groups;
+- empty, insufficient, duplicate and collinear inputs; deterministic repeatability;
+- coordinate scaling, crop/padding transforms, gradients and patch parameter ordering.
+
+Validate analytical derivatives against finite differences and independent formulas.
+Check pure affine reproduction even with RBFs enabled and regularization nonzero.
+As initial numerical targets on well-conditioned exact-affine fixtures, require
+native-coordinate prediction error <0.01 px and gradient error <1e-4. These are
+solver correctness targets, not promises about measured image features. Document
+and investigate any unmet target instead of silently loosening it.
+
+Then compare all available matchers on Live-DIC frames 040/100/199 and tensile 60%,
+using identical visible seeds, with projection disabled, affine, and selected RBF.
+Include synthetic continuous heterogeneous fields so affine-only cases do not
+artificially favor a global affine model. Report for all requested patches:
+coverage, accepted counts, error <=2 px and strictly <5 px, median/RMSE/P95/max,
+false acceptances, gradient errors, and error of each affine initializer across
+its patch support. Separate accepted-only precision from total correct coverage.
+
+Reuse the AdrienVariational TIFF pair and existing mask read-only as an additional
+real-data case. Match residuals and visual alignment are diagnostics, not truth.
+Do not transfer its coordinates or fit settings silently from 640x512 network
+inputs to the original 7920x6004 images. Retain raw observations for reproducibility.
+
+Measure warmed repeated timings on Intel LNL (or explicitly identify a substitute):
+feature extraction/matching, correspondence conversion/transfers, selection,
+final robust fit, patch projection, total; report median and dispersion. Include
+fixed-parameter and auto-selection costs. Sweep N and center counts with bounded
+memory. GPU acceleration is an empirical result, not an assumed deliverable number.
+
+If an existing IC-GN solver is accessible without modifying another project,
+compare convergence, final analytic error and converged windows per second. If
+not accessible, deliver the complete six-parameter export and mark convergence
+validation as pending. Projection acceptance alone does not establish DIC reliability.
+
+## 10. Implementation order, documentation and completion
+
+1. Audit raw-correspondence access and define/test adapters and shared conventions.
+2. Implement independent CPU reference and robust affine projection.
+3. Implement Gaussian RBF + affine component, fixed settings and patch projections.
+4. Implement bounded deterministic selection and preserve its diagnostics.
+5. Execute GPU projection with shared shaders and validate Python/browser parity.
+6. Integrate selectors/exports and benchmark all actual method adapters.
+7. Publish an English Sphinx/Diataxis explanation, examples and dated reports under
+   `results/projection/`, with raw correspondence fixtures or reproducible extraction.
+
+Proposed modules: Python `projection.py`, matcher adapters, shared projection WGSL,
+a browser projection module, and focused tests/benchmarks. Adjust names to the
+existing architecture; do not duplicate the projection algorithm for each matcher.
+
+Completion requires both bases, automatic RBF selection, all six patch parameters,
+explicit model/failure provenance, real GPU measurements, analytical validation,
+existing matcher non-regression and documented frontend coverage. Maintain a status
+checklist naming what remains unimplemented/unmeasured. Do not claim to have solved
+cracks, to have reproduced FG-GMM exactly, or to have globally optimal RBFs.
+
+## 11. Scientific source and deliberate adaptations
+
+Primary source: Zhang, Yan and Li, *Improved initial guess with semi-subpixel level
+accuracy in digital image correlation by feature-based method*, Optics and Lasers
+in Engineering 104 (2018), 149–158, DOI 10.1016/j.optlaseng.2017.05.014 (online 2017).
+Local PDF: `1-s2.0-S0143816617303111-main.pdf`.
+
+Retain its useful separation: feature correspondences -> continuous initializer
+and derivatives -> independent IC-GN. This contract deliberately substitutes modern
+matcher adapters, a bounded Gaussian basis with affine component, robust regression
+and selected hyperparameters for its ORB/FG-GMM full soft-assignment EM pipeline.
+It also adds finite-support patch projection. These are adaptations to validate,
+not evidence of numerical or algorithmic equivalence with the paper.
+
+The paper's synthetic final error of 0.021 px is after IC-GN, not initialization
+alone. Its larger experimental example reaches about 11.5% elongation. It does
+not validate our 60% cases or cracks. Do not copy its heuristic rejecting large
+absolute displacements (about one tenth of image size).
+
+## Implementation progress (November 2026)
+
+- `python/src/wgpu_matching/projection.py` now contains a float64 CPU reference and
+  an opt-in `WGPUMatching.fit_initialization_field` path. Affine/RBF IRLS normal
+  systems, basis construction, residual/robust-weight updates, field evaluation,
+  and support-fit/Taylor patch projection run in canonical WGSL shaders. Pipelines
+  are cached per live device and released when the matcher closes.
+- `CorrespondenceSet` retains matcher identity, unique IDs, native coordinate
+  mapping metadata, scores, acceptance/rejection reasons and measurement kind.
+  It accepts pairs from any method; `from_match_field` consumes direct targets
+  only. HORG optionally exposes its actual nearest-descriptor pairs, including
+  Lowe-ratio rejections. Do not turn HORG's already fitted local affine estimates
+  into synthetic training matches.
+- `CorrespondenceSet.from_preprocessed_pairs` applies separate x/y source and
+  target scale, padding and crop mappings. The public projection API filters to
+  accepted, direct, finite, in-image observations; keeps excluded rows and
+  incompatible duplicate sources in diagnostics; and returns six parameters,
+  support error, robust weights, residuals and original correspondence IDs.
+- The Gaussian-RBF candidate family and affine baseline use deterministic spatial
+  cross-validation in NumPy float64. The final robust solve and patch projection
+  are GPU-resident after host-array upload. Current GPU IRLS uses a fixed scale
+  estimated by a float64 pilot, FP32 normal equations, and an explicit convergence
+  flag/delta; non-convergence is reported. Standard IRLS (zero damping) is the
+  default; optional update damping is shared by the CPU reference and WGSL.
+  Same-device GPU-buffer inputs, GPU-side cross-validation/scale estimation, and
+  a condition estimate are not implemented yet.
+- `matcher-contracts.json` stores projection defaults and scalar bounds. The
+  Sphinx how-to and API reference describe adaptation for HORG, direct
+  MatchFields, and external resized-image matchers. Browser matchers still do not
+  expose the projection operation or its six-parameter CSV output.
+- Analytic tests cover affine/RBF selection, patch parameter ordering, measured
+  versus inferred provenance, anisotropic resize/padding/crop restoration, and
+  hardware WebGPU affine and Gaussian-RBF fits. Python test suite: 39 passed on
+  Intel Graphics LNL. Browser/Python DeepMatching-HORG-CPM parity also passes.
+  The GPU affine smoke recovered patch gradients within 5e-5. The synthetic
+  heterogeneous benchmark is in `results/projection/gpu_projection_synthetic_20261107.md`.
+  Its RBF fit reached 432/432 points under 5 px, but the 20-iteration IRLS did not
+  meet its convergence tolerance; report this limitation with the accuracy.
+- On 2026-11-07, Ruff passed, Sphinx built with warnings treated as errors,
+  browser/Python matcher parity passed, and a wheel was built and installed into
+  an isolated target to confirm both projection WGSL shaders are packaged.
+- Still pending: move spatial RBF cross-validation and scale estimation from
+  NumPy to WGSL; test projection of HORG and other extracted correspondences on
+  experimental frames; compare all available matchers on frames 040/100/199 and
+  tensile 60%; measure downstream IC-GN convergence; complete browser projection
+  and CSV parity; and characterize allocation, conditioning and failure behavior
+  across adapters. Do not call the scientific qualification complete.
+
+## Native ONNX/WebGPU performance work (November 2026)
+
+- The 2026-11-06 audit measured EfficientLoFTR at 640x360 on Intel Graphics LNL.
+  Its original profile had eight CPU `ScatterND` border-mask updates, each
+  materializing a 14.7 MB boolean tensor. Never interpret ORT event durations
+  as GPU hardware timestamps or claim a model is GPU-resident from its selected
+  provider alone.
+- An opt-in rewrite now lives in
+  `python/benchmarks/optimize_onnx_webgpu.py`; the comparison harness is
+  `python/benchmarks/compare_efficientloftr_border_mask.py`. It replaces those
+  updates with one same-shape WebGPU `And`, specializes the graph to a padded
+  640x384 NCHW input, and changes the binary-mask cast from int8 to float32 so
+  `ArgMax`/`ReduceMax` can run on the native WebGPU EP. The rewrite is not part
+  of the default API and must be regenerated for any other tensor size. The
+  14.7 MB constant is a deliberate memory trade-off: chained broadcast `And`
+  operations gave incorrect outputs on the installed provider and were rejected.
+- **Measured 2026-11-07:** original and rewritten output coordinates/confidences
+  are bit-identical on Live-DIC frames 040/100/199 and synthetic 60% tensile at
+  640x360. Three alternating warmed repetitions gave 1.06x-1.18x speedup. The
+  frame-100 diagnostic profile reduced CPU node events from 1,256 to 92 and
+  `MemcpyToHost` volume from 33.45 MB to 63 KB; the event duration remained
+  about 1.05 s, so synchronization still dominates and that event duration is
+  not copy bandwidth. This is not a 4K network run or a fully GPU-resident
+  pipeline. Report and data:
+  `results/features/efficientloftr_border_mask_optimization_20261107.md` and
+  `.json`.
+- The RaCo/ALIKED profile found 37 zero-padded bilinear `GridSample` nodes on
+  CPU and two border-padded nodes. `decompose_raco_grid_sample` in
+  `python/benchmarks/optimize_onnx_webgpu.py` rewrites only the zero-padded
+  nodes as bilinear coordinate/weight arithmetic plus GPU `GatherND`; the
+  dynamic input shapes are retained. It is opt-in with
+  `--decompose-grid-sample` and composes with the existing `--decompose-selu`
+  transform in `experiment_aliked_lightglue.py`.
+- **Measured 2026-11-07:** on the 640x360 network input, three unprofiled
+  repetitions gave 1.34x–1.43x speedup on frames 040/100/199 and tensile 60%.
+  Every per-seed affine initialization and analytic error was identical to the
+  SELU-only baseline. Across eight profiled inferences, CPU `GridSample` time
+  fell 457.5→1.4 ms, summed CPU node duration 622.1→176.9 ms, estimated
+  `MemcpyToHost` bytes 2.092 GB→86.8 MB and `MemcpyFromHost` bytes
+  941.0→613.9 MB. The CPU event count increased because one operator expands
+  to many primitive nodes. ORT trace durations are not hardware GPU timestamps;
+  these reductions do not establish a GPU-resident pipeline. The optional
+  stable `LogSoftmax` decomposition was benchmarked and removed because it
+  slowed all four production cases despite lowering estimated transfer volume.
+  Full report and data:
+  `results/features/raco_gridsample_webgpu_optimization_20261107.md` and `.json`.
+- Remaining P1 work: investigate CPU `Expand`, the two border-padded
+  `GridSample` nodes, and residual ORT synchronization/transfers. Keep rewrites
+  opt-in until per-seed DIC quality and unprofiled performance are measured.
+  Do not start native-4K local refinement or report the <1 s end-to-end target
+  as met until those stages have a bounded-memory design and a measured
+  comparison. No shared allocation between ONNX Runtime's WebGPU provider and
+  `wgpu-py` has been demonstrated.
+
+## DaD, DeDoDe v2 and speckle-specific detector progress (November 2026)
+
+- Optional Python reference adapters now expose official DaD, DeDoDe-L-v2,
+  and DeDoDe-B models through a common floating-point `FeatureSet` contract.
+  The experiment records checkpoint SHA-256 and upstream revisions. PyTorch
+  and the upstream model packages are optional; neither is a core package
+  dependency. DaD + DeDoDe-B is an experimental combination, not an official
+  end-to-end model.
+- **ONNX/WebGPU detector path validated:** `export_learned_detector_onnx.py`
+  exports keypoint-only DaD and DeDoDe-v2 graphs with dynamic image dimensions
+  and a fixed top-K capacity. `OnnxWGPUKeypointDetector` runs them through
+  ONNX Runtime WebGPU without importing PyTorch at inference. The custom
+  keypoint-selection export was checked against the official PyTorch detector;
+  DeDoDe-v2 coordinates match within 4.4e-5 px on the tested random tensor,
+  while DaD's selected set has near-tie ordering differences (1012/1024
+  reference points within 1 px; scores differ by <5e-7). A generated speckle
+  smoke pair yielded 1019/1024 DaD and 1024/1024 DeDoDe-v2 points within 1 px
+  under one-way nearest-set comparison. This metric is not a one-to-one
+  assignment and is only an export parity check, not a matching-quality result.
+- On Intel Graphics LNL, keypoint-only ONNX inference at 640x360 with K=1024
+  measured 0.120 s for DaD and 0.405 s for DeDoDe-v2 (five warm runs; ONNX
+  `session.run` wall time). ONNX Runtime profiles attributed 120.153 ms and
+  409.067 ms respectively to WebGPU nodes, versus 0.516 ms and 1.034 ms to CPU
+  node kernels. The returned keypoint and score arrays total 12 KiB. Profile
+  node durations do not establish buffer sharing with `wgpu-py`; ONNX Runtime
+  returns CPU NumPy arrays. Peak memory was not measured. These timings cover
+  detector inference only, not preprocessing, DeDoDe-B, matching or RANSAC.
+- `experiment_learned_detectors.py` accepts `--dad-onnx` and `--dedode-onnx`
+  to compare those detectors with the common DeDoDe-B descriptor and WGSL
+  affine RANSAC. Its per-detector timings separate preprocessing, ONNX run,
+  coordinate processing and total detection. ONNX graphs have a fixed K, so
+  the candidate pool must not exceed the exported capacity. This comparison
+  still uses a reduced model input and CPU reference descriptor/matcher stages;
+  it is not native 4K inference or an all-GPU pipeline.
+- **60% matching-path comparison:** on the same 3840x2160 affine synthetic
+  pair, both PyTorch and ONNX paths use 640x360 detector inputs, K=1024,
+  budget=512, DeDoDe-B on CPU, mutual cosine matching on CPU, and WGSL affine
+  RANSAC. Across three measured repeats after one warm-up, DaD gives 6/16
+  accepted seeds under 5 px through both paths. Detector pair time changes
+  from 1.447 s (PyTorch) to 0.391 s (ONNX/WebGPU), and total pair time from
+  3.645 s to 2.969 s. DeDoDe v2 gives 0/16 under both paths; detector pair time
+  changes from 3.709 s to 1.056 s, while total pair time changes from 6.302 s
+  to 3.708 s. The raw repeated report is
+  `results/features/detector_onnx_webgpu_20261107/common_descriptor_60pct_repeats3.json`;
+  earlier single-repeat raw files are also preserved. The summary is
+  `results/features/detector_onnx_common_descriptor_60pct_20261107.md`. The
+  paths do not demonstrate an improvement in detector/matcher quality; ONNX
+  preserves these selected outcomes while speeding detector inference.
+- **Higher point budgets:** K=8192 ONNX graphs were exported and checked
+  against official PyTorch selection. DeDoDe v2 matches 8192/8192 keypoints
+  within 1 px and scores within 6.55e-11; DaD's near-tied ONNX order yields
+  8130/8192 within 1 px and 8187/8192 within 5 px, while custom selection vs
+  official PyTorch is within 0.1 px for all 8192. On the 60% affine pair, with
+  candidate pool K=8192, budget 4096 yields 15/16 correct <5 px for DaD and
+  14/16 for DeDoDe v2 through both execution paths. At budget 8192 with a
+  1x candidate pool, both methods reach 16/16 correct <5 px through both
+  paths. The high-budget run uses one measured repeat after warm-up; detector
+  input is still 640x360 and descriptor/mutual matching remain CPU. Raw data
+  are in `results/features/detector_onnx_webgpu_20261107/` and summarized by
+  `results/features/detector_onnx_high_budget_20261107.md`.
+- **60% cross-method context:** on the common 16 analytic seed centres, the
+  high-budget ONNX runs give DaD 15/16 correct <=2 px and 16/16 <5 px; DeDoDe
+  v2 gives 16/16 at both thresholds. This is compared contextually with
+  DeepMatching (8/16 <5 px at 16.405 s), XFeat (8/16 at 0.553 s), EfficientLoFTR
+  (14/16 at 1.501 s), full HORG (0/16 at 0.146 s), and the learned DIC
+  detector (16/16 at 7.006 s). Timing scopes and input resolutions differ, and
+  this remains a globally affine synthetic stress test, not IC-GN convergence
+  or heterogeneous-motion validation. Summary:
+  `results/features/detector_modern_matchers_60pct_20261107.md`.
+- **Progressive frames:** on frames 040/100/199 with three repeats, K=1024,
+  and budget=512, the ONNX path preserves DaD's correct <5 px affine seed
+  counts (21/32, 19/28, 17/28 under global top-K) and DeDoDe v2's counts
+  (12/32, 1/28, 0/28). Full-pair times improve from 3.406/4.015/4.169 s to
+  3.051/2.884/2.960 s for DaD, and from 6.719/6.197/6.391 s to
+  3.522/3.510/3.604 s for DeDoDe v2. This is reduced-resolution detector
+  inference with CPU descriptor/matching stages, not native UHD inference.
+  Details and raw per-seed results are in
+  `results/features/detector_onnx_progressive_20261107.md` and
+  `results/features/detector_onnx_webgpu_20261107/common_descriptor_progressive_repeats3.json`.
+- `experiment_learned_detectors.py` compares the official detectors, HORG/SIFT,
+  and both DIC detector variants with the same DeDoDe-B descriptor, mutual
+  cosine reference matching, and WGSL local-affine RANSAC. On its measured
+  3840x2160 60% affine stress case, DaD + DeDoDe-B accepted 16/16 affine seeds,
+  all 16 under 5 px, at about 11.17 s/pair. DeDoDe v2-L + B accepted 0/16;
+  DIC tensor + B 0/16; HORG/SIFT + B 2/16; learned DIC + B 5/16 in the selected
+  global-top-K candidate-pool variant. DaD inference, DeDoDe-B description and
+  mutual matching in this result ran on CPU; WGSL RANSAC is not evidence of a
+  GPU-resident feature pipeline. The separate ONNX/WebGPU path preserves these
+  seed-level results at a 512 point budget on the same affine stress pair,
+  while reducing detector and total-pair time; this does not qualify it on the
+  progressive or heterogeneous datasets.
+- The DIC structure-tensor baseline, ROI-support checks, subpixel peak
+  localization, NMS and spatial quota selection run in WGSL. A 169-parameter
+  score CNN also runs in WGSL; its training and PyTorch oracle are optional.
+  At 3840x2160, the detector pair call takes about 0.13 s with 8192 selected
+  points on Intel Graphics LNL/Vulkan. This is detector-only and excludes a
+  descriptor, matching and RANSAC. Learned WGSL score parity with PyTorch has
+  maximum absolute error 1.788e-6 in the recorded 4K check.
+- The synthetic generator now covers translation, rigid rotation, affine,
+  smooth heterogeneous and piecewise-discontinuous motion. Discontinuous pairs
+  include an explicit invalid gap; source points near its seam and target
+  points in the gap are excluded from repeatability and equivariance losses.
+  A test checks determinism, the analytic displacement jump and gap masks.
+- A separate 10-epoch model run used 640 training pairs, including 111
+  discontinuous pairs. On 24 held-out 256x256 pairs, its WGSL detector achieved
+  1403/4756 repeatable points at <=1 px, 2711/4756 at <=2 px and 3715/4756 at
+  <=5 px; pair latency was 4.05 ms (about 247 detector pairs/s) on Intel LNL.
+  Re-evaluating the previous checkpoint on the same generated pairs yielded
+  2608/4816 at <=2 px and 3686/4816 at <=5 px. On the five discontinuous cases,
+  <=2 px changed only from 613/954 (64.3%) to 600/924 (64.9%). The added
+  training therefore has only a small exploratory gain for discontinuities;
+  varying visible-point denominators are shown in the report. No descriptor,
+  matching or IC-GN convergence was measured in this detector-only study.
+- The same discontinuity-aware score checkpoint was checked against PyTorch
+  at 3840x2160 on Intel Graphics LNL/Vulkan with 8192 selected points: maximum
+  absolute score difference 2.414e-6, median dispatch/readback 64.28 ms and
+  256 KiB returned. Full timing and parity data:
+  `results/features/dic_detector_discontinuous_wgsl_parity_4k_20261107.json`.
+- A broader shared-descriptor report covers progressive frames 040/100/199 and
+  60% tensile. It records spatial quota and candidate-pool scope, per-seed
+  affine analytic errors, detector/descriptor/match/RANSAC timing, raw results,
+  and the external model revisions. The DIC detector's “global top-K” acts on
+  its WGSL-generated 16x9 per-tile candidate pool; it is not a global top-K over
+  the full UHD response map. Do not conflate detector repeatability, raw
+  descriptor matches, accepted affine seeds, correct coverage, or IC-GN
+  convergence.
+- A separate 60% budget sweep now covers 512, 1024, 2048, 4096 and 8192 points
+  using the discontinuity-aware DIC checkpoint and a 2x candidate pool. With
+  all 16 analytic seeds visible, DaD + DeDoDe-B rises from 9/16 correct accepted
+  seeds at budget 512 to 16/16 by 1024; it reaches 0.46 px RMSE / 0.81 px P95
+  at 8192 in 9.92 s. DeDoDe v2-L + DeDoDe-B reaches 0/16 at budgets 512/1024,
+  3/16 at 2048, 15/16 at 4096 and 16/16 at 8192 (17.14 s). DIC learned WGSL +
+  DeDoDe-B reaches 8/16 at 1024, 15/16 at 2048, then 16/16 correct at <=2 px
+  and <5 px from 4096; at 8192 its accepted RMSE/P95 is 0.38/0.61 px in
+  7.01 s. DIC tensor-only reaches 7/16 accepted at 8192 (5/16 correct <5 px),
+  while HORG/SIFT + B plateaus at 2/16 from 1024 onward. Detector/descriptor
+  timing, matching and RANSAC are reported by stage; the descriptor and mutual
+  matching remain CPU references. This is one synthetic, globally affine
+  stress case, not heterogeneous or experimental validation and not IC-GN
+  convergence. Summary and raw data:
+  `results/features/detector_budget_sweep_60pct_20261107.md`,
+  `results/features/detector_common_descriptor_60pct_budgets_low_20261107.json`,
+  and `results/features/detector_common_descriptor_60pct_budgets_20261107.json`.
+- Current docs and reports:
+  `results/features/detector_method_comparison_20261107.md`,
+  `results/features/detector_common_descriptor_20261107.md`,
+  `results/features/dic_detector_native_4k_20261107.md`,
+  `results/features/dic_detector_discontinuous_training_20261107.md`, and
+  their adjacent JSON data. The trained `.npz` weights remain ignored and must
+  be regenerated or supplied explicitly.
+- Still required before scientific qualification: test high point budgets on
+  progressive frames 040/100/199 and on heterogeneous motion; test
+  detector/descriptors on rotated and spatially localized finite-element
+  fields; implement a matching
+  path for DIC-Detector candidates if they prove useful; expose the methods in
+  the browser UI; and measure IC-GN convergence. The present learned model's
+  score target is a structure-tensor proxy plus score equivariance, not
+  descriptor uniqueness or IC-GN success supervision. Do not claim these
+  methods are qualified for experimental cracks or Live-DIC initialization.
+- **Verification on 2026-11-07:** full Python suite 55 passed;
+  `ruff check python` passed; Ruff format checks pass for the Python files
+  changed in this detector/ONNX work (the repository-wide format check still
+  flags 19 other existing Python files). Sphinx HTML built from a clean output
+  directory with `-E -W` under the RTD theme, including the ONNX result pages.
+  A pure-Python wheel was built and installed to a clean target earlier; the
+  feature adapter and canonical learned WGSL loaded from it without importing
+  PyTorch. The K=8192 ONNX adapter was separately smoke-tested in an environment
+  without PyTorch: it returned 8192 points and 96 KiB of coordinate/score data
+  for each detector.
+
+## Scientific documentation review (2026-11-07)
+
+The explanation path now starts at `docs/explanation/detector-principles.rst`
+and covers DaD, DeDoDe v2/B, tensor and learned DIC scores, XFeat, RaCo, ALIKED,
+LightGlue and EfficientLoFTR, with primary-source links and repository scope.
+Keep training objectives distinct from inference scores and proposed features.
+The DIC score model has one saliency output, not a calibrated IC-GN reliability
+head. How-to commands moved out of the API reference; a weight-free detector
+tutorial provides the first practical outcome. Benchmark definitions now state
+that common-detector totals sum stage medians; do not call them measured
+end-to-end medians. Historical browser/Python DeepMatching statistics must not
+be combined across search-radius protocols.
+
+## Abbreviations in documentation
+
+Every technical abbreviation must be defined independently on each rendered
+page, including generated reports and API prose. The canonical definitions
+are in `docs/acronyms.json`; `docs/_ext/define_acronyms.py` expands first prose
+uses and adds definitions for abbreviations used in headings. Later uses have
+HTML tooltips. Preserve literal code, mathematical symbols and file identifiers.
+The glossary is in `docs/reference/glossary.rst`; it supplements first-use
+definitions and never substitutes for them. Do not invent expansions of
+published model names; give their actual paper title or explain the name.

@@ -120,6 +120,7 @@ def generate_result_pages(app) -> None:
                 ".jpg",
                 ".jpeg",
                 ".svg",
+                ".gif",
             }:
                 image_destination = generated_root / image_relative
                 image_destination.parent.mkdir(parents=True, exist_ok=True)

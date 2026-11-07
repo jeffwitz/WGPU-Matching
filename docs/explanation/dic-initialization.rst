@@ -13,8 +13,21 @@ DeepMatching computes dense hierarchical correspondences by correlation. HORG-DI
 
 The current output is a list of displacements at POIs. It is not a regularized dense field, it does not resolve occlusions, and it does not calculate strain or stress. IC-GN, spatial interpolation, and uncertainty propagation are separate stages.
 
+An optional Python projection layer accepts direct correspondences from these
+or external matchers and fits either a robust affine displacement model or a
+bounded Gaussian-RBF model with an affine component. It evaluates that model
+over each requested DIC support and projects the result to six affine IC-GN
+parameters. This creates a smooth initializer only; it does not replace the
+independent image-based IC-GN solve. Gaussian-RBF settings are selected within
+a finite cross-validation search, and a simpler affine model is preferred when
+its score lies within one estimated standard error of the best RBF candidate.
+The projection diagnostics distinguish measured observations from inferred
+patch parameters and expose when robust iterations did not converge.
+
 .. seealso::
 
    * :doc:`deepmatching` explains the correlation hierarchy.
    * :doc:`horg` explains the keypoint, descriptor, and RANSAC path.
+   * :doc:`../how-to/project-correspondences` shows how to adapt methods and
+     generate affine patch initializers.
    * :doc:`../benchmarks` describes measured cases and limits on generalization.

@@ -1,0 +1,3347 @@
+{
+  "protocol": "official PyTorch detector references; common DeDoDe-B descriptor; mutual cosine matching; existing WGSL local-affine RANSAC",
+  "model_max_side_px": 640,
+  "candidate_multiplier": 1,
+  "steady_state_repeats": 1,
+  "torch_num_threads": 8,
+  "budgets": [
+    8192
+  ],
+  "selection_methods": [
+    "global_topk_from_returned_candidate_pool",
+    "spatial_quotas_from_returned_candidate_pool"
+  ],
+  "descriptor_and_matching": "DeDoDe-B with mutual nearest cosine; matching currently runs on CPU",
+  "selection_scope": "Global top-K and spatial quotas are applied to each detector's returned candidate pool; DIC-Detector itself uses WGSL per-tile quotas when building that pool. This is not a full-response-map global top-K comparison for DIC-Detector.",
+  "ransac": {
+    "implementation": "WGPU-Matching WGSL local-affine RANSAC",
+    "radius_px": 256,
+    "threshold_px": 3,
+    "min_inliers": 6,
+    "min_candidates": 8,
+    "min_inlier_fraction": 0.2,
+    "iterations": 256
+  },
+  "adapter": "Vulkan (Intel(R) Graphics (LNL))",
+  "upstream_revisions": {
+    "DaD": {
+      "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+      "checkpoint_revision": "v0.1.0 release asset dad.pth",
+      "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+      "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f"
+    },
+    "DeDoDe-v2-L": {
+      "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+      "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+      "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+      "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17"
+    },
+    "DeDoDe-B": {
+      "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+      "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+      "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+      "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b"
+    }
+  },
+  "detectors": {
+    "DaD": {
+      "model_load_s": 1.4040934110525995,
+      "reference_package": "dad-detector",
+      "reference_package_version": "0.2.1",
+      "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+      "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dad.pth",
+      "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+      "coordinates": "source-image pixel centres; integer values identify pixel centres",
+      "detector": "DaD",
+      "device": "cpu",
+      "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+      "checkpoint_revision": "v0.1.0 release asset dad.pth"
+    },
+    "DeDoDe-v2-L": {
+      "model_load_s": 0.8124000059906393,
+      "reference_package": "DeDoDe",
+      "reference_package_version": "0.0.1",
+      "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+      "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+      "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+      "coordinates": "source-image pixel centres; integer values identify pixel centres",
+      "detector": "DeDoDe-v2-L",
+      "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+      "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+      "device": "cpu"
+    },
+    "DaD-ONNX-WebGPU": {
+      "model_load_s": 0.0,
+      "detector": "ONNX-WebGPU-keypoint-detector",
+      "model_path": "/tmp/wgpu_matching_detector_exports/dad_keypoints_k8192.onnx",
+      "model_sha256": "bb4f8bdfbe8ae401bbd7987a7414d457e1f2dcdbf0b7fceebff6159d0aaa9b69",
+      "onnxruntime_version": "1.31.1",
+      "providers": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "adapter": {
+        "vendor_id": 32902,
+        "device_id": 25760
+      },
+      "max_side_px": 640,
+      "compiled_keypoint_capacity": 8192,
+      "model_metadata": {
+        "wgpu_matching.max_side": "640",
+        "wgpu_matching.source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+        "wgpu_matching.checkpoint_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+        "wgpu_matching.keypoint_capacity": "8192",
+        "wgpu_matching.output_mode": "keypoints",
+        "wgpu_matching.method": "dad"
+      },
+      "session_initialization_s": 0.0820259089814499,
+      "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+      "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported"
+    },
+    "DeDoDe-v2-ONNX-WebGPU": {
+      "model_load_s": 0.0,
+      "detector": "ONNX-WebGPU-keypoint-detector",
+      "model_path": "/tmp/wgpu_matching_detector_exports/dedodev2_keypoints_k8192.onnx",
+      "model_sha256": "4b4c300001d96b5705308c09ad7cb07c34f65a70ffe70f7a7852cdef8631260c",
+      "onnxruntime_version": "1.31.1",
+      "providers": [
+        "WebGpuExecutionProvider",
+        "CPUExecutionProvider"
+      ],
+      "adapter": {
+        "vendor_id": 32902,
+        "device_id": 25760
+      },
+      "max_side_px": 640,
+      "compiled_keypoint_capacity": 8192,
+      "model_metadata": {
+        "wgpu_matching.max_side": "640",
+        "wgpu_matching.source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+        "wgpu_matching.checkpoint_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+        "wgpu_matching.keypoint_capacity": "8192",
+        "wgpu_matching.output_mode": "keypoints",
+        "wgpu_matching.method": "dedodev2"
+      },
+      "session_initialization_s": 0.09026116807945073,
+      "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+      "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported"
+    }
+  },
+  "descriptor": {
+    "model_load_s": 0.9107053600018844,
+    "reference_package": "DeDoDe",
+    "reference_package_version": "0.0.1",
+    "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+    "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_descriptor_B.pth",
+    "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b",
+    "coordinates": "source-image pixel centres; integer values identify pixel centres",
+    "descriptor": "DeDoDe-B",
+    "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+    "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+    "device": "cpu"
+  },
+  "cases": [
+    {
+      "name": "synthetic_60pct",
+      "source": "synthetic tensile extension with analytic affine truth",
+      "frame": 199,
+      "reference_path": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/reference.png",
+      "target_path": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/frame_199_eng_60pct.png",
+      "image_size_px": [
+        3840,
+        2160
+      ],
+      "model_max_side_px": 640,
+      "truth": {
+        "engineering_axial": 0.6,
+        "stretch_x": 1.6,
+        "stretch_y": 0.7910265877644076
+      },
+      "visible_dic_seeds": 16,
+      "detectors": {
+        "DaD": {
+          "detector_metadata": {
+            "reference_package": "dad-detector",
+            "reference_package_version": "0.2.1",
+            "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dad.pth",
+            "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "detector": "DaD",
+            "device": "cpu",
+            "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+            "checkpoint_revision": "v0.1.0 release asset dad.pth",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "max_keypoints_requested": 8192,
+            "keypoints_returned": 8192,
+            "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+            "roi_mask_applied_after_detection": false
+          },
+          "detector_metadata_by_selection": {
+            "global_topk": {
+              "reference_package": "dad-detector",
+              "reference_package_version": "0.2.1",
+              "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+              "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dad.pth",
+              "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+              "coordinates": "source-image pixel centres; integer values identify pixel centres",
+              "detector": "DaD",
+              "device": "cpu",
+              "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+              "checkpoint_revision": "v0.1.0 release asset dad.pth",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+              "roi_mask_applied_after_detection": false
+            },
+            "spatial_quotas": {
+              "reference_package": "dad-detector",
+              "reference_package_version": "0.2.1",
+              "weights_url": "https://github.com/Parskatt/dad/releases/download/v0.1.0/dad.pth",
+              "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dad.pth",
+              "weights_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+              "coordinates": "source-image pixel centres; integer values identify pixel centres",
+              "detector": "DaD",
+              "device": "cpu",
+              "source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+              "checkpoint_revision": "v0.1.0 release asset dad.pth",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+              "roi_mask_applied_after_detection": false
+            }
+          },
+          "candidate_count_by_selection": {
+            "global_topk": {
+              "reference": 8192,
+              "target": 8192
+            },
+            "spatial_quotas": {
+              "reference": 8192,
+              "target": 8192
+            }
+          },
+          "selection_scope": "Both selectors act on the same returned candidate pool. The WGSL DIC detector internally creates that pool with its configured spatial tile quotas; the global top-K metric is not a global top-K over every NMS peak in the full response map.",
+          "descriptor_metadata": {
+            "reference_package": "DeDoDe",
+            "reference_package_version": "0.0.1",
+            "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_descriptor_B.pth",
+            "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "descriptor": "DeDoDe-B",
+            "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+            "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+            "device": "cpu",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "normalization": "L2"
+          },
+          "selection_timing": {
+            "global_topk": {
+              "reference_detection_s_median": 0.5242662369273603,
+              "target_detection_s_median": 0.5457538228947669,
+              "reference_detection_s_repeats": [
+                0.5242662369273603
+              ],
+              "target_detection_s_repeats": [
+                0.5457538228947669
+              ],
+              "reference_detector_stage_s_median": {},
+              "target_detector_stage_s_median": {},
+              "reference_descriptor_s_median": 0.9273771410807967,
+              "target_descriptor_s_median": 1.0549486429663375,
+              "reference_descriptor_s_repeats": [
+                0.9273771410807967
+              ],
+              "target_descriptor_s_repeats": [
+                1.0549486429663375
+              ]
+            },
+            "spatial_quotas": {
+              "reference_detection_s_median": 0.5242662369273603,
+              "target_detection_s_median": 0.5457538228947669,
+              "reference_detection_s_repeats": [
+                0.5242662369273603
+              ],
+              "target_detection_s_repeats": [
+                0.5457538228947669
+              ],
+              "reference_detector_stage_s_median": {},
+              "target_detector_stage_s_median": {},
+              "reference_descriptor_s_median": 0.9273771410807967,
+              "target_descriptor_s_median": 1.0549486429663375,
+              "reference_descriptor_s_repeats": [
+                0.9273771410807967
+              ],
+              "target_descriptor_s_repeats": [
+                1.0549486429663375
+              ]
+            }
+          },
+          "budgets": {
+            "8192": {
+              "global_topk": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 280.5,
+                  "points_per_dic_window_p10": 124.60000000000001,
+                  "points_per_dic_window_p90": 307.9
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 279.5,
+                  "points_per_dic_window_p10": 132.6,
+                  "points_per_dic_window_p90": 311.6
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5417,
+                  "target_visible_points": 6883,
+                  "one_to_one_mutual_pairs": 4172,
+                  "denominator_min_visible": 5417,
+                  "at_1px": 254,
+                  "at_2px": 886,
+                  "at_5px": 2830,
+                  "repeatability_1px": 0.04688942218940373,
+                  "repeatability_2px": 0.16355916558980985,
+                  "repeatability_5px": 0.5224293889606794
+                },
+                "raw_mutual_matches": 4109,
+                "raw_correct_under_1px": 217,
+                "raw_correct_under_2px": 746,
+                "raw_correct_under_5px": 2301,
+                "raw_precision_under_5px": 0.5599902652713555,
+                "descriptor_matching_s": 0.2643938190303743,
+                "descriptor_matching_s_repeats": [
+                  0.2643938190303743
+                ],
+                "detection_pair_s": 1.0700200598221272,
+                "descriptor_pair_s": 1.9823257840471342,
+                "wgsl_ransac_wall_s": 0.03653133590705693,
+                "wgsl_ransac_compute_ms_median": 33.53989403694868,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.20838338706873,
+                "accepted_affine_error_median_px": 0.7793137199667632,
+                "accepted_affine_error_p95_px": 2.1139287743919017,
+                "accepted_affine_error_max_px": 2.9433718671894322,
+                "total_pair_s_median": 3.3532709988066927,
+                "pair_fps": 0.29821627907671755,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.3153686523438,
+                      276.65509033203125
+                    ],
+                    "analytic_error_px": 1.8374477434593914,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 75,
+                    "residual_px": 1.545871376991272
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1406.40283203125,
+                      275.17413330078125
+                    ],
+                    "analytic_error_px": 1.0926471599744614,
+                    "usable": true,
+                    "inliers": 28,
+                    "candidates": 82,
+                    "residual_px": 1.7040176391601562
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.695556640625,
+                      276.5573425292969
+                    ],
+                    "analytic_error_px": 0.7012657332493468,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 91,
+                    "residual_px": 1.6779309511184692
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3048.29638671875,
+                      277.1018981933594
+                    ],
+                    "analytic_error_px": 2.9433718671894322,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 68,
+                    "residual_px": 1.4592628479003906
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.2415771484375,
+                      680.7330322265625
+                    ],
+                    "analytic_error_px": 1.2566564531073559,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6813653707504272
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.4989013671875,
+                      681.1158447265625
+                    ],
+                    "analytic_error_px": 0.353534613673649,
+                    "usable": true,
+                    "inliers": 45,
+                    "candidates": 96,
+                    "residual_px": 1.5952714681625366
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2225.99365234375,
+                      680.3975830078125
+                    ],
+                    "analytic_error_px": 0.6674224672043612,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.5740869045257568
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.547607421875,
+                      681.4910888671875
+                    ],
+                    "analytic_error_px": 1.1026473148476372,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.7051984071731567
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.6932983398438,
+                      1086.0413818359375
+                    ],
+                    "analytic_error_px": 1.3112102952756077,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.8048144578933716
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.1890869140625,
+                      1085.489990234375
+                    ],
+                    "analytic_error_px": 0.4428822979671646,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.6341972351074219
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.092529296875,
+                      1086.2698974609375
+                    ],
+                    "analytic_error_px": 0.4562388013745649,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.8398330211639404
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.2548828125,
+                      1086.4862060546875
+                    ],
+                    "analytic_error_px": 0.8573617066841798,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.6173887252807617
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.4318237304688,
+                      1491.2333984375
+                    ],
+                    "analytic_error_px": 1.595690365323584,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.5926117897033691
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.7926025390625,
+                      1491.0233154296875
+                    ],
+                    "analytic_error_px": 0.5987102838018501,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.6145223379135132
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.092041015625,
+                      1490.9202880859375
+                    ],
+                    "analytic_error_px": 0.6923744190390623,
+                    "usable": true,
+                    "inliers": 35,
+                    "candidates": 96,
+                    "residual_px": 1.5339821577072144
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.43603515625,
+                      1490.88671875
+                    ],
+                    "analytic_error_px": 0.1719963772220333,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.730025291442871
+                  }
+                ]
+              },
+              "spatial_quotas": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 280.5,
+                  "points_per_dic_window_p10": 124.60000000000001,
+                  "points_per_dic_window_p90": 307.9
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 279.5,
+                  "points_per_dic_window_p10": 132.6,
+                  "points_per_dic_window_p90": 311.6
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5417,
+                  "target_visible_points": 6883,
+                  "one_to_one_mutual_pairs": 4172,
+                  "denominator_min_visible": 5417,
+                  "at_1px": 254,
+                  "at_2px": 886,
+                  "at_5px": 2830,
+                  "repeatability_1px": 0.04688942218940373,
+                  "repeatability_2px": 0.16355916558980985,
+                  "repeatability_5px": 0.5224293889606794
+                },
+                "raw_mutual_matches": 4109,
+                "raw_correct_under_1px": 217,
+                "raw_correct_under_2px": 746,
+                "raw_correct_under_5px": 2301,
+                "raw_precision_under_5px": 0.5599902652713555,
+                "descriptor_matching_s": 0.2933105989359319,
+                "descriptor_matching_s_repeats": [
+                  0.2933105989359319
+                ],
+                "detection_pair_s": 1.0700200598221272,
+                "descriptor_pair_s": 1.9823257840471342,
+                "wgsl_ransac_wall_s": 0.03947742807213217,
+                "wgsl_ransac_compute_ms_median": 33.914197934791446,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.20838338706873,
+                "accepted_affine_error_median_px": 0.7793137199667632,
+                "accepted_affine_error_p95_px": 2.1139287743919017,
+                "accepted_affine_error_max_px": 2.9433718671894322,
+                "total_pair_s_median": 3.3851338708773255,
+                "pair_fps": 0.2954092919642288,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.3153686523438,
+                      276.65509033203125
+                    ],
+                    "analytic_error_px": 1.8374477434593914,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 75,
+                    "residual_px": 1.545871376991272
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1406.40283203125,
+                      275.17413330078125
+                    ],
+                    "analytic_error_px": 1.0926471599744614,
+                    "usable": true,
+                    "inliers": 28,
+                    "candidates": 82,
+                    "residual_px": 1.7040176391601562
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.695556640625,
+                      276.5573425292969
+                    ],
+                    "analytic_error_px": 0.7012657332493468,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 91,
+                    "residual_px": 1.6779309511184692
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3048.29638671875,
+                      277.1018981933594
+                    ],
+                    "analytic_error_px": 2.9433718671894322,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 68,
+                    "residual_px": 1.4592628479003906
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.2415771484375,
+                      680.7330322265625
+                    ],
+                    "analytic_error_px": 1.2566564531073559,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6813653707504272
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.4989013671875,
+                      681.1158447265625
+                    ],
+                    "analytic_error_px": 0.353534613673649,
+                    "usable": true,
+                    "inliers": 45,
+                    "candidates": 96,
+                    "residual_px": 1.5952714681625366
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2225.99365234375,
+                      680.3975830078125
+                    ],
+                    "analytic_error_px": 0.6674224672043612,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.5740869045257568
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.547607421875,
+                      681.4910888671875
+                    ],
+                    "analytic_error_px": 1.1026473148476372,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.7051984071731567
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.6932983398438,
+                      1086.0413818359375
+                    ],
+                    "analytic_error_px": 1.3112102952756077,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.8048144578933716
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.1890869140625,
+                      1085.489990234375
+                    ],
+                    "analytic_error_px": 0.4428822979671646,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.6341972351074219
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.092529296875,
+                      1086.2698974609375
+                    ],
+                    "analytic_error_px": 0.4562388013745649,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.8398330211639404
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.2548828125,
+                      1086.4862060546875
+                    ],
+                    "analytic_error_px": 0.8573617066841798,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.6173887252807617
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.4318237304688,
+                      1491.2333984375
+                    ],
+                    "analytic_error_px": 1.595690365323584,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.5926117897033691
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.7926025390625,
+                      1491.0233154296875
+                    ],
+                    "analytic_error_px": 0.5987102838018501,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.6145223379135132
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.092041015625,
+                      1490.9202880859375
+                    ],
+                    "analytic_error_px": 0.6923744190390623,
+                    "usable": true,
+                    "inliers": 35,
+                    "candidates": 96,
+                    "residual_px": 1.5339821577072144
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.43603515625,
+                      1490.88671875
+                    ],
+                    "analytic_error_px": 0.1719963772220333,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.730025291442871
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "DeDoDe-v2-L": {
+          "detector_metadata": {
+            "reference_package": "DeDoDe",
+            "reference_package_version": "0.0.1",
+            "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+            "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "detector": "DeDoDe-v2-L",
+            "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+            "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+            "device": "cpu",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "max_keypoints_requested": 8192,
+            "keypoints_returned": 8192,
+            "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+            "roi_mask_applied_after_detection": false
+          },
+          "detector_metadata_by_selection": {
+            "global_topk": {
+              "reference_package": "DeDoDe",
+              "reference_package_version": "0.0.1",
+              "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+              "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+              "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+              "coordinates": "source-image pixel centres; integer values identify pixel centres",
+              "detector": "DeDoDe-v2-L",
+              "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+              "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+              "device": "cpu",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+              "roi_mask_applied_after_detection": false
+            },
+            "spatial_quotas": {
+              "reference_package": "DeDoDe",
+              "reference_package_version": "0.0.1",
+              "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/v2/dedode_detector_L_v2.pth",
+              "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_detector_L_v2.pth",
+              "weights_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+              "coordinates": "source-image pixel centres; integer values identify pixel centres",
+              "detector": "DeDoDe-v2-L",
+              "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+              "checkpoint_revision": "v2 release asset dedode_detector_L_v2.pth",
+              "device": "cpu",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic aspect-preserving resize; ImageNet normalization",
+              "roi_mask_applied_after_detection": false
+            }
+          },
+          "candidate_count_by_selection": {
+            "global_topk": {
+              "reference": 8192,
+              "target": 8192
+            },
+            "spatial_quotas": {
+              "reference": 8192,
+              "target": 8192
+            }
+          },
+          "selection_scope": "Both selectors act on the same returned candidate pool. The WGSL DIC detector internally creates that pool with its configured spatial tile quotas; the global top-K metric is not a global top-K over every NMS peak in the full response map.",
+          "descriptor_metadata": {
+            "reference_package": "DeDoDe",
+            "reference_package_version": "0.0.1",
+            "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_descriptor_B.pth",
+            "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "descriptor": "DeDoDe-B",
+            "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+            "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+            "device": "cpu",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "normalization": "L2"
+          },
+          "selection_timing": {
+            "global_topk": {
+              "reference_detection_s_median": 1.361668083933182,
+              "target_detection_s_median": 1.4731249550823122,
+              "reference_detection_s_repeats": [
+                1.361668083933182
+              ],
+              "target_detection_s_repeats": [
+                1.4731249550823122
+              ],
+              "reference_detector_stage_s_median": {},
+              "target_detector_stage_s_median": {},
+              "reference_descriptor_s_median": 0.9363071649568155,
+              "target_descriptor_s_median": 0.9881639709929004,
+              "reference_descriptor_s_repeats": [
+                0.9363071649568155
+              ],
+              "target_descriptor_s_repeats": [
+                0.9881639709929004
+              ]
+            },
+            "spatial_quotas": {
+              "reference_detection_s_median": 1.361668083933182,
+              "target_detection_s_median": 1.4731249550823122,
+              "reference_detection_s_repeats": [
+                1.361668083933182
+              ],
+              "target_detection_s_repeats": [
+                1.4731249550823122
+              ],
+              "reference_detector_stage_s_median": {},
+              "target_detector_stage_s_median": {},
+              "reference_descriptor_s_median": 0.9363071649568155,
+              "target_descriptor_s_median": 0.9881639709929004,
+              "reference_descriptor_s_repeats": [
+                0.9363071649568155
+              ],
+              "target_descriptor_s_repeats": [
+                0.9881639709929004
+              ]
+            }
+          },
+          "budgets": {
+            "8192": {
+              "global_topk": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 265.0,
+                  "points_per_dic_window_p10": 161.20000000000002,
+                  "points_per_dic_window_p90": 310.40000000000003
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 271.5,
+                  "points_per_dic_window_p10": 157.9,
+                  "points_per_dic_window_p90": 299.8
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5176,
+                  "target_visible_points": 6632,
+                  "one_to_one_mutual_pairs": 3422,
+                  "denominator_min_visible": 5176,
+                  "at_1px": 182,
+                  "at_2px": 562,
+                  "at_5px": 1708,
+                  "repeatability_1px": 0.03516228748068006,
+                  "repeatability_2px": 0.10857805255023184,
+                  "repeatability_5px": 0.32998454404945904
+                },
+                "raw_mutual_matches": 3570,
+                "raw_correct_under_1px": 156,
+                "raw_correct_under_2px": 490,
+                "raw_correct_under_5px": 1411,
+                "raw_precision_under_5px": 0.3952380952380952,
+                "descriptor_matching_s": 0.22175986401271075,
+                "descriptor_matching_s_repeats": [
+                  0.22175986401271075
+                ],
+                "detection_pair_s": 2.8347930390154943,
+                "descriptor_pair_s": 1.924471135949716,
+                "wgsl_ransac_wall_s": 0.03670958802103996,
+                "wgsl_ransac_compute_ms_median": 33.50464708637446,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.270542284385526,
+                "accepted_affine_error_median_px": 1.007891445681682,
+                "accepted_affine_error_p95_px": 1.9662728966139098,
+                "accepted_affine_error_max_px": 2.021920296526057,
+                "total_pair_s_median": 5.017733626998961,
+                "pair_fps": 0.19929316188075263,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.8243408203125,
+                      276.6698303222656
+                    ],
+                    "analytic_error_px": 1.3936466465383757,
+                    "usable": true,
+                    "inliers": 24,
+                    "candidates": 59,
+                    "residual_px": 1.5666016340255737
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1405.3101806640625,
+                      275.49261474609375
+                    ],
+                    "analytic_error_px": 1.9378158634884353,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 62,
+                    "residual_px": 1.4565550088882446
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2224.37890625,
+                      275.8603210449219
+                    ],
+                    "analytic_error_px": 2.021920296526057,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 66,
+                    "residual_px": 1.4681669473648071
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.554931640625,
+                      274.1647644042969
+                    ],
+                    "analytic_error_px": 1.757263884498356,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 69,
+                    "residual_px": 1.7217884063720703
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.6107177734375,
+                      681.0447998046875
+                    ],
+                    "analytic_error_px": 0.6219515964166789,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7380436658859253
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.0235595703125,
+                      681.0724487304688
+                    ],
+                    "analytic_error_px": 0.22854598569106918,
+                    "usable": true,
+                    "inliers": 29,
+                    "candidates": 96,
+                    "residual_px": 1.8015793561935425
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.66455078125,
+                      681.3831176757812
+                    ],
+                    "analytic_error_px": 1.3443458935292598,
+                    "usable": true,
+                    "inliers": 27,
+                    "candidates": 96,
+                    "residual_px": 1.7287665605545044
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.7978515625,
+                      680.6876220703125
+                    ],
+                    "analytic_error_px": 0.3105926479938369,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.4573798179626465
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.804931640625,
+                      1085.659423828125
+                    ],
+                    "analytic_error_px": 1.8255080255738447,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6746138334274292
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1409.134765625,
+                      1085.7088623046875
+                    ],
+                    "analytic_error_px": 1.9477237633098607,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.449926733970642
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.376708984375,
+                      1086.328369140625
+                    ],
+                    "analytic_error_px": 1.0538852961035798,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.6384395360946655
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3044.88671875,
+                      1085.8189697265625
+                    ],
+                    "analytic_error_px": 0.7223939161726731,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.565414547920227
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.8026123046875,
+                      1490.408203125
+                    ],
+                    "analytic_error_px": 0.9618975952597842,
+                    "usable": true,
+                    "inliers": 26,
+                    "candidates": 96,
+                    "residual_px": 1.8178664445877075
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.21142578125,
+                      1490.716796875
+                    ],
+                    "analytic_error_px": 0.2218545568477502,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5779861211776733
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.125732421875,
+                      1490.36767578125
+                    ],
+                    "analytic_error_px": 0.6331218975665194,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.5473136901855469
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.156982421875,
+                      1490.407470703125
+                    ],
+                    "analytic_error_px": 0.6915119004215099,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.679931402206421
+                  }
+                ]
+              },
+              "spatial_quotas": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 265.0,
+                  "points_per_dic_window_p10": 161.20000000000002,
+                  "points_per_dic_window_p90": 310.40000000000003
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 271.5,
+                  "points_per_dic_window_p10": 157.9,
+                  "points_per_dic_window_p90": 299.8
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5176,
+                  "target_visible_points": 6632,
+                  "one_to_one_mutual_pairs": 3422,
+                  "denominator_min_visible": 5176,
+                  "at_1px": 182,
+                  "at_2px": 562,
+                  "at_5px": 1708,
+                  "repeatability_1px": 0.03516228748068006,
+                  "repeatability_2px": 0.10857805255023184,
+                  "repeatability_5px": 0.32998454404945904
+                },
+                "raw_mutual_matches": 3570,
+                "raw_correct_under_1px": 156,
+                "raw_correct_under_2px": 490,
+                "raw_correct_under_5px": 1411,
+                "raw_precision_under_5px": 0.3952380952380952,
+                "descriptor_matching_s": 0.2308467689435929,
+                "descriptor_matching_s_repeats": [
+                  0.2308467689435929
+                ],
+                "detection_pair_s": 2.8347930390154943,
+                "descriptor_pair_s": 1.924471135949716,
+                "wgsl_ransac_wall_s": 0.02102358592674136,
+                "wgsl_ransac_compute_ms_median": 17.610850045457482,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.270542284385526,
+                "accepted_affine_error_median_px": 1.007891445681682,
+                "accepted_affine_error_p95_px": 1.9662728966139098,
+                "accepted_affine_error_max_px": 2.021920296526057,
+                "total_pair_s_median": 5.0111345298355445,
+                "pair_fps": 0.1995556084248287,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.8243408203125,
+                      276.6698303222656
+                    ],
+                    "analytic_error_px": 1.3936466465383757,
+                    "usable": true,
+                    "inliers": 24,
+                    "candidates": 59,
+                    "residual_px": 1.5666016340255737
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1405.3101806640625,
+                      275.49261474609375
+                    ],
+                    "analytic_error_px": 1.9378158634884353,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 62,
+                    "residual_px": 1.4565550088882446
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2224.37890625,
+                      275.8603210449219
+                    ],
+                    "analytic_error_px": 2.021920296526057,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 66,
+                    "residual_px": 1.4681669473648071
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.554931640625,
+                      274.1647644042969
+                    ],
+                    "analytic_error_px": 1.757263884498356,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 69,
+                    "residual_px": 1.7217884063720703
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.6107177734375,
+                      681.0447998046875
+                    ],
+                    "analytic_error_px": 0.6219515964166789,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7380436658859253
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.0235595703125,
+                      681.0724487304688
+                    ],
+                    "analytic_error_px": 0.22854598569106918,
+                    "usable": true,
+                    "inliers": 29,
+                    "candidates": 96,
+                    "residual_px": 1.8015793561935425
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.66455078125,
+                      681.3831176757812
+                    ],
+                    "analytic_error_px": 1.3443458935292598,
+                    "usable": true,
+                    "inliers": 27,
+                    "candidates": 96,
+                    "residual_px": 1.7287665605545044
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.7978515625,
+                      680.6876220703125
+                    ],
+                    "analytic_error_px": 0.3105926479938369,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.4573798179626465
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.804931640625,
+                      1085.659423828125
+                    ],
+                    "analytic_error_px": 1.8255080255738447,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6746138334274292
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1409.134765625,
+                      1085.7088623046875
+                    ],
+                    "analytic_error_px": 1.9477237633098607,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.449926733970642
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.376708984375,
+                      1086.328369140625
+                    ],
+                    "analytic_error_px": 1.0538852961035798,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.6384395360946655
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3044.88671875,
+                      1085.8189697265625
+                    ],
+                    "analytic_error_px": 0.7223939161726731,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.565414547920227
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.8026123046875,
+                      1490.408203125
+                    ],
+                    "analytic_error_px": 0.9618975952597842,
+                    "usable": true,
+                    "inliers": 26,
+                    "candidates": 96,
+                    "residual_px": 1.8178664445877075
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.21142578125,
+                      1490.716796875
+                    ],
+                    "analytic_error_px": 0.2218545568477502,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5779861211776733
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.125732421875,
+                      1490.36767578125
+                    ],
+                    "analytic_error_px": 0.6331218975665194,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.5473136901855469
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.156982421875,
+                      1490.407470703125
+                    ],
+                    "analytic_error_px": 0.6915119004215099,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.679931402206421
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "DaD-ONNX-WebGPU": {
+          "detector_metadata": {
+            "detector": "ONNX-WebGPU-keypoint-detector",
+            "model_path": "/tmp/wgpu_matching_detector_exports/dad_keypoints_k8192.onnx",
+            "model_sha256": "bb4f8bdfbe8ae401bbd7987a7414d457e1f2dcdbf0b7fceebff6159d0aaa9b69",
+            "onnxruntime_version": "1.31.1",
+            "providers": [
+              "WebGpuExecutionProvider",
+              "CPUExecutionProvider"
+            ],
+            "adapter": {
+              "vendor_id": 32902,
+              "device_id": 25760
+            },
+            "max_side_px": 640,
+            "compiled_keypoint_capacity": 8192,
+            "model_metadata": {
+              "wgpu_matching.max_side": "640",
+              "wgpu_matching.source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+              "wgpu_matching.checkpoint_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+              "wgpu_matching.keypoint_capacity": "8192",
+              "wgpu_matching.output_mode": "keypoints",
+              "wgpu_matching.method": "dad"
+            },
+            "session_initialization_s": 0.0820259089814499,
+            "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+            "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "max_keypoints_requested": 8192,
+            "keypoints_returned": 8192,
+            "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+            "roi_mask_applied_after_detection": false,
+            "onnx_session_run_s": 0.12493013206403702,
+            "input_preprocessing_s": 0.05880656302906573,
+            "coordinate_postprocessing_s": 0.0004592790501192212,
+            "detect_total_s": 0.18421261804178357,
+            "output_bytes_returned_to_cpu": 98304,
+            "feature_bytes_returned": 98304
+          },
+          "detector_metadata_by_selection": {
+            "global_topk": {
+              "detector": "ONNX-WebGPU-keypoint-detector",
+              "model_path": "/tmp/wgpu_matching_detector_exports/dad_keypoints_k8192.onnx",
+              "model_sha256": "bb4f8bdfbe8ae401bbd7987a7414d457e1f2dcdbf0b7fceebff6159d0aaa9b69",
+              "onnxruntime_version": "1.31.1",
+              "providers": [
+                "WebGpuExecutionProvider",
+                "CPUExecutionProvider"
+              ],
+              "adapter": {
+                "vendor_id": 32902,
+                "device_id": 25760
+              },
+              "max_side_px": 640,
+              "compiled_keypoint_capacity": 8192,
+              "model_metadata": {
+                "wgpu_matching.max_side": "640",
+                "wgpu_matching.source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+                "wgpu_matching.checkpoint_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+                "wgpu_matching.keypoint_capacity": "8192",
+                "wgpu_matching.output_mode": "keypoints",
+                "wgpu_matching.method": "dad"
+              },
+              "session_initialization_s": 0.0820259089814499,
+              "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+              "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+              "roi_mask_applied_after_detection": false,
+              "onnx_session_run_s": 0.12493013206403702,
+              "input_preprocessing_s": 0.05880656302906573,
+              "coordinate_postprocessing_s": 0.0004592790501192212,
+              "detect_total_s": 0.18421261804178357,
+              "output_bytes_returned_to_cpu": 98304,
+              "feature_bytes_returned": 98304
+            },
+            "spatial_quotas": {
+              "detector": "ONNX-WebGPU-keypoint-detector",
+              "model_path": "/tmp/wgpu_matching_detector_exports/dad_keypoints_k8192.onnx",
+              "model_sha256": "bb4f8bdfbe8ae401bbd7987a7414d457e1f2dcdbf0b7fceebff6159d0aaa9b69",
+              "onnxruntime_version": "1.31.1",
+              "providers": [
+                "WebGpuExecutionProvider",
+                "CPUExecutionProvider"
+              ],
+              "adapter": {
+                "vendor_id": 32902,
+                "device_id": 25760
+              },
+              "max_side_px": 640,
+              "compiled_keypoint_capacity": 8192,
+              "model_metadata": {
+                "wgpu_matching.max_side": "640",
+                "wgpu_matching.source_revision": "41b9e86a1a3ae52128485cc1094aa4952ef489ba",
+                "wgpu_matching.checkpoint_sha256": "7d827844649faf5213ba97e7adb43e16b936dd3d11ab2d0fc0d602c67fae781f",
+                "wgpu_matching.keypoint_capacity": "8192",
+                "wgpu_matching.output_mode": "keypoints",
+                "wgpu_matching.method": "dad"
+              },
+              "session_initialization_s": 0.0820259089814499,
+              "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+              "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+              "roi_mask_applied_after_detection": false,
+              "onnx_session_run_s": 0.12493013206403702,
+              "input_preprocessing_s": 0.05880656302906573,
+              "coordinate_postprocessing_s": 0.0004592790501192212,
+              "detect_total_s": 0.18421261804178357,
+              "output_bytes_returned_to_cpu": 98304,
+              "feature_bytes_returned": 98304
+            }
+          },
+          "candidate_count_by_selection": {
+            "global_topk": {
+              "reference": 8192,
+              "target": 8192
+            },
+            "spatial_quotas": {
+              "reference": 8192,
+              "target": 8192
+            }
+          },
+          "selection_scope": "Both selectors act on the same returned candidate pool. The WGSL DIC detector internally creates that pool with its configured spatial tile quotas; the global top-K metric is not a global top-K over every NMS peak in the full response map.",
+          "descriptor_metadata": {
+            "reference_package": "DeDoDe",
+            "reference_package_version": "0.0.1",
+            "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_descriptor_B.pth",
+            "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "descriptor": "DeDoDe-B",
+            "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+            "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+            "device": "cpu",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "normalization": "L2"
+          },
+          "selection_timing": {
+            "global_topk": {
+              "reference_detection_s_median": 0.18427187600173056,
+              "target_detection_s_median": 0.1909531920682639,
+              "reference_detection_s_repeats": [
+                0.18427187600173056
+              ],
+              "target_detection_s_repeats": [
+                0.1909531920682639
+              ],
+              "reference_detector_stage_s_median": {
+                "onnx_session_run_s": 0.12493013206403702,
+                "input_preprocessing_s": 0.05880656302906573,
+                "coordinate_postprocessing_s": 0.0004592790501192212,
+                "detect_total_s": 0.18421261804178357
+              },
+              "target_detector_stage_s_median": {
+                "onnx_session_run_s": 0.12349649600218982,
+                "input_preprocessing_s": 0.06693304900545627,
+                "coordinate_postprocessing_s": 0.0004573781043291092,
+                "detect_total_s": 0.19089520804118365
+              },
+              "reference_descriptor_s_median": 1.0062712399521843,
+              "target_descriptor_s_median": 1.1589052269700915,
+              "reference_descriptor_s_repeats": [
+                1.0062712399521843
+              ],
+              "target_descriptor_s_repeats": [
+                1.1589052269700915
+              ]
+            },
+            "spatial_quotas": {
+              "reference_detection_s_median": 0.18427187600173056,
+              "target_detection_s_median": 0.1909531920682639,
+              "reference_detection_s_repeats": [
+                0.18427187600173056
+              ],
+              "target_detection_s_repeats": [
+                0.1909531920682639
+              ],
+              "reference_detector_stage_s_median": {
+                "onnx_session_run_s": 0.12493013206403702,
+                "input_preprocessing_s": 0.05880656302906573,
+                "coordinate_postprocessing_s": 0.0004592790501192212,
+                "detect_total_s": 0.18421261804178357
+              },
+              "target_detector_stage_s_median": {
+                "onnx_session_run_s": 0.12349649600218982,
+                "input_preprocessing_s": 0.06693304900545627,
+                "coordinate_postprocessing_s": 0.0004573781043291092,
+                "detect_total_s": 0.19089520804118365
+              },
+              "reference_descriptor_s_median": 1.0062712399521843,
+              "target_descriptor_s_median": 1.1589052269700915,
+              "reference_descriptor_s_repeats": [
+                1.0062712399521843
+              ],
+              "target_descriptor_s_repeats": [
+                1.1589052269700915
+              ]
+            }
+          },
+          "budgets": {
+            "8192": {
+              "global_topk": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 281.0,
+                  "points_per_dic_window_p10": 124.50000000000001,
+                  "points_per_dic_window_p90": 308.8
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 280.0,
+                  "points_per_dic_window_p10": 131.8,
+                  "points_per_dic_window_p90": 314.40000000000003
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5419,
+                  "target_visible_points": 6885,
+                  "one_to_one_mutual_pairs": 4181,
+                  "denominator_min_visible": 5419,
+                  "at_1px": 258,
+                  "at_2px": 893,
+                  "at_5px": 2846,
+                  "repeatability_1px": 0.047610260195608045,
+                  "repeatability_2px": 0.16479055176231777,
+                  "repeatability_5px": 0.5251891492895369
+                },
+                "raw_mutual_matches": 4118,
+                "raw_correct_under_1px": 220,
+                "raw_correct_under_2px": 753,
+                "raw_correct_under_5px": 2313,
+                "raw_precision_under_5px": 0.5616804273919378,
+                "descriptor_matching_s": 0.2449791010003537,
+                "descriptor_matching_s_repeats": [
+                  0.2449791010003537
+                ],
+                "detection_pair_s": 0.37522506806999445,
+                "descriptor_pair_s": 2.1651764669222757,
+                "wgsl_ransac_wall_s": 0.03823921910952777,
+                "wgsl_ransac_compute_ms_median": 34.17215601075441,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.1142145852604264,
+                "accepted_affine_error_median_px": 0.7993239942623651,
+                "accepted_affine_error_p95_px": 1.8013728585002224,
+                "accepted_affine_error_max_px": 2.6865446040638035,
+                "total_pair_s_median": 2.8236198551021516,
+                "pair_fps": 0.3541553223579463,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.771240234375,
+                      276.2804260253906
+                    ],
+                    "analytic_error_px": 1.2801234163223147,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 74,
+                    "residual_px": 1.4152556657791138
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.971435546875,
+                      275.6154479980469
+                    ],
+                    "analytic_error_px": 0.8299542104569009,
+                    "usable": true,
+                    "inliers": 28,
+                    "candidates": 84,
+                    "residual_px": 1.6609516143798828
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.435791015625,
+                      276.0116271972656
+                    ],
+                    "analytic_error_px": 0.09705837817292302,
+                    "usable": true,
+                    "inliers": 42,
+                    "candidates": 91,
+                    "residual_px": 1.6970877647399902
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3047.905517578125,
+                      277.30078125
+                    ],
+                    "analytic_error_px": 2.6865446040638035,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 70,
+                    "residual_px": 1.443757176399231
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.5576171875,
+                      681.361083984375
+                    ],
+                    "analytic_error_px": 0.7065820373405247,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.6673831939697266
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.0797119140625,
+                      680.907470703125
+                    ],
+                    "analytic_error_px": 0.12183485592639968,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5616698265075684
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.076171875,
+                      680.2828369140625
+                    ],
+                    "analytic_error_px": 0.7210459733636184,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.588201642036438
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.552734375,
+                      681.5326538085938
+                    ],
+                    "analytic_error_px": 1.128797164517231,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.696128010749817
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.6840209960938,
+                      1086.0406494140625
+                    ],
+                    "analytic_error_px": 1.3203959029563768,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.8004248142242432
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.574951171875,
+                      1085.8812255859375
+                    ],
+                    "analytic_error_px": 0.37852167492766536,
+                    "usable": true,
+                    "inliers": 42,
+                    "candidates": 96,
+                    "residual_px": 1.7373688220977783
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.083984375,
+                      1086.269775390625
+                    ],
+                    "analytic_error_px": 0.4619496918500229,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.8430930376052856
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.582275390625,
+                      1086.544677734375
+                    ],
+                    "analytic_error_px": 1.1572129453992646,
+                    "usable": true,
+                    "inliers": 38,
+                    "candidates": 96,
+                    "residual_px": 1.7727729082107544
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.9240112304688,
+                      1491.102294921875
+                    ],
+                    "analytic_error_px": 1.0884063104574024,
+                    "usable": true,
+                    "inliers": 44,
+                    "candidates": 96,
+                    "residual_px": 1.5618246793746948
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.9190673828125,
+                      1490.9344482421875
+                    ],
+                    "analytic_error_px": 0.7191268202634147,
+                    "usable": true,
+                    "inliers": 44,
+                    "candidates": 96,
+                    "residual_px": 1.858620285987854
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.121826171875,
+                      1491.202392578125
+                    ],
+                    "analytic_error_px": 0.7686937780678292,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.7078683376312256
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.4033203125,
+                      1492.212646484375
+                    ],
+                    "analytic_error_px": 1.5063156099790287,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.8171017169952393
+                  }
+                ]
+              },
+              "spatial_quotas": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 281.0,
+                  "points_per_dic_window_p10": 124.50000000000001,
+                  "points_per_dic_window_p90": 308.8
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 280.0,
+                  "points_per_dic_window_p10": 131.8,
+                  "points_per_dic_window_p90": 314.40000000000003
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5419,
+                  "target_visible_points": 6885,
+                  "one_to_one_mutual_pairs": 4181,
+                  "denominator_min_visible": 5419,
+                  "at_1px": 258,
+                  "at_2px": 893,
+                  "at_5px": 2846,
+                  "repeatability_1px": 0.047610260195608045,
+                  "repeatability_2px": 0.16479055176231777,
+                  "repeatability_5px": 0.5251891492895369
+                },
+                "raw_mutual_matches": 4118,
+                "raw_correct_under_1px": 220,
+                "raw_correct_under_2px": 753,
+                "raw_correct_under_5px": 2313,
+                "raw_precision_under_5px": 0.5616804273919378,
+                "descriptor_matching_s": 0.24511172994971275,
+                "descriptor_matching_s_repeats": [
+                  0.24511172994971275
+                ],
+                "detection_pair_s": 0.37522506806999445,
+                "descriptor_pair_s": 2.1651764669222757,
+                "wgsl_ransac_wall_s": 0.0389069210505113,
+                "wgsl_ransac_compute_ms_median": 35.037835012190044,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 15,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.1142145852604264,
+                "accepted_affine_error_median_px": 0.7993239942623651,
+                "accepted_affine_error_p95_px": 1.8013728585002224,
+                "accepted_affine_error_max_px": 2.6865446040638035,
+                "total_pair_s_median": 2.8244201859924942,
+                "pair_fps": 0.3540549685062538,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.771240234375,
+                      276.2804260253906
+                    ],
+                    "analytic_error_px": 1.2801234163223147,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 74,
+                    "residual_px": 1.4152556657791138
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.971435546875,
+                      275.6154479980469
+                    ],
+                    "analytic_error_px": 0.8299542104569009,
+                    "usable": true,
+                    "inliers": 28,
+                    "candidates": 84,
+                    "residual_px": 1.6609516143798828
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.435791015625,
+                      276.0116271972656
+                    ],
+                    "analytic_error_px": 0.09705837817292302,
+                    "usable": true,
+                    "inliers": 42,
+                    "candidates": 91,
+                    "residual_px": 1.6970877647399902
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3047.905517578125,
+                      277.30078125
+                    ],
+                    "analytic_error_px": 2.6865446040638035,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 70,
+                    "residual_px": 1.443757176399231
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.5576171875,
+                      681.361083984375
+                    ],
+                    "analytic_error_px": 0.7065820373405247,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.6673831939697266
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.0797119140625,
+                      680.907470703125
+                    ],
+                    "analytic_error_px": 0.12183485592639968,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5616698265075684
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.076171875,
+                      680.2828369140625
+                    ],
+                    "analytic_error_px": 0.7210459733636184,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.588201642036438
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.552734375,
+                      681.5326538085938
+                    ],
+                    "analytic_error_px": 1.128797164517231,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.696128010749817
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.6840209960938,
+                      1086.0406494140625
+                    ],
+                    "analytic_error_px": 1.3203959029563768,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.8004248142242432
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.574951171875,
+                      1085.8812255859375
+                    ],
+                    "analytic_error_px": 0.37852167492766536,
+                    "usable": true,
+                    "inliers": 42,
+                    "candidates": 96,
+                    "residual_px": 1.7373688220977783
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.083984375,
+                      1086.269775390625
+                    ],
+                    "analytic_error_px": 0.4619496918500229,
+                    "usable": true,
+                    "inliers": 32,
+                    "candidates": 96,
+                    "residual_px": 1.8430930376052856
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.582275390625,
+                      1086.544677734375
+                    ],
+                    "analytic_error_px": 1.1572129453992646,
+                    "usable": true,
+                    "inliers": 38,
+                    "candidates": 96,
+                    "residual_px": 1.7727729082107544
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.9240112304688,
+                      1491.102294921875
+                    ],
+                    "analytic_error_px": 1.0884063104574024,
+                    "usable": true,
+                    "inliers": 44,
+                    "candidates": 96,
+                    "residual_px": 1.5618246793746948
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.9190673828125,
+                      1490.9344482421875
+                    ],
+                    "analytic_error_px": 0.7191268202634147,
+                    "usable": true,
+                    "inliers": 44,
+                    "candidates": 96,
+                    "residual_px": 1.858620285987854
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.121826171875,
+                      1491.202392578125
+                    ],
+                    "analytic_error_px": 0.7686937780678292,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.7078683376312256
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3046.4033203125,
+                      1492.212646484375
+                    ],
+                    "analytic_error_px": 1.5063156099790287,
+                    "usable": true,
+                    "inliers": 43,
+                    "candidates": 96,
+                    "residual_px": 1.8171017169952393
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "DeDoDe-v2-ONNX-WebGPU": {
+          "detector_metadata": {
+            "detector": "ONNX-WebGPU-keypoint-detector",
+            "model_path": "/tmp/wgpu_matching_detector_exports/dedodev2_keypoints_k8192.onnx",
+            "model_sha256": "4b4c300001d96b5705308c09ad7cb07c34f65a70ffe70f7a7852cdef8631260c",
+            "onnxruntime_version": "1.31.1",
+            "providers": [
+              "WebGpuExecutionProvider",
+              "CPUExecutionProvider"
+            ],
+            "adapter": {
+              "vendor_id": 32902,
+              "device_id": 25760
+            },
+            "max_side_px": 640,
+            "compiled_keypoint_capacity": 8192,
+            "model_metadata": {
+              "wgpu_matching.max_side": "640",
+              "wgpu_matching.source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+              "wgpu_matching.checkpoint_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+              "wgpu_matching.keypoint_capacity": "8192",
+              "wgpu_matching.output_mode": "keypoints",
+              "wgpu_matching.method": "dedodev2"
+            },
+            "session_initialization_s": 0.09026116807945073,
+            "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+            "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "max_keypoints_requested": 8192,
+            "keypoints_returned": 8192,
+            "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+            "roi_mask_applied_after_detection": false,
+            "onnx_session_run_s": 0.4239838339854032,
+            "input_preprocessing_s": 0.07808800193015486,
+            "coordinate_postprocessing_s": 0.00047556101344525814,
+            "detect_total_s": 0.5025574290193617,
+            "output_bytes_returned_to_cpu": 98304,
+            "feature_bytes_returned": 98304
+          },
+          "detector_metadata_by_selection": {
+            "global_topk": {
+              "detector": "ONNX-WebGPU-keypoint-detector",
+              "model_path": "/tmp/wgpu_matching_detector_exports/dedodev2_keypoints_k8192.onnx",
+              "model_sha256": "4b4c300001d96b5705308c09ad7cb07c34f65a70ffe70f7a7852cdef8631260c",
+              "onnxruntime_version": "1.31.1",
+              "providers": [
+                "WebGpuExecutionProvider",
+                "CPUExecutionProvider"
+              ],
+              "adapter": {
+                "vendor_id": 32902,
+                "device_id": 25760
+              },
+              "max_side_px": 640,
+              "compiled_keypoint_capacity": 8192,
+              "model_metadata": {
+                "wgpu_matching.max_side": "640",
+                "wgpu_matching.source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+                "wgpu_matching.checkpoint_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+                "wgpu_matching.keypoint_capacity": "8192",
+                "wgpu_matching.output_mode": "keypoints",
+                "wgpu_matching.method": "dedodev2"
+              },
+              "session_initialization_s": 0.09026116807945073,
+              "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+              "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+              "roi_mask_applied_after_detection": false,
+              "onnx_session_run_s": 0.4239838339854032,
+              "input_preprocessing_s": 0.07808800193015486,
+              "coordinate_postprocessing_s": 0.00047556101344525814,
+              "detect_total_s": 0.5025574290193617,
+              "output_bytes_returned_to_cpu": 98304,
+              "feature_bytes_returned": 98304
+            },
+            "spatial_quotas": {
+              "detector": "ONNX-WebGPU-keypoint-detector",
+              "model_path": "/tmp/wgpu_matching_detector_exports/dedodev2_keypoints_k8192.onnx",
+              "model_sha256": "4b4c300001d96b5705308c09ad7cb07c34f65a70ffe70f7a7852cdef8631260c",
+              "onnxruntime_version": "1.31.1",
+              "providers": [
+                "WebGpuExecutionProvider",
+                "CPUExecutionProvider"
+              ],
+              "adapter": {
+                "vendor_id": 32902,
+                "device_id": 25760
+              },
+              "max_side_px": 640,
+              "compiled_keypoint_capacity": 8192,
+              "model_metadata": {
+                "wgpu_matching.max_side": "640",
+                "wgpu_matching.source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+                "wgpu_matching.checkpoint_sha256": "4113809dd9e0367af013a45fc2255a6b243ff241cd06520d17a65d9e231bdc17",
+                "wgpu_matching.keypoint_capacity": "8192",
+                "wgpu_matching.output_mode": "keypoints",
+                "wgpu_matching.method": "dedodev2"
+              },
+              "session_initialization_s": 0.09026116807945073,
+              "coordinate_convention": "source-image integer pixel centres; output converted from align_corners=False normalized coordinates",
+              "output_transfer": "keypoints and scores are returned as CPU NumPy arrays; dense maps are not exported",
+              "source_size_px": [
+                3840,
+                2160
+              ],
+              "model_size_px": [
+                640,
+                360
+              ],
+              "max_keypoints_requested": 8192,
+              "keypoints_returned": 8192,
+              "preprocessing": "grayscale replicated to RGB; bicubic resize to multiples of 8; ImageNet normalization",
+              "roi_mask_applied_after_detection": false,
+              "onnx_session_run_s": 0.4239838339854032,
+              "input_preprocessing_s": 0.07808800193015486,
+              "coordinate_postprocessing_s": 0.00047556101344525814,
+              "detect_total_s": 0.5025574290193617,
+              "output_bytes_returned_to_cpu": 98304,
+              "feature_bytes_returned": 98304
+            }
+          },
+          "candidate_count_by_selection": {
+            "global_topk": {
+              "reference": 8192,
+              "target": 8192
+            },
+            "spatial_quotas": {
+              "reference": 8192,
+              "target": 8192
+            }
+          },
+          "selection_scope": "Both selectors act on the same returned candidate pool. The WGSL DIC detector internally creates that pool with its configured spatial tile quotas; the global top-K metric is not a global top-K over every NMS peak in the full response map.",
+          "descriptor_metadata": {
+            "reference_package": "DeDoDe",
+            "reference_package_version": "0.0.1",
+            "weights_url": "https://github.com/Parskatt/DeDoDe/releases/download/dedode_pretrained_models/dedode_descriptor_B.pth",
+            "weights_path": "/home/jeff/.cache/torch/hub/checkpoints/dedode_descriptor_B.pth",
+            "weights_sha256": "8eccfc270ec990ced60cd54a434411a47c4c504de13586f596d042e005b3022b",
+            "coordinates": "source-image pixel centres; integer values identify pixel centres",
+            "descriptor": "DeDoDe-B",
+            "source_revision": "6d156183f4dc84cd704ae779eebc8350995c5b06",
+            "checkpoint_revision": "dedode_pretrained_models release asset dedode_descriptor_B.pth",
+            "device": "cpu",
+            "source_size_px": [
+              3840,
+              2160
+            ],
+            "model_size_px": [
+              640,
+              360
+            ],
+            "normalization": "L2"
+          },
+          "selection_timing": {
+            "global_topk": {
+              "reference_detection_s_median": 0.5026228789938614,
+              "target_detection_s_median": 0.4744509330485016,
+              "reference_detection_s_repeats": [
+                0.5026228789938614
+              ],
+              "target_detection_s_repeats": [
+                0.4744509330485016
+              ],
+              "reference_detector_stage_s_median": {
+                "onnx_session_run_s": 0.4239838339854032,
+                "input_preprocessing_s": 0.07808800193015486,
+                "coordinate_postprocessing_s": 0.00047556101344525814,
+                "detect_total_s": 0.5025574290193617
+              },
+              "target_detector_stage_s_median": {
+                "onnx_session_run_s": 0.3957115029916167,
+                "input_preprocessing_s": 0.07818088994827121,
+                "coordinate_postprocessing_s": 0.0004874889273196459,
+                "detect_total_s": 0.4743891879916191
+              },
+              "reference_descriptor_s_median": 1.1246553499950096,
+              "target_descriptor_s_median": 1.2016449000220746,
+              "reference_descriptor_s_repeats": [
+                1.1246553499950096
+              ],
+              "target_descriptor_s_repeats": [
+                1.2016449000220746
+              ]
+            },
+            "spatial_quotas": {
+              "reference_detection_s_median": 0.5026228789938614,
+              "target_detection_s_median": 0.4744509330485016,
+              "reference_detection_s_repeats": [
+                0.5026228789938614
+              ],
+              "target_detection_s_repeats": [
+                0.4744509330485016
+              ],
+              "reference_detector_stage_s_median": {
+                "onnx_session_run_s": 0.4239838339854032,
+                "input_preprocessing_s": 0.07808800193015486,
+                "coordinate_postprocessing_s": 0.00047556101344525814,
+                "detect_total_s": 0.5025574290193617
+              },
+              "target_detector_stage_s_median": {
+                "onnx_session_run_s": 0.3957115029916167,
+                "input_preprocessing_s": 0.07818088994827121,
+                "coordinate_postprocessing_s": 0.0004874889273196459,
+                "detect_total_s": 0.4743891879916191
+              },
+              "reference_descriptor_s_median": 1.1246553499950096,
+              "target_descriptor_s_median": 1.2016449000220746,
+              "reference_descriptor_s_repeats": [
+                1.1246553499950096
+              ],
+              "target_descriptor_s_repeats": [
+                1.2016449000220746
+              ]
+            }
+          },
+          "budgets": {
+            "8192": {
+              "global_topk": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 265.0,
+                  "points_per_dic_window_p10": 161.20000000000002,
+                  "points_per_dic_window_p90": 310.40000000000003
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 271.5,
+                  "points_per_dic_window_p10": 157.9,
+                  "points_per_dic_window_p90": 299.8
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5176,
+                  "target_visible_points": 6632,
+                  "one_to_one_mutual_pairs": 3424,
+                  "denominator_min_visible": 5176,
+                  "at_1px": 182,
+                  "at_2px": 562,
+                  "at_5px": 1708,
+                  "repeatability_1px": 0.03516228748068006,
+                  "repeatability_2px": 0.10857805255023184,
+                  "repeatability_5px": 0.32998454404945904
+                },
+                "raw_mutual_matches": 3570,
+                "raw_correct_under_1px": 156,
+                "raw_correct_under_2px": 490,
+                "raw_correct_under_5px": 1411,
+                "raw_precision_under_5px": 0.3952380952380952,
+                "descriptor_matching_s": 0.2579493470257148,
+                "descriptor_matching_s_repeats": [
+                  0.2579493470257148
+                ],
+                "detection_pair_s": 0.977073812042363,
+                "descriptor_pair_s": 2.326300250017084,
+                "wgsl_ransac_wall_s": 0.03928100096527487,
+                "wgsl_ransac_compute_ms_median": 35.18064599484205,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 16,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.1735392942256038,
+                "accepted_affine_error_median_px": 1.0074781852060042,
+                "accepted_affine_error_p95_px": 1.8534911941436767,
+                "accepted_affine_error_max_px": 1.937676560380679,
+                "total_pair_s_median": 3.600604410050437,
+                "pair_fps": 0.2777311490283911,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.8242797851562,
+                      276.6698913574219
+                    ],
+                    "analytic_error_px": 1.3937309106264695,
+                    "usable": true,
+                    "inliers": 24,
+                    "candidates": 59,
+                    "residual_px": 1.566552996635437
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1405.310302734375,
+                      275.4927062988281
+                    ],
+                    "analytic_error_px": 1.937676560380679,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 62,
+                    "residual_px": 1.4565774202346802
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2225.18212890625,
+                      274.9996337890625
+                    ],
+                    "analytic_error_px": 1.5273222092477805,
+                    "usable": true,
+                    "inliers": 22,
+                    "candidates": 66,
+                    "residual_px": 1.529062271118164
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.554931640625,
+                      274.1647644042969
+                    ],
+                    "analytic_error_px": 1.757263884498356,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 69,
+                    "residual_px": 1.7218776941299438
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.610595703125,
+                      681.0446166992188
+                    ],
+                    "analytic_error_px": 0.6217971064076698,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7380481958389282
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.5213623046875,
+                      681.4766235351562
+                    ],
+                    "analytic_error_px": 0.6365962846851678,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.9314913749694824
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.66455078125,
+                      681.383056640625
+                    ],
+                    "analytic_error_px": 1.3443251920151742,
+                    "usable": true,
+                    "inliers": 27,
+                    "candidates": 96,
+                    "residual_px": 1.728866457939148
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.7978515625,
+                      680.6876831054688
+                    ],
+                    "analytic_error_px": 0.31054558543771227,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.4573838710784912
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.8048706054688,
+                      1085.6595458984375
+                    ],
+                    "analytic_error_px": 1.8254294053980094,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6746273040771484
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1408.401611328125,
+                      1085.909423828125
+                    ],
+                    "analytic_error_px": 1.2018863258978725,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7449065446853638
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.3759765625,
+                      1086.3282470703125
+                    ],
+                    "analytic_error_px": 1.0531606288961612,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.638451337814331
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3044.88623046875,
+                      1085.8189697265625
+                    ],
+                    "analytic_error_px": 0.722876108078006,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.5653566122055054
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.802490234375,
+                      1490.408203125
+                    ],
+                    "analytic_error_px": 0.9617957415158469,
+                    "usable": true,
+                    "inliers": 26,
+                    "candidates": 96,
+                    "residual_px": 1.8179210424423218
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.2113037109375,
+                      1490.716552734375
+                    ],
+                    "analytic_error_px": 0.2220920978150292,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5779986381530762
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.57421875,
+                      1490.3634033203125
+                    ],
+                    "analytic_error_px": 0.6007953557812766,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.545196771621704
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.156982421875,
+                      1490.4075927734375
+                    ],
+                    "analytic_error_px": 0.6914181896838304,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6799544095993042
+                  }
+                ]
+              },
+              "spatial_quotas": {
+                "selected_keypoints": {
+                  "reference": 8192,
+                  "target": 8192
+                },
+                "reference_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 265.0,
+                  "points_per_dic_window_p10": 161.20000000000002,
+                  "points_per_dic_window_p90": 310.40000000000003
+                },
+                "target_distribution": {
+                  "coverage_cells_occupied": 144,
+                  "coverage_cells_total": 144,
+                  "dic_grid_windows_with_points": 32,
+                  "dic_grid_windows_total": 32,
+                  "points_per_dic_window_median": 271.5,
+                  "points_per_dic_window_p10": 157.9,
+                  "points_per_dic_window_p90": 299.8
+                },
+                "detector_repeatability": {
+                  "source_visible_points": 5176,
+                  "target_visible_points": 6632,
+                  "one_to_one_mutual_pairs": 3424,
+                  "denominator_min_visible": 5176,
+                  "at_1px": 182,
+                  "at_2px": 562,
+                  "at_5px": 1708,
+                  "repeatability_1px": 0.03516228748068006,
+                  "repeatability_2px": 0.10857805255023184,
+                  "repeatability_5px": 0.32998454404945904
+                },
+                "raw_mutual_matches": 3570,
+                "raw_correct_under_1px": 156,
+                "raw_correct_under_2px": 490,
+                "raw_correct_under_5px": 1411,
+                "raw_precision_under_5px": 0.3952380952380952,
+                "descriptor_matching_s": 0.2681978589389473,
+                "descriptor_matching_s_repeats": [
+                  0.2681978589389473
+                ],
+                "detection_pair_s": 0.977073812042363,
+                "descriptor_pair_s": 2.326300250017084,
+                "wgsl_ransac_wall_s": 0.03679851407650858,
+                "wgsl_ransac_compute_ms_median": 31.808555009774864,
+                "accepted_affine_seeds": 16,
+                "affine_seed_correct_under_2px": 16,
+                "affine_seed_correct_under_5px": 16,
+                "accepted_affine_error_rmse_px": 1.1735392942256038,
+                "accepted_affine_error_median_px": 1.0074781852060042,
+                "accepted_affine_error_p95_px": 1.8534911941436767,
+                "accepted_affine_error_max_px": 1.937676560380679,
+                "total_pair_s_median": 3.608370435074903,
+                "pair_fps": 0.2771334091088799,
+                "per_seed_affine": [
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      586.8242797851562,
+                      276.6698913574219
+                    ],
+                    "analytic_error_px": 1.3937309106264695,
+                    "usable": true,
+                    "inliers": 24,
+                    "candidates": 59,
+                    "residual_px": 1.566552996635437
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1405.310302734375,
+                      275.4927062988281
+                    ],
+                    "analytic_error_px": 1.937676560380679,
+                    "usable": true,
+                    "inliers": 19,
+                    "candidates": 62,
+                    "residual_px": 1.4565774202346802
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2225.18212890625,
+                      274.9996337890625
+                    ],
+                    "analytic_error_px": 1.5273222092477805,
+                    "usable": true,
+                    "inliers": 22,
+                    "candidates": 66,
+                    "residual_px": 1.529062271118164
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      63.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.554931640625,
+                      274.1647644042969
+                    ],
+                    "analytic_error_px": 1.757263884498356,
+                    "usable": true,
+                    "inliers": 21,
+                    "candidates": 69,
+                    "residual_px": 1.7218776941299438
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.610595703125,
+                      681.0446166992188
+                    ],
+                    "analytic_error_px": 0.6217971064076698,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7380481958389282
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.5213623046875,
+                      681.4766235351562
+                    ],
+                    "analytic_error_px": 0.6365962846851678,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.9314913749694824
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.66455078125,
+                      681.383056640625
+                    ],
+                    "analytic_error_px": 1.3443251920151742,
+                    "usable": true,
+                    "inliers": 27,
+                    "candidates": 96,
+                    "residual_px": 1.728866457939148
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      575.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.7978515625,
+                      680.6876831054688
+                    ],
+                    "analytic_error_px": 0.31054558543771227,
+                    "usable": true,
+                    "inliers": 34,
+                    "candidates": 96,
+                    "residual_px": 1.4573838710784912
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      589.8048706054688,
+                      1085.6595458984375
+                    ],
+                    "analytic_error_px": 1.8254294053980094,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6746273040771484
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1408.401611328125,
+                      1085.909423828125
+                    ],
+                    "analytic_error_px": 1.2018863258978725,
+                    "usable": true,
+                    "inliers": 37,
+                    "candidates": 96,
+                    "residual_px": 1.7449065446853638
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2227.3759765625,
+                      1086.3282470703125
+                    ],
+                    "analytic_error_px": 1.0531606288961612,
+                    "usable": true,
+                    "inliers": 31,
+                    "candidates": 96,
+                    "residual_px": 1.638451337814331
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1087.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3044.88623046875,
+                      1085.8189697265625
+                    ],
+                    "analytic_error_px": 0.722876108078006,
+                    "usable": true,
+                    "inliers": 40,
+                    "candidates": 96,
+                    "residual_px": 1.5653566122055054
+                  },
+                  {
+                    "seed_xy_px": [
+                      1087.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      588.802490234375,
+                      1490.408203125
+                    ],
+                    "analytic_error_px": 0.9617957415158469,
+                    "usable": true,
+                    "inliers": 26,
+                    "candidates": 96,
+                    "residual_px": 1.8179210424423218
+                  },
+                  {
+                    "seed_xy_px": [
+                      1599.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      1407.2113037109375,
+                      1490.716552734375
+                    ],
+                    "analytic_error_px": 0.2220920978150292,
+                    "usable": true,
+                    "inliers": 41,
+                    "candidates": 96,
+                    "residual_px": 1.5779986381530762
+                  },
+                  {
+                    "seed_xy_px": [
+                      2111.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      2226.57421875,
+                      1490.3634033203125
+                    ],
+                    "analytic_error_px": 0.6007953557812766,
+                    "usable": true,
+                    "inliers": 39,
+                    "candidates": 96,
+                    "residual_px": 1.545196771621704
+                  },
+                  {
+                    "seed_xy_px": [
+                      2623.5,
+                      1599.5
+                    ],
+                    "estimated_target_xy_px": [
+                      3045.156982421875,
+                      1490.4075927734375
+                    ],
+                    "analytic_error_px": 0.6914181896838304,
+                    "usable": true,
+                    "inliers": 30,
+                    "candidates": 96,
+                    "residual_px": 1.6799544095993042
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

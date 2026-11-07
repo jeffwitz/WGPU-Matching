@@ -5,7 +5,7 @@ import re
 from dataclasses import asdict
 from pathlib import Path
 
-from wgpu_matching import CPMOptions, DeepMatchingOptions, HORGOptions
+from wgpu_matching import CPMOptions, DeepMatchingOptions, HORGOptions, ProjectionOptions
 
 ROOT = Path(__file__).resolve().parents[2]
 SHADERS = ROOT / "python/src/wgpu_matching/shaders"
@@ -40,8 +40,12 @@ def test_python_option_defaults_come_from_the_shared_matcher_contract() -> None:
         "deepmatching": asdict(DeepMatchingOptions()),
         "horg": asdict(HORGOptions()),
         "cpm": asdict(CPMOptions()),
+        "projection": asdict(ProjectionOptions()),
     }
     for algorithm, spec in contract["algorithms"].items():
         for name, expected in spec["defaults"].items():
             python_name = spec["option_keys"][name]["python"]
-            assert instances[algorithm][python_name] == expected
+            actual = instances[algorithm][python_name]
+            if isinstance(expected, list):
+                expected = tuple(expected)
+            assert actual == expected

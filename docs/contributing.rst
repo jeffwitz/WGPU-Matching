@@ -61,3 +61,31 @@ The documentation is organized around user needs:
 * **Reference** records API signatures, option values, output fields, and metric definitions.
 
 Tie benchmark claims to a report and raw data. State image size, seed population, acceptance denominator, adapter, and timing boundary. Do not present synthetic extrapolation as experimental validation, or method-specific scores as interchangeable.
+
+Scientific explanation maintenance
+------------------------------------
+
+For each method explanation, identify the published mechanism and primary
+source, explain its objective and mathematical assumptions, then describe the
+actual repository adaptation, execution backend and validated scope. Keep
+commands in how-to pages and signatures/units in reference pages. Tutorials
+should have a bounded first outcome without an external research dataset.
+This follows the four reader needs in `Diataxis <https://diataxis.fr/>`_.
+
+Describe a loss as implemented, including its proxy target. A sigmoid is not
+calibration evidence. Rotation augmentation is not an affine-invariance proof.
+Numerical export parity is not downstream accuracy. Benchmark summaries must
+link raw measurements and expose budgets, resolution, denominators and timing
+scope. Preserve older runs and qualify their scope instead of silently replacing
+their measurements with a newer configuration.
+
+Abbreviations must be defined on each page, including report pages and API
+prose. Add their meaning to ``docs/acronyms.json`` and the glossary in
+``docs/reference/glossary.rst``. The Sphinx transform expands first uses and
+adds hover definitions to subsequent uses while preserving literal code and
+equations. A glossary entry alone is not sufficient for first-use readability.
+
+Strict Sphinx builds reject unregistered uppercase abbreviations in prose and
+headings, including generated reports. Put executable identifiers in literal
+markup; add scientific abbreviations to the registry rather than suppressing
+the warning.

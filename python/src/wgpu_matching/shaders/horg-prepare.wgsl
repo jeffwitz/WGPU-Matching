@@ -17,6 +17,7 @@ struct CandidateBuffer { values: array<u32> }
 @group(0) @binding(5) var<storage, read_write> seeds: SeedBuffer;
 @group(0) @binding(6) var<storage, read_write> candidate_ids: CandidateBuffer;
 @group(0) @binding(7) var<uniform> params: Params;
+@group(0) @binding(8) var<storage, read_write> raw_matches: MatchBuffer;
 
 @compute @workgroup_size(64)
 fn filter_lowe_ratio(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -30,6 +31,7 @@ fn filter_lowe_ratio(@builtin(global_invocation_id) id: vec3<u32>) {
         && first_index < f32(params.counts.y) && second_index < f32(params.counts.y);
     if !valid_indices || !(result.w > 0.0) {
         ratio_matches.values[query] = vec4<f32>(-1.0, 0.0, 0.0, 0.0);
+        raw_matches.values[query] = vec4<f32>(-1.0, 0.0, 0.0, 0.0);
         ratio_values.values[query] = -1.0;
         return;
     }
@@ -37,13 +39,15 @@ fn filter_lowe_ratio(@builtin(global_invocation_id) id: vec3<u32>) {
     let ratio = sqrt(max(0.0, result.z / result.w));
     if !(ratio >= 0.0) || ratio > 1.0 {
         ratio_matches.values[query] = vec4<f32>(-1.0, 0.0, 0.0, 0.0);
+        raw_matches.values[query] = vec4<f32>(-1.0, 0.0, 0.0, 0.0);
         ratio_values.values[query] = -1.0;
         return;
     }
     ratio_values.values[query] = ratio;
+    let source = reference_coordinates.values[query];
+    let target_coordinate = target_coordinates.values[u32(first_index)];
+    raw_matches.values[query] = vec4<f32>(source, target_coordinate);
     if ratio < params.settings.x {
-        let source = reference_coordinates.values[query];
-        let target_coordinate = target_coordinates.values[u32(first_index)];
         ratio_matches.values[query] = vec4<f32>(source, target_coordinate);
     } else {
         ratio_matches.values[query] = vec4<f32>(-1.0, 0.0, 0.0, 0.0);

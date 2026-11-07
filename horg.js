@@ -630,6 +630,8 @@ export async function computeHorg(device, referencePixels, targetPixels,
       bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG top two descriptor matches");
     const ratioMatchesBuffer = ownBuffer(device, resources, resultBytes,
       bufferUsage.STORAGE, "HORG GPU ratio-filtered matches");
+    const rawMatchesBuffer = ownBuffer(device, resources, resultBytes,
+      bufferUsage.STORAGE, "HORG direct descriptor proposals");
     const ratioBuffer = ownBuffer(device, resources, ratioBytes,
       bufferUsage.STORAGE | bufferUsage.COPY_SRC, "HORG GPU ratio diagnostics");
     const ratioReadback = ownBuffer(device, resources, ratioBytes,
@@ -668,6 +670,7 @@ export async function computeHorg(device, referencePixels, targetPixels,
       { binding: 3, resource: { buffer: ratioMatchesBuffer } },
       { binding: 4, resource: { buffer: ratioBuffer } },
       { binding: 7, resource: { buffer: ratioParams } },
+      { binding: 8, resource: { buffer: rawMatchesBuffer } },
     ]);
     const candidateParams = makeRansacUniform(device, resources,
       [seedCount, referenceCount, MAX_RANSAC_CANDIDATES, 0],

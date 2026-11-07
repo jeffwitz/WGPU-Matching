@@ -1,0 +1,61 @@
+{
+  "reference": "/home/jeff/Code/WGPU-Matching/results/features/adrien_variational_affine_20261106/reference.tiff",
+  "deformed_input": "/home/jeff/CNRS/DIC/AdrienVariational/img_000075_1608.88508.tiff",
+  "output_canvas_px": [
+    7920,
+    6004
+  ],
+  "resampler": "Pillow bilinear",
+  "fill_value": 0,
+  "mapping_convention": "ONNX affine maps reference coordinates to deformed-image coordinates; Pillow samples the deformed image at that map for every output reference pixel. This produces target warped onto the reference canvas.",
+  "models": {
+    "RaCo SELU\u2192WebGPU": {
+      "reference_to_target_affine": [
+        [
+          1.0920556284804326,
+          -0.004757384357324923,
+          -368.15908138899636
+        ],
+        [
+          0.0063369721041436474,
+          0.9549975233081982,
+          93.70084163724725
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "roi_inliers": 677,
+      "roi_matches": 680
+    },
+    "EfficientLoFTR": {
+      "reference_to_target_affine": [
+        [
+          1.0920625082569564,
+          -0.004938387056625582,
+          -367.8346153191707
+        ],
+        [
+          0.006679555017605404,
+          0.955378083113302,
+          91.348390451249
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "roi_inliers": 2673,
+      "roi_matches": 2675
+    }
+  },
+  "eog_sequence": [
+    "/home/jeff/Code/WGPU-Matching/results/features/adrien_variational_affine_20261106/eog_sequence/01_reference_before_raco.tiff",
+    "/home/jeff/Code/WGPU-Matching/results/features/adrien_variational_affine_20261106/eog_sequence/02_raco_affine_corrected.tiff",
+    "/home/jeff/Code/WGPU-Matching/results/features/adrien_variational_affine_20261106/eog_sequence/03_reference_before_efficientloftr.tiff",
+    "/home/jeff/Code/WGPU-Matching/results/features/adrien_variational_affine_20261106/eog_sequence/04_efficientloftr_affine_corrected.tiff"
+  ]
+}
