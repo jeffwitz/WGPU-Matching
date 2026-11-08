@@ -144,3 +144,40 @@ was 110.8/s for the CNN. This is a narrow family-specific result, not a
 general descriptor improvement. The complete by-family comparison, timing
 accounting, direct-match counts, oracle ceilings, hashes, and reproduction
 commands are in [the expanded qualification report](../qualification/dic_descriptor_expanded_icgn_20261108/README.md).
+
+## Detector-point hard negatives and affine augmentation
+
+The next training protocol uses actual points from the WebGPU digital image
+correlation (DIC) detector rather than uniformly random query positions.
+Positive patches are sampled at the analytic subpixel correspondence;
+hard negatives are selected online from detector points in the same texture.
+A 17 by 17 validity lattice checks the complete 64 by 64 descriptor support
+in both images, including the mapped target support. Validation checkpoint
+selection macro-averages top-1 retrieval over translation, rigid rotation,
+affine, heterogeneous, and discontinuous motion.
+
+On one independent native-4K pair per family, 512 source queries were ranked
+against 512, 2,048, and 8,192 target candidates. At the largest pool,
+hard-negative training changed CNN top-1/top-5 retrieval as follows: rigid
+rotation 0/0 to 0/0; affine 0/1 to 5/17; heterogeneous 1/2 to 0/1; and
+discontinuous 458/476 to 481/487. These measurements are conditional on a
+repeatable target detection and are not population estimates. HORG-64 reached
+43/74, 3/7, 3/9, and 90/116, respectively. Full retrieval tables, margins,
+false positives, timings, and checkpoint hashes are in the
+[hard-negative report](dic_descriptor_hardneg_training_20261108/README.md).
+
+A separate run with independent random affine transforms applied to both
+patches did not solve affine retrieval and reduced discontinuous top-1/top-5
+to 280/334 at 8,192 candidates. This negative result suggests that broad
+invariance augmentation can remove useful speckle discrimination. Its weights
+and per-family validation are archived in
+[`dic_descriptor_affine_aug_training_20261108`](dic_descriptor_affine_aug_training_20261108/README.md).
+
+The corresponding external inverse compositional Gauss–Newton (IC-GN)
+qualification tests ten independent fields per family and all six frozen
+regressions. The hard-negative model still fails to produce a field for all
+independent rigid cases, 8/10 affine cases, and 8/10 heterogeneous cases. It
+does not recover `affine_8101_9101` or `heterogeneous_8102_9102`. Full-support
+scoring is reported separately from center-visible scoring; it is a post-run
+subset and does not alter matching or solving. See the
+[independent requalification](../qualification/dic_descriptor_hardneg_icgn_20261108/README.md).

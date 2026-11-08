@@ -1,0 +1,460 @@
+{
+  "metadata": {
+    "seed": 20261109,
+    "train_pairs": 60,
+    "validation_pairs": 20,
+    "query_points_per_pair": 128,
+    "detector_negative_candidates_per_image": 512,
+    "actual_train_negative_candidates_per_pair": [
+      512,
+      393,
+      512,
+      392,
+      321,
+      512,
+      512,
+      344,
+      454,
+      368,
+      512,
+      512,
+      512,
+      450,
+      512,
+      453,
+      512,
+      439,
+      352,
+      468,
+      512,
+      442,
+      512,
+      376,
+      377,
+      512,
+      512,
+      512,
+      422,
+      350,
+      451,
+      469,
+      512,
+      396,
+      512,
+      512,
+      512,
+      336,
+      401,
+      433,
+      512,
+      512,
+      439,
+      342,
+      480,
+      512,
+      512,
+      427,
+      512,
+      442,
+      512,
+      512,
+      340,
+      345,
+      460,
+      512,
+      443,
+      512,
+      498,
+      487
+    ],
+    "actual_validation_negative_candidates_per_pair": [
+      512,
+      512,
+      493,
+      383,
+      454,
+      512,
+      439,
+      355,
+      429,
+      482,
+      512,
+      512,
+      337,
+      473,
+      436,
+      511,
+      512,
+      512,
+      500,
+      391
+    ],
+    "motion_families": [
+      "translation",
+      "rigid",
+      "affine",
+      "heterogeneous",
+      "discontinuous"
+    ],
+    "point_source": "WGSL DIC-Detector spatially distributed response points",
+    "positive_sampling": "analytic floating-point correspondence; bilinear image sampling",
+    "support_validity": "17x17 lattice over full 64x64 support; source and mapped target must be visible",
+    "negative_mining": "online top-128 negatives from the full same-image DIC-Detector candidate pool, symmetrically in both directions; 48 px false-negative exclusion",
+    "validation_metric": "macro mean of per-motion-family top-1 retrieval; independent texture identities",
+    "patch_augmentation": "independent random rotation [-180,180] degrees, log-uniform anisotropic scale [0.7,1.45], shear [-0.25,0.25], and translation [-0.08,0.08] normalized patch units; bilinear resampling with border padding",
+    "torch_version": "2.15.0+cpu"
+  },
+  "training_texture_seed_sha256": "50422c05911dacc8d29551f972150569d9dbc75fda5b2bec6db8f4af136d9e81",
+  "validation_texture_seed_sha256": "3c81675f544bdfa56f6abc47a4c67c5005667632cf02b04b81f94a800d056c1f",
+  "weights_sha256": "343d2828dc9c1313440bd8efd5ae939637db21fed790d42ff2e8716583b81217",
+  "selected_epoch": 2,
+  "selected_validation_by_motion": {
+    "translation": {
+      "top1": 0.80078125,
+      "top5": 0.8486328125
+    },
+    "rigid": {
+      "top1": 0.0068359375,
+      "top5": 0.0322265625
+    },
+    "affine": {
+      "top1": 0.005859375,
+      "top5": 0.0224609375
+    },
+    "heterogeneous": {
+      "top1": 0.00390625,
+      "top5": 0.013671875
+    },
+    "discontinuous": {
+      "top1": 0.5859375,
+      "top5": 0.7587890625
+    }
+  },
+  "total_wall_s": 57.82471082697157,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 6.9491219282150265,
+      "validation_macro_family_top1": 0.2693359375,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.7890625,
+          "top5": 0.8369140625
+        },
+        "rigid": {
+          "top1": 0.0107421875,
+          "top5": 0.0302734375
+        },
+        "affine": {
+          "top1": 0.005859375,
+          "top5": 0.0234375
+        },
+        "heterogeneous": {
+          "top1": 0.00390625,
+          "top5": 0.009765625
+        },
+        "discontinuous": {
+          "top1": 0.537109375,
+          "top5": 0.7294921875
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "train_loss": 6.947106965382894,
+      "validation_macro_family_top1": 0.2806640625,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.80078125,
+          "top5": 0.8486328125
+        },
+        "rigid": {
+          "top1": 0.0068359375,
+          "top5": 0.0322265625
+        },
+        "affine": {
+          "top1": 0.005859375,
+          "top5": 0.0224609375
+        },
+        "heterogeneous": {
+          "top1": 0.00390625,
+          "top5": 0.013671875
+        },
+        "discontinuous": {
+          "top1": 0.5859375,
+          "top5": 0.7587890625
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "train_loss": 6.947056619326274,
+      "validation_macro_family_top1": 0.2716796875,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.7744140625,
+          "top5": 0.8193359375
+        },
+        "rigid": {
+          "top1": 0.0078125,
+          "top5": 0.02734375
+        },
+        "affine": {
+          "top1": 0.0087890625,
+          "top5": 0.021484375
+        },
+        "heterogeneous": {
+          "top1": 0.00390625,
+          "top5": 0.013671875
+        },
+        "discontinuous": {
+          "top1": 0.5634765625,
+          "top5": 0.720703125
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "train_loss": 6.94703647295634,
+      "validation_macro_family_top1": 0.256640625,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.736328125,
+          "top5": 0.80859375
+        },
+        "rigid": {
+          "top1": 0.0078125,
+          "top5": 0.029296875
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.0166015625
+        },
+        "heterogeneous": {
+          "top1": 0.0068359375,
+          "top5": 0.0146484375
+        },
+        "discontinuous": {
+          "top1": 0.5283203125,
+          "top5": 0.673828125
+        }
+      }
+    },
+    {
+      "epoch": 5,
+      "train_loss": 6.947027119000753,
+      "validation_macro_family_top1": 0.228125,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.6689453125,
+          "top5": 0.7646484375
+        },
+        "rigid": {
+          "top1": 0.01171875,
+          "top5": 0.0244140625
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.021484375
+        },
+        "heterogeneous": {
+          "top1": 0.0068359375,
+          "top5": 0.017578125
+        },
+        "discontinuous": {
+          "top1": 0.44921875,
+          "top5": 0.6123046875
+        }
+      }
+    },
+    {
+      "epoch": 6,
+      "train_loss": 6.947022000948588,
+      "validation_macro_family_top1": 0.20546875,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.603515625,
+          "top5": 0.72265625
+        },
+        "rigid": {
+          "top1": 0.0107421875,
+          "top5": 0.0283203125
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.01953125
+        },
+        "heterogeneous": {
+          "top1": 0.0048828125,
+          "top5": 0.0078125
+        },
+        "discontinuous": {
+          "top1": 0.404296875,
+          "top5": 0.5673828125
+        }
+      }
+    },
+    {
+      "epoch": 7,
+      "train_loss": 6.94701783657074,
+      "validation_macro_family_top1": 0.1841796875,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.5244140625,
+          "top5": 0.673828125
+        },
+        "rigid": {
+          "top1": 0.0107421875,
+          "top5": 0.0283203125
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.0146484375
+        },
+        "heterogeneous": {
+          "top1": 0.00390625,
+          "top5": 0.013671875
+        },
+        "discontinuous": {
+          "top1": 0.3779296875,
+          "top5": 0.5107421875
+        }
+      }
+    },
+    {
+      "epoch": 8,
+      "train_loss": 6.947015309333802,
+      "validation_macro_family_top1": 0.1580078125,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.435546875,
+          "top5": 0.5859375
+        },
+        "rigid": {
+          "top1": 0.009765625,
+          "top5": 0.0263671875
+        },
+        "affine": {
+          "top1": 0.0068359375,
+          "top5": 0.015625
+        },
+        "heterogeneous": {
+          "top1": 0.005859375,
+          "top5": 0.017578125
+        },
+        "discontinuous": {
+          "top1": 0.33203125,
+          "top5": 0.4580078125
+        }
+      }
+    },
+    {
+      "epoch": 9,
+      "train_loss": 6.947013386090597,
+      "validation_macro_family_top1": 0.1369140625,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.3876953125,
+          "top5": 0.517578125
+        },
+        "rigid": {
+          "top1": 0.001953125,
+          "top5": 0.0205078125
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.017578125
+        },
+        "heterogeneous": {
+          "top1": 0.001953125,
+          "top5": 0.009765625
+        },
+        "discontinuous": {
+          "top1": 0.2890625,
+          "top5": 0.4287109375
+        }
+      }
+    },
+    {
+      "epoch": 10,
+      "train_loss": 6.947012058893839,
+      "validation_macro_family_top1": 0.11796875,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.3310546875,
+          "top5": 0.453125
+        },
+        "rigid": {
+          "top1": 0.009765625,
+          "top5": 0.0205078125
+        },
+        "affine": {
+          "top1": 0.00390625,
+          "top5": 0.0126953125
+        },
+        "heterogeneous": {
+          "top1": 0.001953125,
+          "top5": 0.015625
+        },
+        "discontinuous": {
+          "top1": 0.2431640625,
+          "top5": 0.3779296875
+        }
+      }
+    },
+    {
+      "epoch": 11,
+      "train_loss": 6.947010898590088,
+      "validation_macro_family_top1": 0.10234375,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.296875,
+          "top5": 0.400390625
+        },
+        "rigid": {
+          "top1": 0.0068359375,
+          "top5": 0.0263671875
+        },
+        "affine": {
+          "top1": 0.001953125,
+          "top5": 0.015625
+        },
+        "heterogeneous": {
+          "top1": 0.00390625,
+          "top5": 0.0146484375
+        },
+        "discontinuous": {
+          "top1": 0.2021484375,
+          "top5": 0.35546875
+        }
+      }
+    },
+    {
+      "epoch": 12,
+      "train_loss": 6.947010294596354,
+      "validation_macro_family_top1": 0.0861328125,
+      "validation_by_motion": {
+        "translation": {
+          "top1": 0.2607421875,
+          "top5": 0.3818359375
+        },
+        "rigid": {
+          "top1": 0.0078125,
+          "top5": 0.0185546875
+        },
+        "affine": {
+          "top1": 0.0048828125,
+          "top5": 0.015625
+        },
+        "heterogeneous": {
+          "top1": 0.001953125,
+          "top5": 0.015625
+        },
+        "discontinuous": {
+          "top1": 0.1552734375,
+          "top5": 0.28515625
+        }
+      }
+    }
+  ]
+}

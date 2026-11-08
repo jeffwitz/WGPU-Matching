@@ -36,6 +36,22 @@ each for translation, rigid rotation, affine, heterogeneous, and discontinuous
 motion. Its objective and aggregation differ from the progressive tensile
 benchmark above; use the report's protocol when comparing those numbers.
 
+The follow-up :doc:`same-texture hard-negative experiment
+<_generated_results/descriptors/dic_descriptor_hardneg_training_20261108/README>`
+trains on points returned by the WebGPU DIC detector and evaluates retrieval
+among 512, 2,048 and 8,192 native-4K candidates. It improves the measured
+affine and discontinuous pairs, but does not resolve rotation or heterogeneous
+retrieval. A broad independent-patch affine-augmentation control performs
+worse, especially on discontinuities. The :doc:`IC-GN requalification
+<_generated_results/qualification/dic_descriptor_hardneg_icgn_20261108/README>`
+adds ten independent fields per motion family and explicitly distinguishes
+failed field projections from fields with zero correct windows. These remain
+experimental results and do not qualify the descriptor as a general
+replacement for DeDoDe-B. The isolated retrieval-ranking diagnostic copies
+descriptors to NumPy and ranks them on the CPU; only extraction is WebGPU in
+that benchmark. The end-to-end requalification uses the WebGPU reciprocal
+matcher.
+
 Three repeated complete affine calls measure the actual wall-clock pipeline,
 with decoding and figure generation excluded and both images processed each
 time. Automatic-basis fitting reuses the last pair set and has a separate

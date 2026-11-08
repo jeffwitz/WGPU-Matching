@@ -79,7 +79,7 @@ passes; the intermediate GPU buffer is not copied back to the host.
    python python/benchmarks/train_dic_cnn_descriptor.py \
        --output results/descriptors/dic_descriptor_cnn_training_20261108 \
        --train-pairs 24 --validation-pairs 8 --points-per-pair 48 \
-       --epochs 15 --batch-size 2 --seed 20261109
+       --epochs 15 --batch-size 2 --seed 20261109 --no-affine-augmentation
 
 The trainer selects the epoch with the highest validation retrieval score;
 the fixed test fields are not consulted during selection. This first run uses
@@ -95,7 +95,7 @@ textures, 48 points per pair, 20 epochs, and seed ``20261110``:
    python python/benchmarks/train_dic_cnn_descriptor.py \
        --output results/descriptors/dic_descriptor_cnn_training_20261108_expanded \
        --train-pairs 80 --validation-pairs 20 --points-per-pair 48 \
-       --epochs 20 --batch-size 4 --seed 20261110
+       --epochs 20 --batch-size 4 --seed 20261110 --no-affine-augmentation
 
 The selected epoch was 7, with 6.04% validation top-1 retrieval. The weight
 archive SHA-256 is
@@ -136,3 +136,57 @@ initial parameters, and per-window IC-GN results. The report
 <../../_generated_results/descriptors/baseline_failure_analysis>`: in this
 pilot, learning a transform of HORG did not improve the number of correctly
 converged windows and was slower than fixed HORG-64.
+
+Train with detector points and image-wide hard negatives
+--------------------------------------------------------
+
+The follow-up experiment uses points returned by the WebGPU DIC-Detector and
+analytically mapped, subpixel positive locations. Same-texture detector points
+form the negative pool; each training step selects the 128 most similar valid
+negatives in both directions. Supports must remain physically valid across a
+17 by 17 sample lattice on the 64 by 64 patch. Train and validation texture
+identities are disjoint, and checkpoint selection macro-averages top-1
+retrieval across motion families.
+
+.. code-block:: console
+
+   python python/benchmarks/train_dic_cnn_descriptor.py \
+     --output results/descriptors/dic_descriptor_hardneg_training_20261108 \
+     --train-pairs 24 --validation-pairs 10 --points-per-pair 128 \
+     --negative-points-per-image 1024 --epochs 12 --seed 20261108 \
+     --no-affine-augmentation
+
+To evaluate full-image retrieval among increasing numbers of native 4K
+candidates:
+
+.. code-block:: console
+
+   python python/benchmarks/benchmark_dic_descriptor_retrieval.py \
+     --weights results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \
+     --output results/descriptors/dic_descriptor_hardneg_training_20261108/retrieval_full_pool.json \
+     --families rigid affine heterogeneous discontinuous --queries 512 --seed 20261108
+
+The retrieval benchmark counts only queries with a detector point within five
+pixels of the analytic target position. It is not an IC-GN success rate. The
+hard-negative run improves affine and discontinuous retrieval on the measured
+4K pairs, but leaves rotation and heterogeneous retrieval essentially
+unresolved. Independent random affine patch augmentation did not help. See
+:doc:`the complete descriptor report
+<../_generated_results/descriptors/dic_descriptor_hardneg_training_20261108/README>`.
+
+Requalify the saved checkpoint through the external WebGPU IC-GN solver:
+
+.. code-block:: console
+
+   PYTHONPATH=python/src:python/benchmarks python python/benchmarks/qualify_dic_descriptor_checkpoint.py \
+     --output results/qualification/dic_descriptor_hardneg_icgn_20261108 \
+     --scratch /tmp/dic_descriptor_hardneg_icgn_20261108 \
+     --cnn-descriptor results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \
+     --detector-weights results/features/dic_detector_training_discontinuous_20261107/dic_detector_weights.npz \
+     --independent-eval-per-family 10
+
+This tests ten independent fields per family and preserves all six fixed
+regressions. Failed field projections are reported separately from scored
+windows: a failed fit is not a measured zero-success IC-GN run. The results
+are in :doc:`the hard-negative requalification
+<../_generated_results/qualification/dic_descriptor_hardneg_icgn_20261108/README>`.

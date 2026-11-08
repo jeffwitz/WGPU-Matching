@@ -75,6 +75,11 @@ Execution and score contracts
   <../how-to/train-dic-descriptor>`.
   The complete expanded comparison is available as the :doc:`qualification
   report <../_generated_results/qualification/dic_descriptor_expanded_icgn_20261108/README>`.
+  The subsequent same-texture hard-negative training, 4K retrieval sweep and
+  affine-augmentation control are documented in the :doc:`dated descriptor
+  report <../_generated_results/descriptors/dic_descriptor_hardneg_training_20261108/README>`;
+  the corresponding independent IC-GN run is in the :doc:`requalification
+  report <../_generated_results/qualification/dic_descriptor_hardneg_icgn_20261108/README>`.
 * Mutual cosine nearest neighbours can execute in WGSL; descriptor arrays are
   uploaded per call and only the best index and cosine score per query return
   to the host. The measured full 60% workload preserves the exact direct-pair

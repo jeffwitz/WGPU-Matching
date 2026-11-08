@@ -13,6 +13,7 @@ import numpy as np
 from geometric_consensus import LocalConsensus
 from PIL import Image
 from qualify_all_initializers import Extractor
+from train_dic_cnn_descriptor import bilinear, support_is_valid, target_support_is_valid
 from wgpu_matching import (
     CorrespondenceSet,
     DeDoDeBOnnxWGPUDescriptor,
@@ -125,6 +126,10 @@ def diagnostic_correspondence_scores(
 
     source_descriptor = reference.descriptors.astype(np.float32, copy=False)
     target_descriptor = target.descriptors.astype(np.float32, copy=False)
+    source_support_valid = support_is_valid(pair, source_xy)
+    target_support_valid = target_support_is_valid(pair, expected_xy)
+    fully_valid_support = visible & source_support_valid & target_support_valid
+    target_candidate_support_valid = target_support_is_valid(pair, target_xy)
     similarities = source_descriptor @ target_descriptor.T
     top = np.argmax(similarities, axis=1)
     top_score = similarities[np.arange(len(top)), top]
@@ -147,6 +152,9 @@ def diagnostic_correspondence_scores(
         np.linalg.norm(source_xy[:, None, :] - centers[None, :, :], axis=2), axis=1
     )
     correct5 = visible & (match_error < 5.0)
+    correct5_full_support = (
+        fully_valid_support & target_candidate_support_valid[top] & (match_error < 5.0)
+    )
     coverage = np.zeros(len(centers), dtype=bool)
     if correct5.any():
         coverage[np.unique(window_index[correct5])] = True
@@ -155,6 +163,8 @@ def diagnostic_correspondence_scores(
         "source_points": len(source_xy),
         "target_points": len(target_xy),
         "visible_source_points": int(visible.sum()),
+        "fully_valid_source_and_mapped_target_support_points": int(fully_valid_support.sum()),
+        "top1_correct_lt5px_with_valid_support": int(correct5_full_support.sum()),
         "target_detection_repeatability_le2px": int(
             np.count_nonzero(visible & (repeatability_error <= 2))
         ),
@@ -232,6 +242,12 @@ def run_case(
     )
     points = grid_centres(width, height, 64, 64)
     visible = pair.visible[np.rint(points[:, 1]).astype(int), np.rint(points[:, 0]).astype(int)]
+    mapped_centres = points + bilinear(pair.flow_xy, points).astype(np.float32)
+    fully_valid_support_windows = (
+        visible
+        & support_is_valid(pair, points)
+        & target_support_is_valid(pair, mapped_centres)
+    )
 
     detection_start = time.perf_counter()
     detected = [
@@ -353,6 +369,7 @@ def run_case(
         "direct_matches_accepted": int(pairs.accepted.sum()),
         "direct_matches_correct_le2px": int(np.count_nonzero((pair_error <= 2) & pairs.accepted)),
         "direct_matches_correct_lt5px": int(np.count_nonzero((pair_error < 5) & pairs.accepted)),
+        "fully_valid_support_windows": int(fully_valid_support_windows.sum()),
         "raw_direct_match_error_px": {
             "median": float(np.median(raw_error)) if len(raw_error) else None,
             "p95": float(np.percentile(raw_error, 95)) if len(raw_error) else None,
@@ -453,6 +470,9 @@ def run_case(
                 + elapsed
             )
             solver_metrics = score_result(result, truth_parameters, visible)
+            full_support_solver_metrics = score_result(
+                result, truth_parameters, fully_valid_support_windows
+            )
             measurements[basis] = {
                 "effective_basis": field.effective_basis,
                 "accepted_direct_matches": int(pairs.accepted.sum()),
@@ -462,6 +482,7 @@ def run_case(
                 "field_fit_s": field_fit_s,
                 "patch_projection_s": projection_s,
                 "solver": solver_metrics,
+                "solver_on_fully_valid_support_windows": full_support_solver_metrics,
                 "solver_wall_s_including_python_readback": elapsed,
                 "full_pipeline_s": full_pipeline_s,
                 "correct_windows_per_second_end_to_end": float(

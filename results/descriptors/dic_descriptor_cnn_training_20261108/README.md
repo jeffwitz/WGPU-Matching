@@ -101,7 +101,7 @@ python -m pip install -e ".[research]"
 python python/benchmarks/train_dic_cnn_descriptor.py \
   --output results/descriptors/dic_descriptor_cnn_training_20261108 \
   --train-pairs 24 --validation-pairs 8 --points-per-pair 48 \
-  --epochs 15 --batch-size 2 --seed 20261109
+  --epochs 15 --batch-size 2 --seed 20261109 --no-affine-augmentation
 ```
 
 The complete scientific qualification, raw pairs and per-window solver output
