@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from benchmark_dic_descriptor_retrieval import spatial_budget, take
 from benchmark_oracle_affine_descriptor_retrieval import bilinear
-from wgpu_matching import DICDetectorOptions, DescribedFeatures, FeatureSet, WGPUMatching
+from wgpu_matching import DescribedFeatures, DICDetectorOptions, FeatureSet, WGPUMatching
 from wgpu_matching.dic_synthetic import generate_speckle_pair
 
 
@@ -583,6 +583,7 @@ def evaluate_rotation_coarse_to_fine(
     coarse_rows: list[dict] = []
     refine_rows: list[dict] = []
     full_rows: list[dict] = []
+    full_pairs: list[np.ndarray] = []
     timings = {
         "source_image_and_weights_upload": 0.0,
         "target_image_and_weights_upload": 0.0,
@@ -715,8 +716,16 @@ def evaluate_rotation_coarse_to_fine(
                         consensus["reciprocal_match_count"] = len(matches.points)
                         consensus["full_verify_s"] = time.perf_counter() - started
                         full_rows.append(consensus)
+                        full_pairs.append(matches.points.copy())
 
-    selected_full = max(full_rows, key=_consensus_rank, default={"usable": False})
+    selected_index = max(
+        range(len(full_rows)),
+        key=lambda index: _consensus_rank(full_rows[index]),
+        default=None,
+    )
+    selected_full = (
+        full_rows[selected_index] if selected_index is not None else {"usable": False}
+    )
     true_angle = float(np.rad2deg(case["pair"].metadata["angle_rad"]))
     selected_angle = selected_full.get("angle_hypothesis_deg")
     angular_error_deg = (
@@ -747,6 +756,9 @@ def evaluate_rotation_coarse_to_fine(
         "selected_angle_deg": selected_angle,
         "selected_angle_error_deg": angular_error_deg,
         "selected_full_consensus": selected_full,
+        "selected_pairs_xyxy": (
+            full_pairs[selected_index].tolist() if selected_index is not None else []
+        ),
         "rotation_search_s": rotation_search_s,
         "coarse_stage": coarse_rows,
         "refine_stage": refine_rows,
@@ -764,6 +776,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--mode", choices=("combined", "rotation", "coarse", "both"), default="both"
+    )
+    parser.add_argument(
+        "--family",
+        choices=("rigid", "heterogeneous"),
+        default="rigid",
+        help="Motion family for the coarse-to-fine experiment; other modes retain their established families",
     )
     parser.add_argument("--cnn-weights", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -790,7 +808,7 @@ def main() -> None:
         if args.mode in ("rotation", "both"):
             jobs.append(("rigid", "rotation"))
         if args.mode == "coarse":
-            jobs.append(("rigid", "coarse"))
+            jobs.append((args.family, "coarse"))
         for family, experiment in jobs:
             family_index = 0 if family == "affine" else 1
             for texture_index in range(args.textures):
