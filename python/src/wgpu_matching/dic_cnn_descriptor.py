@@ -87,12 +87,23 @@ class DICConvDescriptorBackend:
         image: np.ndarray,
         features: FeatureSet,
         weights: DICConvDescriptorWeights,
+        support_jacobian: np.ndarray | None = None,
     ) -> DescribedFeatures:
         pixels = np.ascontiguousarray(image, dtype=np.float32)
         if pixels.ndim != 2 or not np.isfinite(pixels).all():
             raise ValueError("DIC convolutional descriptor expects a finite grayscale image")
         height, width = pixels.shape
         count = len(features.xy)
+        jacobian = (
+            np.eye(2, dtype=np.float32)
+            if support_jacobian is None
+            else np.asarray(support_jacobian, dtype=np.float32)
+        )
+        if jacobian.shape != (2, 2) or not np.isfinite(jacobian).all():
+            raise ValueError("support_jacobian must be a finite 2x2 matrix")
+        determinant = float(np.linalg.det(jacobian))
+        if determinant <= 1e-6:
+            raise ValueError("support_jacobian must preserve orientation and be invertible")
         if count == 0:
             return DescribedFeatures(features, np.empty((0, 64), dtype=np.float32))
         if max(width, height) > 8192:
@@ -157,15 +168,14 @@ class DICConvDescriptorBackend:
             params = create_buffer(
                 self.device,
                 scope,
-                32,
+                48,
                 wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST,
                 "DIC convolutional descriptor parameters",
             )
-            self.device.queue.write_buffer(
-                params,
-                0,
-                np.asarray([width, height, count, 64, 0, 0, 0, 0], dtype=np.uint32),
-            )
+            packed_params = np.zeros(12, dtype=np.uint32)
+            packed_params[:4] = [width, height, count, 64]
+            packed_params[4:8].view(np.float32)[:] = jacobian.ravel()
+            self.device.queue.write_buffer(params, 0, packed_params)
             all_entries = [
                 {"binding": index, "resource": {"buffer": buffer}}
                 for index, buffer in enumerate(
@@ -199,13 +209,15 @@ class DICConvDescriptorBackend:
             scope.close()
 
         support = int(weights.metadata["support_px"])
-        margin = support // 2
+        half_support = support / 2.0
+        extent_x = half_support * (abs(float(jacobian[0, 0])) + abs(float(jacobian[0, 1])))
+        extent_y = half_support * (abs(float(jacobian[1, 0])) + abs(float(jacobian[1, 1])))
         valid = (
             features.valid
-            & (features.xy[:, 0] >= margin - 1)
-            & (features.xy[:, 1] >= margin - 1)
-            & (features.xy[:, 0] + margin < width)
-            & (features.xy[:, 1] + margin < height)
+            & (features.xy[:, 0] >= extent_x)
+            & (features.xy[:, 1] >= extent_y)
+            & (features.xy[:, 0] + extent_x < width)
+            & (features.xy[:, 1] + extent_y < height)
         )
         result_features = FeatureSet(
             features.xy,
@@ -222,6 +234,7 @@ class DICConvDescriptorBackend:
                 "descriptor": "DIC-Descriptor patch CNN WGSL",
                 "dimension": 64,
                 "support_px": support,
+                "support_jacobian": jacobian.tolist(),
                 "weights_sha256": weights.metadata["weights_sha256"],
                 "execution": "native grayscale image and descriptor kernels on WebGPU; output copied to host",
             },

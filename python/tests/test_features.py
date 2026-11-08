@@ -343,6 +343,7 @@ def test_dic_patch_cnn_wgsl_matches_pytorch_reference(tmp_path) -> None:
     image = rng.integers(0, 256, size=(192, 192), dtype=np.uint8)
     points = np.array([[80.0, 80.0], [103.25, 96.75]], dtype=np.float32)
     features = FeatureSet(points, np.ones(len(points), dtype=np.float32))
+    support_jacobian = np.asarray([[1.12, 0.08], [-0.05, 0.93]], dtype=np.float32)
     reference = TorchReference().eval()
     with torch.no_grad():
         reference.conv1.weight.copy_(torch.from_numpy(arrays["conv1_weight"]))
@@ -355,9 +356,11 @@ def test_dic_patch_cnn_wgsl_matches_pytorch_reference(tmp_path) -> None:
         offsets = torch.arange(64, dtype=torch.float32) - 31.0
         yy, xx = torch.meshgrid(offsets, offsets, indexing="ij")
         patches = []
+        warped_x = support_jacobian[0, 0] * xx + support_jacobian[0, 1] * yy
+        warped_y = support_jacobian[1, 0] * xx + support_jacobian[1, 1] * yy
         for x, y in points:
-            grid_x = (x + xx + 0.5) * (2.0 / image.shape[1]) - 1.0
-            grid_y = (y + yy + 0.5) * (2.0 / image.shape[0]) - 1.0
+            grid_x = (x + warped_x + 0.5) * (2.0 / image.shape[1]) - 1.0
+            grid_y = (y + warped_y + 0.5) * (2.0 / image.shape[0]) - 1.0
             grid = torch.stack((grid_x, grid_y), dim=-1)[None]
             patches.append(
                 torch.nn.functional.grid_sample(
@@ -371,5 +374,10 @@ def test_dic_patch_cnn_wgsl_matches_pytorch_reference(tmp_path) -> None:
     except RuntimeError as error:
         pytest.skip(f"No software WebGPU adapter is available: {error}")
     with matcher:
-        actual = matcher.describe_dic_cnn_keypoints(image, features, weights_path=path)
+        actual = matcher.describe_dic_cnn_keypoints(
+            image,
+            features,
+            weights_path=path,
+            support_jacobian=support_jacobian,
+        )
     np.testing.assert_allclose(actual.descriptors, expected, rtol=3e-4, atol=3e-4)

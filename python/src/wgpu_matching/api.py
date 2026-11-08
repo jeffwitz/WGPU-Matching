@@ -410,8 +410,14 @@ class WGPUMatching:
         features: FeatureSet,
         *,
         weights_path: str | Path,
+        support_jacobian: np.ndarray | None = None,
     ) -> DescribedFeatures:
-        """Describe supplied keypoints with a trained patch CNN on WebGPU."""
+        """Describe keypoints on WebGPU, optionally rectifying each support by a 2x2 Jacobian.
+
+        The Jacobian maps support offsets from the reference frame into the
+        target image. It changes patch sampling around each candidate center;
+        it does not move candidate centers or require a translation estimate.
+        """
         self._ensure_open()
         path = str(Path(weights_path).expanduser())
         weights = self._dic_cnn_weights.get(path)
@@ -419,7 +425,12 @@ class WGPUMatching:
             weights = DICConvDescriptorWeights.load(path)
             self._dic_cnn_weights[path] = weights
         gray = _as_gray(image)
-        return self._dic_cnn_descriptor.describe(gray.astype(np.float32) / 255.0, features, weights)
+        return self._dic_cnn_descriptor.describe(
+            gray.astype(np.float32) / 255.0,
+            features,
+            weights,
+            support_jacobian=support_jacobian,
+        )
 
     def match_deepmatching(
         self,

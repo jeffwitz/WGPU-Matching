@@ -1,5 +1,6 @@
 struct Params {
     image: vec4<u32>, // width, height, keypoint count, support size
+    jacobian: vec4<f32>, // row-major 2x2 support transform
     reserved: vec4<u32>,
 }
 struct FloatBuffer { values: array<f32> }
@@ -55,9 +56,15 @@ fn first_convolution(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_inv
             let patch_y = i32(oy * u32(step) + ky) - 1;
             var sample = 0.0;
             if patch_x >= 0 && patch_x < i32(support) && patch_y >= 0 && patch_y < i32(support) {
-                let offset = vec2<f32>(start + f32(ox) * step + f32(kx) - 1.0,
-                                       start + f32(oy) * step + f32(ky) - 1.0);
-                sample = bilinear(center.x + offset.x, center.y + offset.y);
+                let source_offset = vec2<f32>(
+                    start + f32(ox) * step + f32(kx) - 1.0,
+                    start + f32(oy) * step + f32(ky) - 1.0
+                );
+                let target_offset = vec2<f32>(
+                    params.jacobian.x * source_offset.x + params.jacobian.y * source_offset.y,
+                    params.jacobian.z * source_offset.x + params.jacobian.w * source_offset.y
+                );
+                sample = bilinear(center.x + target_offset.x, center.y + target_offset.y);
             }
             value += weights.values[channel * 9u + ky * 3u + kx] * sample;
         }
@@ -74,8 +81,10 @@ fn pool_project(@builtin(local_invocation_index) lane: u32, @builtin(workgroup_i
     let center = vec2<f32>(keypoints.values[point_index * 2u], keypoints.values[point_index * 2u + 1u]);
     let support = f32(params.image.w);
     let half_support = support * 0.5;
-    if center.x < half_support - 1.0 || center.y < half_support - 1.0
-        || center.x + half_support >= f32(width) || center.y + half_support >= f32(height) {
+    let extent_x = half_support * (abs(params.jacobian.x) + abs(params.jacobian.y));
+    let extent_y = half_support * (abs(params.jacobian.z) + abs(params.jacobian.w));
+    if center.x < extent_x || center.y < extent_y
+        || center.x + extent_x >= f32(width) || center.y + extent_y >= f32(height) {
         if lane < 64u {
             for (var d = lane; d < 64u; d += 64u) {
                 descriptors.values[point_index * 64u + d] = 0.0;

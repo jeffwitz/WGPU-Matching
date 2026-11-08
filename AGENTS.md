@@ -1085,10 +1085,10 @@ cause. HORG-64 and zero-mean normalized cross-correlation improve only
 modestly, while the learned descriptors recover much of their ranking ability
 with correct geometry. The oracle uses synthetic truth and does not establish
 performance on unknown motion or convergence of inverse compositional
-Gauss–Newton. The next discriminating experiment is a finite bank of
-image-derived affine hypotheses, several retained candidates per query, and a
-shared geometric-consensus check. Evaluate on frozen cases including the two
-historical failures; do not tune on the test truth or relax consensus thresholds.
+Gauss–Newton. The follow-up translation-free support experiment and its
+Jacobian-error sweep are recorded below. Do not implement a dense affine bank
+from the oracle result alone: combined Jacobian errors, heterogeneous fields,
+and image-derived hypotheses remain untested.
 
 Reproduce after exporting the official DeDoDe-B model and providing the
 recorded compact-descriptor weights:
@@ -1109,3 +1109,122 @@ Their SHA-256 fingerprints and execution providers are recorded in the JSON
 result. See the dated report for sources on affine-equivariant descriptors,
 deformation-conditioned descriptor transforms, and feature-guided DIC
 initialization.
+
+### Translation-free affine candidate-patch sensitivity (8 November 2026)
+
+The follow-up is implemented by
+`python/benchmarks/benchmark_affine_candidate_patch_sensitivity.py` and
+summarized in
+`results/descriptors/affine_candidate_sensitivity_20261108/README.md`.
+For each target candidate `y`, it samples `I1(y + F_hat xi)`: the analytic
+translation is never used to construct or select candidate patches. The
+analytic Jacobian is still an oracle input, and analytic displacement is used
+only to score retrieval and the post-fit error. Candidate detector positions
+remain fixed across each Jacobian sweep. No analytic visibility or occlusion
+mask is consulted; image-border-invalid transformed supports receive a score
+floor and are excluded from ranking.
+
+On three 3840 × 2160 synthetic global-affine pairs, all with 512 source queries
+and exactly 8,192 target candidates, 1,002 of 1,536 queries had a detector
+candidate within 5 pixels. With the exact Jacobian and no translation oracle,
+the compact DIC convolutional neural network (CNN) descriptor rose from
+196/1,002 to 823/1,002 correct top-1 retrievals and from 366/1,002 to 901/1,002
+top-five retrievals. The corresponding WebGPU random sample consensus
+(RANSAC) retained 775 estimates, all within 5 pixels, with zero false
+acceptances in these globally affine cases. This is a support-normalization
+diagnostic, not a deployable initializer or an inverse compositional
+Gauss–Newton convergence result.
+
+One-axis Jacobian perturbations show roughly 80% top-1 retrieval within ±5°
+rotation, ±10% independent axial stretch, and ±0.10 shear. At ±10°,
+±20% stretch, or ±0.20 shear, top-1 drops to roughly 54–68%; top-five remains
+higher. These sweeps do not establish a bank spacing because simultaneous
+parameter errors and non-affine fields were not tested. Descriptor recompute
+on the current candidate atlas takes a median 1.87 seconds per hypothesis for
+this 8,192-candidate workload; its CPU sampler and atlas are diagnostic
+prototypes, not production kernels. Do not build a dense bank on this path.
+
+Reproduce the raw benchmark and report with:
+
+```bash
+PYTHONPATH=python/benchmarks:python/src python3 \
+  python/benchmarks/benchmark_affine_candidate_patch_sensitivity.py \
+  --cnn-weights results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \
+  --output results/descriptors/affine_candidate_sensitivity_20261108/oracle_sensitivity_4k_8192.json \
+  --width 3840 --height 2160 --candidate-budget 8192 \
+  --global-queries 512 --textures 3 --families affine --sensitivity
+PYTHONPATH=python/benchmarks:python/src python3 \
+  python/benchmarks/summarize_affine_candidate_patch_sensitivity.py \
+  --input results/descriptors/affine_candidate_sensitivity_20261108/oracle_sensitivity_4k_8192.json \
+  --output results/descriptors/affine_candidate_sensitivity_20261108/README.md
+```
+
+The measurement used Vulkan on Intel Graphics (LNL). Candidate patch sampling
+and similarity ranking in this first sweep are CPU-side; HORG/CNN description
+and affine RANSAC run through WebGPU. DeDoDe-B is not part of this support
+sweep because its current fixed-shape dense-image descriptor API does not
+accept candidate-centred affine patches. The preceding full-image oracle
+report retains its DeDoDe-B comparison.
+
+### Combined Jacobian errors and image-only rotation hypotheses (8 November 2026)
+
+The next diagnostic is implemented in
+`python/benchmarks/benchmark_affine_hypothesis_search.py`; the raw 4K data and
+summary are in
+`results/descriptors/affine_hypothesis_wgpu_20261108/`. Unlike the CPU atlas
+prototype above, the compact descriptor's candidate-centred affine support is
+now sampled directly from the native target image in the canonical WGSL
+shader. This path is exposed by `describe_dic_cnn_keypoints(...,
+support_jacobian=...)` and is checked against the PyTorch sampling grid.
+
+The combined-error experiment uses three independent global-affine 4K pairs,
+512 fixed queries and 8,192 fixed candidates per pair. An 81-point grid
+combines rotation errors (-10°, 0°, +10°), independent axial stretch errors
+(-20%, 0%, +20%) and shear errors (-0.20, 0, +0.20). The repeatable denominator
+is fixed at 751/1,536 queries across every hypothesis. Top-1 retrieval falls
+from 80.4% among repeatable queries for the exact Jacobian to 11.9% when all
+four parameters are perturbed; the pooled rate falls as more parameters are
+wrong. At the exact Jacobian, the direct consensus retains 551 pairs, including
+6 false acceptances under the 5-pixel truth check. The fitted affine predicts
+all query centres correctly only because these test fields are globally
+affine; this is not a result for heterogeneous fields.
+
+The image-only rigid-rotation bank tests 18, 36 and 72 angles over a full turn.
+Its hypothesis selection uses only reciprocal matching and WebGPU affine
+consensus, not the true angle or translation. Across three independent rigid
+4K pairs, top-1 retrieval among repeatable queries is 58.8%, 78.7% and 81.3%,
+respectively, versus 88.1% for exact-Jacobian oracle scoring and 0% without
+support compensation. All retained direct matches in this sample are within
+5 pixels, while fitted rigid fields predict all 1,536 query centres correctly.
+Again, reconstructed centres are not direct correspondences. Median bank time
+per pair is 2.36 s, 4.72 s and 9.36 s, so a 72-angle exhaustive pass is too
+slow for the target pipeline. The 36-to-72 increase provides only 24 additional
+top-1 matches among 941 repeatable queries in this sample.
+
+The detector/visibility split is also recorded after the fact for the affine
+cases: 603/1,536 mapped centres are outside the image, 182 are inside but have
+no detected target candidate within 5 pixels, and 751 have such a candidate.
+Analytic visibility is never used to filter hypotheses or candidates.
+
+This remains a diagnostic on three globally affine and three globally rigid
+synthetic pairs, with no IC-GN qualification and no heterogeneous field test.
+The current runner still reads descriptor arrays to NumPy, and the existing
+GPU mutual matcher uploads them again; diagnostic ranking is also CPU-side.
+Next, shorten rotation search with a cheap coarse score and refine only a few
+hypotheses, then qualify local hypotheses on heterogeneous fields without
+propagating one global model across the full image.
+
+Reproduce the campaign with:
+
+```bash
+PYTHONPATH=python/benchmarks:python/src python3 \\
+  python/benchmarks/benchmark_affine_hypothesis_search.py \\
+  --mode both \\
+  --cnn-weights results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \\
+  --output results/descriptors/affine_hypothesis_wgpu_20261108/combined_and_rotation_4k.json \\
+  --width 3840 --height 2160 --candidate-budget 8192 --query-budget 512 --textures 3
+PYTHONPATH=python/benchmarks:python/src python3 \\
+  python/benchmarks/summarize_affine_hypothesis_search.py \\
+  results/descriptors/affine_hypothesis_wgpu_20261108/combined_and_rotation_4k.json \\
+  --output-dir results/descriptors/affine_hypothesis_wgpu_20261108
+```

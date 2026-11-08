@@ -63,6 +63,26 @@ DeDoDe-B uses a 1024 × 576 input while the other listed descriptors use native
 4K pixels, and treats the result as a diagnostic ceiling rather than an
 achievable initializer.
 
+The follow-up :doc:`translation-free affine candidate-patch sensitivity
+study <_generated_results/descriptors/affine_candidate_sensitivity_20261108/README>`
+uses 8,192 fixed detector candidates per native-4K target image. It applies an
+oracle Jacobian to candidate-centred patches but never uses oracle translation
+to build or select them. The report measures top-1/top-5 retrieval and GPU
+affine consensus while perturbing rotation, independent axial stretches and
+shear. It remains an oracle diagnostic on globally affine synthetic fields;
+candidate patch sampling and similarity ranking are not yet a production GPU
+path.
+
+The follow-up :doc:`combined affine-error and image-only rotation-bank study
+<_generated_results/descriptors/affine_hypothesis_wgpu_20261108/README>`
+samples candidate-centred supports directly from native 4K target pixels in
+WGSL. It combines four Jacobian errors, compares fixed-denominator retrieval,
+and searches rigid rotation without using the analytic angle to select a
+hypothesis. It reports measured direct correspondences separately from affine
+field predictions. The evidence is limited to three globally affine and three
+globally rigid synthetic pairs; the rotation bank remains expensive and the
+matching path still copies descriptors through CPU memory.
+
 Three repeated complete affine calls measure the actual wall-clock pipeline,
 with decoding and figure generation excluded and both images processed each
 time. Automatic-basis fitting reuses the last pair set and has a separate
