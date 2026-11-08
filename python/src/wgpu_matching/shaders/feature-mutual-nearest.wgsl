@@ -6,10 +6,10 @@ struct Best { values: array<vec2<f32>> }
 @group(0) @binding(1) var<storage, read> candidates: Values;
 @group(0) @binding(2) var<storage, read_write> best: Best;
 @group(0) @binding(3) var<uniform> params: Params;
-var<workgroup> lane_scores: array<f32, 64>;
-var<workgroup> lane_indices: array<u32, 64>;
+var<workgroup> lane_scores: array<f32, 256>;
+var<workgroup> lane_indices: array<u32, 256>;
 
-@compute @workgroup_size(64)
+@compute @workgroup_size(256)
 fn nearest(
     @builtin(workgroup_id) group: vec3<u32>,
     @builtin(local_invocation_index) lane: u32,
@@ -19,7 +19,7 @@ fn nearest(
     var best_score = -3.402823e38;
     var best_index = 0xffffffffu;
     if query < params.counts.x {
-      for (var candidate = lane; candidate < params.counts.y; candidate += 64u) {
+      for (var candidate = lane; candidate < params.counts.y; candidate += 256u) {
         var score = 0.0;
         for (var d = 0u; d < dimensions; d += 1u) {
             score += queries.values[query * dimensions + d]
@@ -37,7 +37,7 @@ fn nearest(
     if lane == 0u && query < params.counts.x {
         var result_score = -3.402823e38;
         var result_index = 0xffffffffu;
-        for (var i = 0u; i < 64u; i += 1u) {
+        for (var i = 0u; i < 256u; i += 1u) {
             if lane_scores[i] > result_score {
                 result_score = lane_scores[i];
                 result_index = lane_indices[i];

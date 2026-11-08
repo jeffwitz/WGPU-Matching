@@ -257,9 +257,12 @@ def finalize_pairs(
 class Extractor:
     """Optional neural runtimes and native WebGPU engines; no analytic truth."""
 
-    def __init__(self, matcher, methods, models, keypoints, descriptor_side, geometry):
+    def __init__(
+        self, matcher, methods, models, keypoints, descriptor_side, geometry, feature_matcher
+    ):
         self.matcher, self.models = matcher, models
         self.keypoints, self.descriptor_side = keypoints, descriptor_side
+        self.feature_matcher = feature_matcher
         self.detectors, self.sessions = {}, {}
         self.consensus = LocalConsensus(matcher) if geometry == "local_consensus" else None
         common = set(methods) & {"dad_b", "dedode_b", "dic_tensor_b", "dic_learned_b", "horg_b"}
@@ -365,7 +368,21 @@ class Extractor:
             ]
             stage["description_pair_s"] = time.perf_counter() - t
             t = time.perf_counter()
-            matches = mutual_nearest_cosine(*described, min_cosine_similarity=0.0)
+            matched = (
+                self.matcher.match_features(
+                    *described,
+                    seeds,
+                    min_cosine_similarity=0.0,
+                    fit_local_models=False,
+                )
+                if self.feature_matcher == "wgpu"
+                else None
+            )
+            matches = (
+                matched.correspondences
+                if matched is not None
+                else mutual_nearest_cosine(*described, min_cosine_similarity=0.0)
+            )
             stage["mutual_matching_s"] = time.perf_counter() - t
             values = matches.points
             result = finalize_pairs(values[:, :2], values[:, 2:], size, method, mask=mask)
@@ -375,6 +392,12 @@ class Extractor:
                 point_budget=self.keypoints,
                 detected_counts=[len(f.xy) for f in detected],
                 common_matcher="mutual nearest cosine; minimum similarity 0",
+                feature_matcher=self.feature_matcher,
+                gpu_local_initializations=(
+                    [asdict(m) for m in matched.initializations.matches]
+                    if matched is not None
+                    else None
+                ),
             )
         else:
             if method == "xfeat":
@@ -673,6 +696,7 @@ def main():
     parser.add_argument("--descriptor-side", type=int, default=1024)
     parser.add_argument("--render-width", type=int, default=1280)
     parser.add_argument("--geometry", choices=("local_consensus", "raw"), default="local_consensus")
+    parser.add_argument("--feature-matcher", choices=("wgpu", "cpu"), default="wgpu")
     parser.add_argument("--models", type=Path, help="Optional JSON overriding external model paths")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -700,6 +724,7 @@ def main():
         "render_width": args.render_width,
         "projection_defaults": asdict(ProjectionOptions()),
         "geometric_verification": args.geometry,
+        "feature_matcher": args.feature_matcher,
         "local_consensus_settings": {
             "radius_px": 256,
             "threshold_px": 3,
@@ -788,7 +813,13 @@ def main():
         manifest["adapter"] = matcher.adapter_info
         write_json(manifest_path, manifest)
         extractor = Extractor(
-            matcher, args.methods, models, args.keypoints, args.descriptor_side, args.geometry
+            matcher,
+            args.methods,
+            models,
+            args.keypoints,
+            args.descriptor_side,
+            args.geometry,
+            args.feature_matcher,
         )
         for case in selected:
             ref, tar = load_gray(case["reference"]), load_gray(case["target"])

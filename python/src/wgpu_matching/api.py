@@ -557,11 +557,13 @@ class WGPUMatching:
         min_candidates: int = 8,
         min_inlier_fraction: float = 0.2,
         max_iterations: int = 256,
+        fit_local_models: bool = True,
     ) -> FeatureMatchField:
         """Match a common descriptor and fit local affine seeds on WebGPU.
 
-        Mutual cosine nearest neighbours and local-affine RANSAC execute on
-        WebGPU. Descriptors are uploaded from host memory and only nearest-index
+        Mutual cosine nearest neighbours execute on WebGPU. Optional local-affine
+        RANSAC also runs there; disable it when a later geometric stage owns
+        acceptance. Descriptors are uploaded from host memory and only nearest-index
         and score arrays are read back; detector and descriptor inference are
         independent stages and may still execute on the CPU.
         """
@@ -580,7 +582,17 @@ class WGPUMatching:
             min_cosine_similarity=min_cosine_similarity,
             pipeline=self._feature_match_pipeline,
         )
-        if len(pairs.points) >= 3:
+        if not isinstance(fit_local_models, bool):
+            raise TypeError("fit_local_models must be a boolean")
+        if not fit_local_models:
+            initialization = LocalAffineField(
+                matches=[],
+                correspondence_count=len(pairs.points),
+                radius_px=radius_px,
+                threshold_px=threshold_px,
+                gpu_compute_ms=0.0,
+            )
+        elif len(pairs.points) >= 3:
             initialization = self.fit_local_affine(
                 pairs.points,
                 seed_points,
