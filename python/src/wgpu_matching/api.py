@@ -14,6 +14,7 @@ import wgpu
 
 from ._gpu import make_pipeline, shader_source
 from .contracts import validate_matcher_options
+from .dic_cnn_descriptor import DICConvDescriptorBackend, DICConvDescriptorWeights
 from .dic_detector import DICDetectorBackend, DICDetectorOptions, DICDetectorResult
 from .features import (
     DescribedFeatures,
@@ -295,6 +296,8 @@ class WGPUMatching:
         self.closed = False
         self._horg = HORGBackend(self.device)
         self._dic_detector = DICDetectorBackend(self.device)
+        self._dic_cnn_descriptor = DICConvDescriptorBackend(self.device)
+        self._dic_cnn_weights: dict[str, DICConvDescriptorWeights] = {}
         self._feature_match_pipeline = None
 
     @property
@@ -383,6 +386,40 @@ class WGPUMatching:
         self._ensure_open()
         gray = _as_gray(image)
         return self._horg.describe_keypoints(gray, features, reduction=reduction)
+
+    def describe_dic_keypoints(
+        self,
+        image: np.ndarray | str | Path,
+        features: FeatureSet,
+        *,
+        weights_path: str | Path,
+    ) -> DescribedFeatures:
+        """Describe fixed keypoints with an optional trained compact DIC model.
+
+        Feature extraction, learned projection, and L2 normalization execute
+        through WebGPU kernels. The resulting 64-component array is read back
+        to host memory before the current ``match_features`` call uploads it.
+        """
+        self._ensure_open()
+        gray = _as_gray(image)
+        return self._horg.describe_keypoints_compact(gray, features, str(weights_path))
+
+    def describe_dic_cnn_keypoints(
+        self,
+        image: np.ndarray | str | Path,
+        features: FeatureSet,
+        *,
+        weights_path: str | Path,
+    ) -> DescribedFeatures:
+        """Describe supplied keypoints with a trained patch CNN on WebGPU."""
+        self._ensure_open()
+        path = str(Path(weights_path).expanduser())
+        weights = self._dic_cnn_weights.get(path)
+        if weights is None:
+            weights = DICConvDescriptorWeights.load(path)
+            self._dic_cnn_weights[path] = weights
+        gray = _as_gray(image)
+        return self._dic_cnn_descriptor.describe(gray.astype(np.float32) / 255.0, features, weights)
 
     def match_deepmatching(
         self,

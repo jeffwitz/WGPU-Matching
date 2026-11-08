@@ -16,6 +16,7 @@ support and scientific metrics. Continue to a method page, then to
    dad
    dedode
    dic-detector
+   dic-descriptor
    learned-feature-pipelines
    deepmatching
    horg

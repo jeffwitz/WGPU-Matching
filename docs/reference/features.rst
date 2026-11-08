@@ -48,6 +48,33 @@ Execution and score contracts
   to about 10 ms, but yielded enough reliable matches for field fitting in
   only one of six fields. See the :doc:`heterogeneous seeded IC-GN report
   <../_generated_results/qualification/heterogeneous_icgn_20261108/README>`.
+* ``WGPUMatching.describe_dic_keypoints`` applies an optional trained
+  projection to one or three HORG scales using WGSL. Linear, residual MLP, and
+  multiscale MLP weight bundles are supported. The projection is tested
+  against a NumPy oracle for all three architectures. In the dated six-field
+  study, the trained multiscale projection did not improve HORG-64: it reached
+  53/91 correct IC-GN windows on the one field where HORG-64 reached 57/91,
+  and it did not produce a usable field in the other five. Its paired
+  descriptor time was 83.9 ms versus 22.7 ms on native 4K images with 4096
+  points. Read the :doc:`scientific explanation
+  <../explanation/dic-descriptor>` and :doc:`failure analysis
+  <../_generated_results/descriptors/baseline_failure_analysis>` before using
+  these experimental weights.
+* ``WGPUMatching.describe_dic_cnn_keypoints`` evaluates a trained 64-pixel
+  patch convolutional neural network on the supplied floating-point points.
+  It runs the first convolution and feature-map pooling/projection in two
+  WGSL passes, keeps the intermediate feature map in a WebGPU storage buffer,
+  and returns a 64-component unit-normalized descriptor. Points whose support
+  crosses the image boundary are marked invalid. PyTorch is only needed for
+  optional training; the exported NumPy weight archive is sufficient for
+  inference. The expanded independent qualification obtained 684/1013
+  correct converged windows on discontinuous fields, but failed to produce a
+  field on held-out rigid, affine, and heterogeneous families. It did not
+  recover either historical regression failure. See :doc:`the method explanation
+  <../explanation/dic-descriptor>` and :doc:`training and qualification guide
+  <../how-to/train-dic-descriptor>`.
+  The complete expanded comparison is available as the :doc:`qualification
+  report <../_generated_results/qualification/dic_descriptor_expanded_icgn_20261108/README>`.
 * Mutual cosine nearest neighbours can execute in WGSL; descriptor arrays are
   uploaded per call and only the best index and cosine score per query return
   to the host. The measured full 60% workload preserves the exact direct-pair

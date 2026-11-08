@@ -29,6 +29,13 @@ The same predeclared geometric verification is applied to all pipelines,
 without analytic correspondence filtering. All rejections and model-selection
 convergence flags remain available.
 
+The compact speckle descriptor has a separate :doc:`IC-GN qualification
+<_generated_results/qualification/dic_descriptor_expanded_icgn_20261108/README>`.
+That study contains six frozen regression cases and ten independent fields
+each for translation, rigid rotation, affine, heterogeneous, and discontinuous
+motion. Its objective and aggregation differ from the progressive tensile
+benchmark above; use the report's protocol when comparing those numbers.
+
 Three repeated complete affine calls measure the actual wall-clock pipeline,
 with decoding and figure generation excluded and both images processed each
 time. Automatic-basis fitting reuses the last pair set and has a separate

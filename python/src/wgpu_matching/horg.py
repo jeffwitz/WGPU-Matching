@@ -23,6 +23,7 @@ from ._gpu import (
     uniform_buffer,
     upload_buffer,
 )
+from .dic_descriptor import CompactDescriptorBackend, CompactDescriptorWeights
 from .features import DescribedFeatures, FeatureSet
 
 FEATURE_STRIDE = 68
@@ -35,6 +36,8 @@ class HORGBackend:
     def __init__(self, device: Any) -> None:
         self.device = device
         self._compact_descriptor_pipelines: tuple[Any, Any] | None = None
+        self._learned_descriptor_backend = CompactDescriptorBackend(device)
+        self._learned_descriptor_weights: dict[str, CompactDescriptorWeights] = {}
 
     def _shader(self, name: str) -> Any:
         return self.device.create_shader_module(label=name, code=shader_source(name))
@@ -758,6 +761,40 @@ class HORGBackend:
             )
         finally:
             scope.close()
+
+    def describe_keypoints_compact(
+        self,
+        pixels: np.ndarray,
+        features: FeatureSet,
+        weights_path: str,
+    ) -> DescribedFeatures:
+        """Extract trained HORG-scale features and project them in WGSL."""
+        path = str(weights_path)
+        weights = self._learned_descriptor_weights.get(path)
+        if weights is None:
+            weights = CompactDescriptorWeights.load(path)
+            self._learned_descriptor_weights[path] = weights
+        reductions = tuple(int(value) for value in weights.metadata["image_reductions"])
+        if not reductions:
+            raise ValueError("Trained descriptor metadata must list image reductions")
+        parts = [
+            self.describe_keypoints(pixels, features, reduction=reduction).descriptors
+            for reduction in reductions
+        ]
+        source = np.concatenate(parts, axis=1)
+        projected = self._learned_descriptor_backend.project(source, weights)
+        return DescribedFeatures(
+            features,
+            projected,
+            {
+                "descriptor": "DIC-Descriptor-WGSL",
+                "architecture": weights.metadata["architecture"],
+                "dimension": 64,
+                "image_reductions": reductions,
+                "weights_sha256": weights.metadata.get("weights_sha256"),
+                "execution": "HORG feature kernels and trained projection in WGSL; compact output read to host",
+            },
+        )
 
     def fit_local_correspondences(
         self,

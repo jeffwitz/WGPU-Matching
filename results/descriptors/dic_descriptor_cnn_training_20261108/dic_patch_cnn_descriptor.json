@@ -1,0 +1,24 @@
+{
+  "seed": 20261109,
+  "train_pairs": 24,
+  "validation_pairs": 8,
+  "points_per_pair": 48,
+  "motion_families": [
+    "translation",
+    "rigid",
+    "affine",
+    "heterogeneous",
+    "discontinuous"
+  ],
+  "negative_mining": "same-texture locations at least 48 source pixels apart; hardest current similarities dominate InfoNCE",
+  "torch_version": "2.15.0+cpu",
+  "checkpoint_selection": "maximum validation top-1 retrieval; first epoch wins ties",
+  "architecture": "dic_patch_cnn_v1",
+  "support_px": 64,
+  "feature_channels": 8,
+  "output_dimension": 64,
+  "normalization": "L2",
+  "operations": "3x3 stride-4 convolution, depthwise 3x3, 4x4 spatial average pooling, linear projection",
+  "weights_file": "dic_patch_cnn_descriptor.npz",
+  "weights_sha256": "942644d3267bb1f5fcf01513705cda5b1e8b70452751f0f3c76f301c09c8d252"
+}

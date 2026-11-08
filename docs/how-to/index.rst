@@ -10,6 +10,7 @@ Each guide addresses a practical task. For the reasoning behind thresholds and s
    seeds-and-fields
    project-correspondences
    train-dic-detector
+   train-dic-descriptor
    reproduce-benchmarks
    qualify-all-initializers
 

@@ -1,0 +1,34 @@
+{
+  "seed": 20261108,
+  "train_texture_seeds_sha256": "b2e880b957cbcc5eead125e22ce9261603c6efd43912cb530e0ef3137fbe1445",
+  "validation_texture_seeds_sha256": "9acd1cbde1307f58d3ff9355991628cc89f7c7d40d3a22e558b6a2f1e2c4c280",
+  "train_pairs": 64,
+  "validation_pairs": 16,
+  "points_per_pair": 96,
+  "motion_families": [
+    "translation",
+    "rigid",
+    "affine",
+    "heterogeneous",
+    "discontinuous"
+  ],
+  "hard_negatives": "highest cosine distractors among same-texture points at least 48 source pixels apart; InfoNCE emphasizes high-scoring negatives",
+  "exclusion_radius_px": 48,
+  "dataset_files": {
+    "train_pairs.npz": "10a0cd21885d47642800e01a87b81961c73f8cabd50b692d2e22e07e5d9c97be",
+    "validation_pairs.npz": "783699bd116f1f7d3e1f1c9285bf81fb1a1088fc398fdebb000389b9ed4b79fc"
+  },
+  "feature_teacher": "HORG-64 WGSL at exact analytic corresponding coordinates",
+  "wall_s_before_training": 11.970694968942553,
+  "architecture": "linear",
+  "image_reductions": [
+    4
+  ],
+  "input_dimension": 64,
+  "hidden_dimension": 0,
+  "output_dimension": 64,
+  "normalization": "L2",
+  "inference": "WGSL linear projection or one-hidden-layer ReLU MLP",
+  "weights_file": "dic_descriptor_linear.npz",
+  "weights_sha256": "11a7365769f73a32f555322395c4d99d5de42a07866041950c7456e76fee0d78"
+}
