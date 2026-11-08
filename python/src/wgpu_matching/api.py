@@ -366,6 +366,24 @@ class WGPUMatching:
             on_progress=on_progress,
         )
 
+    def describe_horg_keypoints(
+        self,
+        image: np.ndarray | str | Path,
+        features: FeatureSet,
+        *,
+        reduction: int = 4,
+    ) -> DescribedFeatures:
+        """Compute HORG-64 descriptors for supplied floating-point keypoints.
+
+        This experimental adapter runs its image reduction and descriptor
+        kernels on WebGPU. It uses a fixed SIFT support scale, so it is useful
+        for controlled descriptor ablations but is not the native HORG
+        detector-and-descriptor pipeline.
+        """
+        self._ensure_open()
+        gray = _as_gray(image)
+        return self._horg.describe_keypoints(gray, features, reduction=reduction)
+
     def match_deepmatching(
         self,
         reference: np.ndarray | str | Path,

@@ -100,3 +100,26 @@ def test_horg_keypoints_are_exposed_for_a_common_descriptor() -> None:
     assert np.isfinite(features.xy).all()
     assert np.isfinite(features.scores).all()
     assert features.scales is not None
+
+
+def test_horg_compact_descriptor_preserves_supplied_points() -> None:
+    from wgpu_matching import WGPUMatching
+
+    rng = np.random.default_rng(8108)
+    image = rng.integers(0, 256, size=(128, 128), dtype=np.uint8)
+    features = FeatureSet(
+        xy=np.array([[40.25, 41.75], [64.0, 64.0], [88.5, 77.25]], dtype=np.float32),
+        scores=np.array([0.9, 0.8, 0.7], dtype=np.float32),
+    )
+    try:
+        matcher = WGPUMatching(device_type="cpu")
+    except RuntimeError as error:
+        pytest.skip(f"No software WebGPU adapter is available: {error}")
+    with matcher:
+        described = matcher.describe_horg_keypoints(image, features, reduction=2)
+
+    assert described.descriptors.shape == (3, 64)
+    assert described.metadata["descriptor"] == "HORG-64 supplied-keypoint variant"
+    np.testing.assert_array_equal(described.features.xy, features.xy)
+    assert np.isfinite(described.descriptors).all()
+    np.testing.assert_allclose(np.linalg.norm(described.descriptors, axis=1), 1.0, atol=2e-5)

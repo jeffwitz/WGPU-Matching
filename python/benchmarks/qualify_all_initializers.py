@@ -44,6 +44,7 @@ from wgpu_matching import (
     CorrespondenceSet,
     CPMOptions,
     DeDoDeBDescriptor,
+    DeDoDeBOnnxWGPUDescriptor,
     DeepMatchingOptions,
     DICDetectorOptions,
     HORGOptions,
@@ -258,7 +259,16 @@ class Extractor:
     """Optional neural runtimes and native WebGPU engines; no analytic truth."""
 
     def __init__(
-        self, matcher, methods, models, keypoints, descriptor_side, geometry, feature_matcher
+        self,
+        matcher,
+        methods,
+        models,
+        keypoints,
+        descriptor_side,
+        geometry,
+        feature_matcher,
+        descriptor_backend,
+        descriptor_onnx,
     ):
         self.matcher, self.models = matcher, models
         self.keypoints, self.descriptor_side = keypoints, descriptor_side
@@ -266,9 +276,16 @@ class Extractor:
         self.detectors, self.sessions = {}, {}
         self.consensus = LocalConsensus(matcher) if geometry == "local_consensus" else None
         common = set(methods) & {"dad_b", "dedode_b", "dic_tensor_b", "dic_learned_b", "horg_b"}
-        self.descriptor = (
-            DeDoDeBDescriptor(max_side=descriptor_side, device="cpu") if common else None
-        )
+        if common and descriptor_backend == "wgpu":
+            if descriptor_onnx is None:
+                raise ValueError("--descriptor-onnx is required when descriptor backend is wgpu")
+            self.descriptor = DeDoDeBOnnxWGPUDescriptor(
+                descriptor_onnx, max_side=descriptor_side, capacity=keypoints
+            )
+        else:
+            self.descriptor = (
+                DeDoDeBDescriptor(max_side=descriptor_side, device="cpu") if common else None
+            )
         for method in ("dad_b", "dedode_b"):
             if method in methods:
                 self.detectors[method] = OnnxWGPUKeypointDetector(models[method], max_side=640)
@@ -697,6 +714,8 @@ def main():
     parser.add_argument("--render-width", type=int, default=1280)
     parser.add_argument("--geometry", choices=("local_consensus", "raw"), default="local_consensus")
     parser.add_argument("--feature-matcher", choices=("wgpu", "cpu"), default="wgpu")
+    parser.add_argument("--descriptor-backend", choices=("cpu", "wgpu"), default="cpu")
+    parser.add_argument("--descriptor-onnx", type=Path)
     parser.add_argument("--models", type=Path, help="Optional JSON overriding external model paths")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
@@ -725,6 +744,8 @@ def main():
         "projection_defaults": asdict(ProjectionOptions()),
         "geometric_verification": args.geometry,
         "feature_matcher": args.feature_matcher,
+        "descriptor_backend": args.descriptor_backend,
+        "descriptor_onnx": str(args.descriptor_onnx) if args.descriptor_onnx else None,
         "local_consensus_settings": {
             "radius_px": 256,
             "threshold_px": 3,
@@ -820,6 +841,8 @@ def main():
             args.descriptor_side,
             args.geometry,
             args.feature_matcher,
+            args.descriptor_backend,
+            args.descriptor_onnx,
         )
         for case in selected:
             ref, tar = load_gray(case["reference"]), load_gray(case["target"])

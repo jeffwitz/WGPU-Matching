@@ -1,0 +1,194 @@
+{
+  "created_utc": "2026-11-08T08:15:48.001470+00:00",
+  "resumed_utc": [],
+  "protocol_sha256": "94190b39bb0b31dfe441cb42ed74fd56771f753158fdcae538046a443ccdd08b",
+  "protocol": {
+    "methods": [
+      "dic_learned_b"
+    ],
+    "cases": [
+      "tensile_60pct"
+    ],
+    "repeats": 1,
+    "keypoints": 8192,
+    "descriptor_side": 1024,
+    "render_width": 1280,
+    "projection_defaults": {
+      "basis": "gaussian_rbf",
+      "center_counts": [
+        16,
+        32,
+        64
+      ],
+      "width_factors": [
+        1.0,
+        2.0,
+        4.0
+      ],
+      "ridge_values": [
+        1e-06,
+        0.0001,
+        0.01
+      ],
+      "folds": 3,
+      "max_irls_iterations": 20,
+      "irls_tolerance": 0.0001,
+      "irls_damping": 0.0,
+      "huber_delta": 1.345,
+      "minimum_scale_px": 0.05,
+      "density_cells": [
+        16,
+        12
+      ],
+      "random_seed": 20261106
+    },
+    "geometric_verification": "local_consensus",
+    "feature_matcher": "wgpu",
+    "descriptor_backend": "wgpu",
+    "descriptor_onnx": "/tmp/dedode_b_descriptor_1024x576_k8192.onnx",
+    "local_consensus_settings": {
+      "radius_px": 256,
+      "threshold_px": 3,
+      "iterations": 256,
+      "minimum_inliers": 6,
+      "minimum_candidates": 8,
+      "minimum_inlier_fraction": 0.2
+    },
+    "maximum_projection_pairs": 8192,
+    "models": {
+      "dad_b": {
+        "path": "/tmp/wgpu_matching_detector_exports/dad_keypoints_k8192.onnx",
+        "sha256": "bb4f8bdfbe8ae401bbd7987a7414d457e1f2dcdbf0b7fceebff6159d0aaa9b69"
+      },
+      "dedode_b": {
+        "path": "/tmp/wgpu_matching_detector_exports/dedodev2_keypoints_k8192.onnx",
+        "sha256": "4b4c300001d96b5705308c09ad7cb07c34f65a70ffe70f7a7852cdef8631260c"
+      },
+      "xfeat": {
+        "path": "/tmp/xfeat-eval/xfeat_dense_e2e.onnx",
+        "sha256": "936d5090d91e3f32e3c545567f8d3d6c9af8ec955f32d3ddd8ff850b0c807fbe"
+      },
+      "efficientloftr": {
+        "path": "/tmp/wgpu-matching-aliked-study/eloftr_border_mask_640x384.onnx",
+        "sha256": "b9dbf3e6b30158f33a7fa3e89cdcac319df5fc874903151891bc1a491dff5724"
+      },
+      "efficientloftr_dynamic": {
+        "path": "/tmp/wgpu-matching-aliked-study/eloftr_outdoor_opt.onnx",
+        "sha256": "a2cbdcfef0ddb5cdab062ae34bf7b09da6cac79baf97fc5155033c8cb1eab602"
+      },
+      "raco": {
+        "path": "/tmp/wgpu-matching-aliked-study/raco_selu_gathernd_i32_v1.onnx",
+        "sha256": "f452b89f4567b9c530f6f35053c2dab5c3d9bcae2ac52279cf8d570b0dfc5149"
+      },
+      "dic_learned_b": {
+        "path": "/home/jeff/Code/WGPU-Matching/results/features/dic_detector_training_discontinuous_20261107/dic_detector_weights.npz",
+        "sha256": "d539deef26b46ffbbe54e3d27b1395a66126ddbea7243c3221f2617f25cb9094"
+      }
+    },
+    "source_files": {
+      "python/benchmarks/geometric_consensus.py": "7d54f519fab81d8ce9c753909112a5e809598b4d889bd972d84f02c907bf0ea0",
+      "python/benchmarks/qualification_visuals.py": "282f12fdef93cb6a4defad0564a9b3a7236ca319d4b20025236abf71203e9587",
+      "python/benchmarks/qualify_all_initializers.py": "41e4ae71c3ed70264ae6de7f831537aa6ab9b5e97316d00f656f11908ae23628",
+      "python/src/wgpu_matching/__init__.py": "199d54ed6621ff2b9c0d0b9adf2ca5697c4f35f90c36639eb1a18b2698d56ace",
+      "python/src/wgpu_matching/_gpu.py": "836aba387d8304f1096715cef2d711b5ec07e20cfe8b4db91b1589533c53f6f2",
+      "python/src/wgpu_matching/api.py": "4018a3768222e59c48d8fc1eb81d6537d3167ab195cf8005715c12b6c0c5f174",
+      "python/src/wgpu_matching/contracts.py": "971fb90731ed2ad0153fe2134ef66cb0e51f5b200c958c5a8cda04ffe07b6594",
+      "python/src/wgpu_matching/cpm.py": "b264032f568997b8e0145589e5cba0f40814842627e4d50aa08b5c654260bf01",
+      "python/src/wgpu_matching/deepmatching.py": "4196bf4b28e4efbcbb4387a254f592e3e824a63c7e8ecbdb46802427f8fa7ee6",
+      "python/src/wgpu_matching/dic_detector.py": "b93031b2b6ee1c341f8367c664d57549dc549075bd5bf0464920fe4c34dab705",
+      "python/src/wgpu_matching/dic_model.py": "20f766ad606c15135d6557c9fa18b5cede05e4bbf841801e648f58ecde17f042",
+      "python/src/wgpu_matching/dic_synthetic.py": "dd1017b41ae3bbbc794d1d906ce6f37fba524c3b3ab2298f47b95c9d0f3fe8cd",
+      "python/src/wgpu_matching/features.py": "4bf970e40d7b1571f7eb3514922b4e8352c7d3a860de6d4fc71d44ec64c8f127",
+      "python/src/wgpu_matching/horg.py": "389648c2329eb37527b1b76acd9925b609688b0864da7a9de6c2a7dec4b51bba",
+      "python/src/wgpu_matching/images.py": "5419240720dfa99fd68145cd0f88b0db84c6c077b23571d281f30caca1cda407",
+      "python/src/wgpu_matching/projection.py": "8fb3cedd86db9f5a1d59fcf47721e3529fb25fa8feb12c4b9d4921292ee85b61",
+      "python/src/wgpu_matching/shaders/affine-warp.wgsl": "6c71ebc184f13faa68243f1c295b805aa38aca79a9d28b9f4882369c68750f97",
+      "python/src/wgpu_matching/shaders/cpm-match.wgsl": "bf8d11a9c370032b69f74a02406c2d53241b1ca769f4502e406882e9a20b1aec",
+      "python/src/wgpu_matching/shaders/cpm-pyramid.wgsl": "4e5e7cdd3eaeb3051804a54a2f8685eb5cebeca3f2fcfdbf59f4aad929d126b9",
+      "python/src/wgpu_matching/shaders/deepmatching-descriptor.wgsl": "a3a01af1fdf77094053bffa47ffd2b4d7b11d73b860d895be643538278ea3c73",
+      "python/src/wgpu_matching/shaders/deepmatching-hierarchy.wgsl": "f1fd0eb20a7f7359ddf895b4d71794117df38e36285bf1081a37af5eadae400d",
+      "python/src/wgpu_matching/shaders/deepmatching-match.wgsl": "42aeca7d20bb30060ede057820224d05eb7ad985ab9a8ac97bd5623d3d8690bc",
+      "python/src/wgpu_matching/shaders/deepmatching-pyramid.wgsl": "15148b5ef30fcc0f10582d7fc8fe570b19603c775505d8f8834387cbc85df7c3",
+      "python/src/wgpu_matching/shaders/dic-detector.wgsl": "e936759725b02f880c4c9c9381ce02369a48f1bb28433b4d3edf670096724b4a",
+      "python/src/wgpu_matching/shaders/dic-learned.wgsl": "9af3ca4b5a97cc02a27d09d1cc526847aaf6c51afb68a54227899c96224d2f04",
+      "python/src/wgpu_matching/shaders/ecc-affine-finish.wgsl": "9821c402be5e0b455c6e7076d37b87d90960e2206d4193d6e8cb838930000e00",
+      "python/src/wgpu_matching/shaders/ecc-affine-reduce.wgsl": "2c3525153187b2292af87462ee9dce65d4968b5b8f09e2ccb96a44fe1f1112df",
+      "python/src/wgpu_matching/shaders/ecc-affine-solve.wgsl": "bf4f4fd632b192cc71a485e2177d91344736dfb07fd9917e263801e49e4ffbf0",
+      "python/src/wgpu_matching/shaders/feature-mutual-nearest.wgsl": "b27193dfd1da6abbe631222d44615d0d3abf64611424070980819b30b462ceec",
+      "python/src/wgpu_matching/shaders/horg-confidence.wgsl": "86ef9bb931adca11585c9453810139519d6be5c24a3064ffd1b0b1c1236ed39c",
+      "python/src/wgpu_matching/shaders/horg-descriptor.wgsl": "793e5ab68d46946a7db6d5a06d23bf571089e32d9286b2d18a0addecdc5a4ffe",
+      "python/src/wgpu_matching/shaders/horg-detect.wgsl": "bf55f34ecdc561faef61b6081950637ab4296f1d73d326d1575da09d8724e64b",
+      "python/src/wgpu_matching/shaders/horg-match.wgsl": "41d5fad174d91f8def30ce651d7e9797276cbb84eff6c618cb93c39abfb49247",
+      "python/src/wgpu_matching/shaders/horg-prepare.wgsl": "c1b005386619f4388510611372effacb2c5dc55cd4728dcb4e963d76419b7bea",
+      "python/src/wgpu_matching/shaders/horg-pyramid.wgsl": "3401caa6c10c09ada686e776f4faf46c3175e460b3bcdf6e9c6cc87f2c1d53d8",
+      "python/src/wgpu_matching/shaders/horg-ransac.wgsl": "184fb3923f36b167ea414d7920485bf5b493f01c76441e15280fa94abf667523",
+      "python/src/wgpu_matching/shaders/local-consensus-filter.wgsl": "0575a27deba8fe7a87528f3399b12dd31cad70f6d8669d265f73cfe57bad0967",
+      "python/src/wgpu_matching/shaders/projection-evaluate.wgsl": "12de70a08ecb70d4d3987159b49939def53b82f181019d740e936cb6f0032a06",
+      "python/src/wgpu_matching/shaders/projection-fit.wgsl": "fd417c09c916900ddd25e48e7c70a5403aff9f9f7ae9534e20fab40eaf83391f",
+      "python/src/wgpu_matching/shaders/ransac-affine-best.wgsl": "7e44d50b185562b742fc5c4aeda27f28c7f0dcc6a604efa44c5b84f5b038120f",
+      "python/src/wgpu_matching/shaders/ransac-affine-refit.wgsl": "7e2d8a9343cc115f1b8635aeb90ee3ebf2bf60c0763757a1f986ecf3bdedced9",
+      "python/src/wgpu_matching/shaders/ransac-affine.wgsl": "858a859114bffe4d4bfc1bc996389d597bce83906f3977d7dbb6184a8ed33490"
+    },
+    "images": [
+      {
+        "case": "tensile_60pct",
+        "reference": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/reference.png",
+        "target": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/frame_199_eng_60pct.png",
+        "reference_sha256": "7cadf6032d7c5ac2de74ae542573a3b38069dc8c1c075ef9576641601996aeec",
+        "target_sha256": "259151c6b85fb880b58b56a1bab81d1f64398d74184e59c516b9d549a2f5d4ae",
+        "size": [
+          3840,
+          2160
+        ],
+        "analytic_truth": {
+          "time_s": 6.633333333333334,
+          "engineering_axial": 0.6,
+          "true_axial": 0.4700036292457356,
+          "plastic_true": 0.46711305077794435,
+          "stress_true_MPa": 607.0214782361531,
+          "stretch_x": 1.6,
+          "stretch_y": 0.7910265877644076,
+          "engineering_transverse": -0.2089734122355924,
+          "machine_force_N": 18991.366919783828
+        },
+        "mask_sha256": null
+      }
+    ],
+    "pass_rule": "all visible requested windows have finite displacement error strictly <5 px",
+    "primary_projection": "affine, predeclared from prior tensile study",
+    "secondary_projection": "spatial cross-validation between affine and Gaussian RBF",
+    "timing_scope": "affine: measured complete extraction+fit+patch call; decoding, model load, warmup, rendering excluded",
+    "rbf_timing_scope": "single fit+patch call on final measured correspondence set; no end-to-end FPS claim",
+    "coordinate_mapping": "integer source pixel centres; inverse resize (x+0.5)*scale-0.5",
+    "oracle_policy": "truth used only for seed visibility and evaluation",
+    "peak_gpu_memory": "not measured",
+    "peak_host_memory": "not measured",
+    "reference_caching": "none: each timed call processes two decoded images",
+    "numerical_threads": "PyTorch8, ORT8; launch with OpenBLAS/OMP/MKL8"
+  },
+  "runtime": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "numpy": "2.5.4",
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "torch": "2.15.0+cpu"
+  },
+  "decoded_images": {
+    "tensile_60pct": {
+      "reference_sha256": "a92d306a131829675d1023abd6d95375baa86f317fcd108e797900caa7511b50",
+      "target_sha256": "5a1851a7dff31c47a34a37b1b757e0505ab457139cbb4835239175a3e3021353",
+      "dtype": "uint8"
+    }
+  },
+  "adapter": {
+    "vendor": "Intel open-source Mesa driver",
+    "architecture": "",
+    "device": "Intel(R) Graphics (LNL)",
+    "description": "Mesa 25.2.8-0ubuntu0.24.04.4",
+    "stackgroup_min_size": 4,
+    "stackgroup_max_size": 128,
+    "vendor_id": 32902,
+    "device_id": 25760,
+    "adapter_type": "IntegratedGPU",
+    "backend_type": "Vulkan"
+  }
+}

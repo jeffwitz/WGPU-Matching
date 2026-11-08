@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-
 from wgpu_matching import CPMOptions, WGPUMatching
 
 ROOT = Path(__file__).resolve().parents[1]

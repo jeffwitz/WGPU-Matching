@@ -34,11 +34,27 @@ Execution and score contracts
   scores are sigmoid outputs, not calibrated correspondence probabilities.
 * DIC ROI support checks run before selection; DaD/DeDoDe ROI filtering is
   applied after top-K and can leave fewer points than requested.
-* DeDoDe-B description remains a CPU reference stage. Mutual cosine nearest
-  neighbours now execute in WGSL; descriptor arrays are uploaded per call and
-  only the best index and cosine score per query return to the host. This
-  removes the quadratic CPU similarity matrix but does not make extraction or
-  the full pipeline resident on GPU.
+* ``DeDoDeBDescriptor`` is the PyTorch reference implementation. The optional
+  ``DeDoDeBOnnxWGPUDescriptor`` samples the same official 256-component
+  descriptor through a fixed-shape ONNX graph whose operators ran on ONNX
+  Runtime's WebGPU execution provider in the measured export. The output still
+  crosses to NumPy and is uploaded by ``wgpu-py``; there is no shared allocation
+  between these runtimes.
+* ``WGPUMatching.describe_horg_keypoints`` computes a compact 64-value HORG
+  descriptor for caller-supplied points with WGSL. This controlled ablation
+  uses a fixed SIFT support scale and estimates orientation from local
+  gradients; it is not the native multi-octave HORG pipeline. In the
+  six-field IC-GN pilot, it reduced paired descriptor time from about 2.4 s
+  to about 10 ms, but yielded enough reliable matches for field fitting in
+  only one of six fields. See the :doc:`heterogeneous seeded IC-GN report
+  <../_generated_results/qualification/heterogeneous_icgn_20261108/README>`.
+* Mutual cosine nearest neighbours can execute in WGSL; descriptor arrays are
+  uploaded per call and only the best index and cosine score per query return
+  to the host. The measured full 60% workload preserves the exact direct-pair
+  digest and projected-field error, but WGSL matching was slower than NumPy
+  for 256-component descriptors. See the :doc:`dated DeDoDe ONNX/WebGPU report
+  <../_generated_results/features/dedode_onnx_wgpu_20261108/README>` for timings,
+  parity, graph placement, and the fixed-shape limitation.
 
 API
 ---
@@ -59,6 +75,9 @@ API
    :members:
 
 .. autoclass:: wgpu_matching.DeDoDeBDescriptor
+   :members:
+
+.. autoclass:: wgpu_matching.DeDoDeBOnnxWGPUDescriptor
    :members:
 
 .. autofunction:: wgpu_matching.mutual_nearest_cosine
@@ -94,6 +113,13 @@ pages: :doc:`native 4K detector latency and repeatability
 <../_generated_results/features/detector_common_descriptor_20261107>`. A
 separate 60% stress report is linked from :doc:`the benchmark index
 <../benchmarks>`.
+
+To reproduce the ONNX descriptor profile, export the static model with
+``python/benchmarks/export_dedode_descriptor_onnx.py`` and run
+``python/benchmarks/profile_dedode_descriptor_onnx.py MODEL.onnx
+--output profile-summary.json``. The profiler reports per-operator provider
+counts and summed ONNX Runtime event durations; those event durations are not
+hardware GPU timestamps.
 
 The follow-up training set adds piecewise-discontinuous motion with an invalid
 gap. On 24 held-out generated pairs, the report separates repeatability by

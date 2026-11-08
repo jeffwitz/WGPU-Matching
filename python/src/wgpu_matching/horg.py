@@ -23,7 +23,7 @@ from ._gpu import (
     uniform_buffer,
     upload_buffer,
 )
-from .features import FeatureSet
+from .features import DescribedFeatures, FeatureSet
 
 FEATURE_STRIDE = 68
 DESCRIPTOR_SIZE = 64
@@ -34,6 +34,7 @@ MAX_RANSAC_CANDIDATES = 96
 class HORGBackend:
     def __init__(self, device: Any) -> None:
         self.device = device
+        self._compact_descriptor_pipelines: tuple[Any, Any] | None = None
 
     def _shader(self, name: str) -> Any:
         return self.device.create_shader_module(label=name, code=shader_source(name))
@@ -617,6 +618,146 @@ class HORGBackend:
                 "coordinate_convention": "source-image pixel centres; integer values identify pixel centres",
             },
         )
+
+    def describe_keypoints(
+        self,
+        pixels: np.ndarray,
+        features: FeatureSet,
+        *,
+        reduction: int = 4,
+    ) -> DescribedFeatures:
+        """Compute the 64-value HORG descriptor at caller-supplied keypoints.
+
+        The image is reduced on WebGPU, and the descriptor shader estimates
+        its own dominant orientation. A fixed SIFT scale of 4 is used because
+        arbitrary keypoint detectors do not provide HORG's Gaussian-octave
+        scale. This is a compact common-point descriptor variant, not an exact
+        reconstruction of HORG's native multi-octave detection pipeline.
+        """
+        image = np.ascontiguousarray(pixels, dtype=np.uint8)
+        if image.ndim != 2:
+            raise ValueError("HORG descriptors expect a grayscale image")
+        if reduction < 1:
+            raise ValueError("reduction must be positive")
+        height, width = image.shape
+        if len(features.xy) == 0:
+            return DescribedFeatures(
+                features,
+                np.empty((0, DESCRIPTOR_SIZE), dtype=np.float32),
+                {"descriptor": "HORG-64 supplied-keypoint variant", "reduction": reduction},
+            )
+        base_width, base_height = max(1, width // reduction), max(1, height // reduction)
+        if base_width < 8 or base_height < 8:
+            raise ValueError("Reduced image is too small for HORG descriptors")
+        if self._compact_descriptor_pipelines is None:
+            pyramid = self._shader("horg-pyramid.wgsl")
+            descriptor = self._shader("horg-descriptor.wgsl")
+            self._compact_descriptor_pipelines = (
+                make_pipeline(self.device, pyramid, "downsample_base", "HORG point-image reduction"),
+                make_pipeline(self.device, descriptor, "build_horg", "HORG supplied-point descriptor"),
+            )
+        downsample_pipeline, descriptor_pipeline = self._compact_descriptor_pipelines
+        scope = ResourceScope()
+        try:
+            source_texture = self._new_texture(
+                scope,
+                width,
+                height,
+                "HORG supplied-point source",
+                format="r8unorm",
+                usage=wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.COPY_DST,
+            )
+            self.device.queue.write_texture(
+                {"texture": source_texture, "mip_level": 0, "origin": (0, 0, 0)},
+                image,
+                {"offset": 0, "bytes_per_row": width, "rows_per_image": height},
+                (width, height, 1),
+            )
+            base_texture = self._new_texture(
+                scope, base_width, base_height, "HORG supplied-point reduced image"
+            )
+            reduction_params = self._pyramid_params(
+                scope,
+                (width, height, base_width, base_height),
+                (reduction, 0, 0, 0),
+            )
+            reduction_group = make_bind_group(
+                self.device,
+                downsample_pipeline,
+                [
+                    self._view_entry(0, source_texture),
+                    self._view_entry(1, base_texture),
+                    self._buffer_entry(2, reduction_params),
+                ],
+            )
+            reduction_encoder = self.device.create_command_encoder(
+                label="HORG supplied-keypoint image reduction"
+            )
+            dispatch(
+                reduction_encoder,
+                downsample_pipeline,
+                reduction_group,
+                math.ceil(base_width / 8),
+                math.ceil(base_height / 8),
+                label="HORG supplied-keypoint image reduction",
+            )
+            self.device.queue.submit([reduction_encoder.finish()])
+
+            count = len(features.xy)
+            keypoints = np.zeros((count, 4), dtype=np.float32)
+            keypoints[:, :2] = features.xy / float(reduction)
+            keypoints[:, 2] = 4.0
+            keypoints[:, 3] = features.scores
+            keypoint_buffer = upload_buffer(
+                self.device,
+                scope,
+                keypoints,
+                wgpu.BufferUsage.STORAGE,
+                "HORG supplied keypoints",
+            )
+            output = create_buffer(
+                self.device,
+                scope,
+                count * FEATURE_STRIDE * 4,
+                wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+                "HORG supplied-keypoint descriptors",
+            )
+            params = make_params(
+                self.device,
+                scope,
+                [base_width, base_height, count, 0, reduction, 0, 0, base_width],
+                "HORG supplied-keypoint descriptor parameters",
+            )
+            group = make_bind_group(
+                self.device,
+                descriptor_pipeline,
+                [
+                    self._view_entry(0, base_texture),
+                    self._view_entry(1, base_texture),
+                    self._view_entry(2, base_texture),
+                    self._buffer_entry(3, keypoint_buffer),
+                    self._buffer_entry(4, output),
+                    self._buffer_entry(5, params),
+                ],
+            )
+            encoder = self.device.create_command_encoder(label="HORG supplied-point descriptors")
+            dispatch(encoder, descriptor_pipeline, group, count, label="HORG supplied-point descriptors")
+            self.device.queue.submit([encoder.finish()])
+            raw = read_array(self.device, output, np.dtype(np.float32), count * FEATURE_STRIDE)
+            packed = raw.reshape(count, FEATURE_STRIDE)
+            return DescribedFeatures(
+                features,
+                packed[:, 4:].copy(),
+                {
+                    "descriptor": "HORG-64 supplied-keypoint variant",
+                    "dimension": DESCRIPTOR_SIZE,
+                    "scale_policy": "fixed SIFT scale 4; orientation estimated from local gradients",
+                    "image_reduction": reduction,
+                    "execution": "WGSL WebGPU; output descriptors copied to host by wgpu-py",
+                },
+            )
+        finally:
+            scope.close()
 
     def fit_local_correspondences(
         self,

@@ -637,6 +637,95 @@ class DeDoDeBDescriptor:
         )
 
 
+class DeDoDeBOnnxWGPUDescriptor:
+    """Run a fixed-shape exported DeDoDe-B descriptor graph through WebGPU EP."""
+
+    def __init__(self, model_path: str | Path, *, max_side: int = 1024, capacity: int = 8192):
+        if max_side < 64 or capacity < 1:
+            raise ValueError("max_side must be >=64 and capacity positive")
+        self.model_path = Path(model_path).expanduser()
+        if not self.model_path.is_file():
+            raise FileNotFoundError(self.model_path)
+        try:
+            import onnxruntime as ort
+            import onnxruntime_ep_webgpu as webgpu_ep
+        except ImportError as error:
+            raise ImportError("Install the optional 'onnx-webgpu' dependencies") from error
+        name = "wgpu_matching_dedode_descriptor"
+        if name not in _REGISTERED_WEBGPU_LIBRARIES:
+            ort.register_execution_provider_library(name, webgpu_ep.get_library_path())
+            _REGISTERED_WEBGPU_LIBRARIES.add(name)
+        devices = [d for d in ort.get_ep_devices() if d.ep_name == webgpu_ep.get_ep_name()]
+        if not devices:
+            raise RuntimeError("ONNX Runtime found no WebGPU adapter")
+        options = ort.SessionOptions()
+        options.log_severity_level = 3
+        options.add_provider_for_devices(devices, {"preferredLayout": "NHWC"})
+        self.session = ort.InferenceSession(
+            str(self.model_path), sess_options=options, providers=None
+        )
+        self.max_side, self.capacity = int(max_side), int(capacity)
+        inputs, outputs = self.session.get_inputs(), self.session.get_outputs()
+        if [x.name for x in inputs] != ["image", "keypoints"] or [x.name for x in outputs] != [
+            "descriptors"
+        ]:
+            raise ValueError(
+                "Expected DeDoDe descriptor inputs image/keypoints and output descriptors"
+            )
+        self.image_shape = tuple(int(x) for x in inputs[0].shape)
+        self.capacity = int(inputs[1].shape[1])
+        self.metadata = {
+            "descriptor": "DeDoDe-B-ONNX-WebGPU",
+            "model_path": str(self.model_path),
+            "model_sha256": _sha256(self.model_path),
+            "providers": self.session.get_providers(),
+            "device": str(getattr(devices[0].device, "device_id", "WebGPU")),
+            "model_size_px": [self.image_shape[3], self.image_shape[2]],
+            "keypoint_capacity": self.capacity,
+            "dimensions": int(outputs[0].shape[-1]),
+            "return_transfer": "only sampled descriptors; dense maps are not exported",
+        }
+
+    def describe(self, image: np.ndarray | str | Path, features: FeatureSet) -> DescribedFeatures:
+        gray = _gray_image(image)
+        height, width = gray.shape
+        rw, rh = _resize_shape(width, height, self.max_side)
+        if (rh, rw) != self.image_shape[2:]:
+            raise ValueError(
+                f"Export expects {self.image_shape[3]}x{self.image_shape[2]} input; "
+                f"resizing this image gives {rw}x{rh}"
+            )
+        if len(features.xy) > self.capacity:
+            raise ValueError("Feature count exceeds the exported descriptor capacity")
+        rgb = np.repeat(gray[..., None], 3, axis=2)
+        resized = (
+            np.asarray(
+                Image.fromarray(rgb, mode="RGB").resize(
+                    (rw, rh), resample=Image.Resampling.BICUBIC
+                ),
+                dtype=np.float32,
+            )
+            / 255.0
+        )
+        mean = np.asarray((0.485, 0.456, 0.406), dtype=np.float32)
+        std = np.asarray((0.229, 0.224, 0.225), dtype=np.float32)
+        batch = np.ascontiguousarray(((resized - mean) / std).transpose(2, 0, 1)[None])
+        xy = features.xy
+        model_x = (xy[:, 0] + 0.5) * (rw / width)
+        model_y = (xy[:, 1] + 0.5) * (rh / height)
+        points = np.column_stack((2 * model_x / rw - 1, 2 * model_y / rh - 1)).astype(np.float32)
+        padded = np.zeros((1, self.capacity, 2), dtype=np.float32)
+        padded[0, : len(points)] = points
+        start = time.perf_counter()
+        descriptors = self.session.run(["descriptors"], {"image": batch, "keypoints": padded})[0]
+        elapsed = time.perf_counter() - start
+        return DescribedFeatures(
+            features,
+            descriptors[0, : len(points)].astype(np.float32, copy=False),
+            {**self.metadata, "source_size_px": [width, height], "model_run_s": elapsed},
+        )
+
+
 @dataclass(slots=True)
 class FeatureCorrespondences:
     """Mutual nearest-neighbour pairs produced by a shared cosine matcher."""

@@ -179,6 +179,8 @@ The native Python benchmark measures HORG and DeepMatching separately on Live-DI
 * :doc:`EfficientLoFTR WebGPU graph optimization <_generated_results/features/efficientloftr_border_mask_optimization_20261107>` with :doc:`profile and parity data <_generated_results/features/efficientloftr_border_mask_optimization_20261107.json>`
 * :doc:`RaCo GridSample WebGPU optimization <_generated_results/features/raco_gridsample_webgpu_optimization_20261107>` with :doc:`profile and per-seed data <_generated_results/features/raco_gridsample_webgpu_optimization_20261107.json>`
 * :doc:`RaCo ONNX CPU-fallback reduction <_generated_results/features/raco_onnx_cpu_fallbacks_20261107>` with :doc:`profile and exact per-seed parity data <_generated_results/features/raco_onnx_cpu_fallbacks_20261107.json>`
+* :doc:`DeDoDe-B descriptor ONNX/WebGPU qualification <_generated_results/features/dedode_onnx_wgpu_20261108/README>` with graph-provider profile and 60% tensile parity
+* :doc:`Heterogeneous and discontinuous fields through seeded IC-GN <_generated_results/qualification/heterogeneous_icgn_20261108/README>` with direct-match errors, affine/RBF initialization, solver coverage, and analytic-oracle controls
 * :doc:`DeepMatching/XFeat comparison <_generated_results/features/deepmatching_vs_xfeat>`
 * :doc:`DeepMatching–HORG raw comparison data <_generated_results/uniaxial/deepmatching_horg_current_comparison.csv>`
 * :doc:`Native Python benchmark report <_generated_results/uniaxial/python_runtime_comparison>` and :doc:`timing data <_generated_results/uniaxial/python_runtime_comparison.csv>`

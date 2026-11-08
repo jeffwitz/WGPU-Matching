@@ -17,6 +17,7 @@ from .dic_detector import DICDetectorOptions, DICDetectorResult
 from .features import (
     DaDDetector,
     DeDoDeBDescriptor,
+    DeDoDeBOnnxWGPUDescriptor,
     DeDoDeV2Detector,
     DescribedFeatures,
     FeatureCorrespondences,
@@ -36,6 +37,7 @@ __all__ = [
     "DICDetectorResult",
     "DaDDetector",
     "DeDoDeBDescriptor",
+    "DeDoDeBOnnxWGPUDescriptor",
     "DeDoDeV2Detector",
     "DeepMatchingOptions",
     "DescribedFeatures",
