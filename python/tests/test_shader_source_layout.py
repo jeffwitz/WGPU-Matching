@@ -12,9 +12,15 @@ SHADERS = ROOT / "python/src/wgpu_matching/shaders"
 
 
 def test_browser_and_python_share_the_packaged_wgsl_sources() -> None:
-    browser_sources = [ROOT / name for name in (
-        "deepmatching.js", "horg.js", "cpm.js", "matcher-contracts.js",
-    )]
+    browser_sources = [
+        ROOT / name
+        for name in (
+            "deepmatching.js",
+            "horg.js",
+            "cpm.js",
+            "matcher-contracts.js",
+        )
+    ]
     referenced = set()
     for source in browser_sources:
         text = source.read_text(encoding="utf-8")
@@ -25,7 +31,9 @@ def test_browser_and_python_share_the_packaged_wgsl_sources() -> None:
         ROOT / "matcher-contracts.js"
     ).read_text(encoding="utf-8")
     assert all((SHADERS / name).is_file() for name in referenced)
-    assert not list(ROOT.glob("*.wgsl")), "WGSL copies at the repository root would drift from the package"
+    assert not list(ROOT.glob("*.wgsl")), (
+        "WGSL copies at the repository root would drift from the package"
+    )
 
 
 def test_every_packaged_shader_is_included_by_setuptools_package_data() -> None:

@@ -15,10 +15,19 @@ from wgpu_matching import DeepMatchingOptions, HORGOptions, WGPUMatching, load_g
 REPOSITORY = Path(__file__).resolve().parents[2]
 DEFAULT_DATASET = REPOSITORY / "results/uniaxial/tensile_60pct"
 FIELDS = (
-    "requested_percent", "actual_percent", "frame", "method", "visible_poi_count",
-    "accepted_visible_count", "within_2px_count", "accepted_coverage_visible_percent",
-    "accurate_coverage_visible_percent", "accepted_rmse_px", "accepted_median_px",
-    "accepted_p95_px", "elapsed_s",
+    "requested_percent",
+    "actual_percent",
+    "frame",
+    "method",
+    "visible_poi_count",
+    "accepted_visible_count",
+    "within_2px_count",
+    "accepted_coverage_visible_percent",
+    "accurate_coverage_visible_percent",
+    "accepted_rmse_px",
+    "accepted_median_px",
+    "accepted_p95_px",
+    "elapsed_s",
 )
 
 
@@ -47,7 +56,9 @@ def main() -> None:
     dataset = args.dataset.resolve()
     output = (args.output or dataset / "matcher_comparison.csv").resolve()
     manifest = json.loads((dataset / "manifest.json").read_text(encoding="utf-8"))
-    truth_rows = csv.DictReader((dataset / manifest["truth_file"]).open(newline="", encoding="utf-8"))
+    truth_rows = csv.DictReader(
+        (dataset / manifest["truth_file"]).open(newline="", encoding="utf-8")
+    )
     truth_by_frame = {int(row["frame"]): row for row in truth_rows}
     reference = load_gray(dataset / "reference.png")
     results = []
@@ -58,16 +69,25 @@ def main() -> None:
                 frame = int(snapshot["frame"])
                 truth = truth_by_frame[frame]
                 target = load_gray(dataset / snapshot["file"])
-                visible_seeds = visible_grid_seeds(float(truth["stretch_x"]), float(truth["stretch_y"]))
+                visible_seeds = visible_grid_seeds(
+                    float(truth["stretch_x"]), float(truth["stretch_y"])
+                )
                 if method == "HORG":
                     options = HORGOptions(
-                        patch_size=128, stride=512, reduction=4, max_features=1024,
+                        patch_size=128,
+                        stride=512,
+                        reduction=4,
+                        max_features=1024,
                         seed_points=visible_seeds,
                     )
                 else:
                     options = DeepMatchingOptions(
-                        mode="inria", patch_size=128, root_patch_size=512, stride=512,
-                        downscale_levels=2, search_radius_px=256,
+                        mode="inria",
+                        patch_size=128,
+                        root_patch_size=512,
+                        stride=512,
+                        downscale_levels=2,
+                        search_radius_px=256,
                         seed_points=visible_seeds,
                     )
 
@@ -98,18 +118,28 @@ def main() -> None:
                     errors.append(math.hypot(match.dx - dx, match.dy - dy))
                 errors.sort()
                 row = {
-                    "requested_percent": round(100 * float(snapshot["requested_engineering_strain"])),
+                    "requested_percent": round(
+                        100 * float(snapshot["requested_engineering_strain"])
+                    ),
                     "actual_percent": f"{100 * float(truth['engineering_axial']):.6f}",
                     "frame": frame,
                     "method": method,
                     "visible_poi_count": visible_count,
                     "accepted_visible_count": len(errors),
                     "within_2px_count": sum(error <= 2 for error in errors),
-                    "accepted_coverage_visible_percent": f"{100 * len(errors) / visible_count:.3f}" if visible_count else "",
-                    "accurate_coverage_visible_percent": f"{100 * sum(error <= 2 for error in errors) / visible_count:.3f}" if visible_count else "",
-                    "accepted_rmse_px": f"{math.sqrt(statistics.mean(error * error for error in errors)):.6f}" if errors else "",
+                    "accepted_coverage_visible_percent": f"{100 * len(errors) / visible_count:.3f}"
+                    if visible_count
+                    else "",
+                    "accurate_coverage_visible_percent": f"{100 * sum(error <= 2 for error in errors) / visible_count:.3f}"
+                    if visible_count
+                    else "",
+                    "accepted_rmse_px": f"{math.sqrt(statistics.mean(error * error for error in errors)):.6f}"
+                    if errors
+                    else "",
                     "accepted_median_px": f"{statistics.median(errors):.6f}" if errors else "",
-                    "accepted_p95_px": f"{errors[min(len(errors) - 1, math.ceil(0.95 * len(errors)) - 1)]:.6f}" if errors else "",
+                    "accepted_p95_px": f"{errors[min(len(errors) - 1, math.ceil(0.95 * len(errors)) - 1)]:.6f}"
+                    if errors
+                    else "",
                     "elapsed_s": f"{elapsed:.6f}",
                 }
                 results.append(row)

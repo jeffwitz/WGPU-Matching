@@ -235,9 +235,11 @@ def generate_result_pages(app) -> None:
         lines = [title, "=" * len(title), ""]
         if directory == Path("."):
             lines += [
-                "Reports are grouped by study. Large arrays remain available as themed data "
-                "pages with bounded previews and complete-file downloads; they are listed in "
-                "the separate raw-data catalogue rather than in every page's navigation.",
+                (
+                    "Reports are grouped by study. Large arrays remain available as themed data "
+                    "pages with bounded previews and complete-file downloads; they are listed in "
+                    "the separate raw-data catalogue rather than in every page's navigation."
+                ),
                 "",
             ]
         lines += [".. toctree::", "   :maxdepth: 2", ""]
@@ -254,9 +256,11 @@ def generate_result_pages(app) -> None:
         "Raw-data catalogue",
         "==================",
         "",
-        "Use the study reports for interpretation. The links below open compact themed "
-        "previews with complete-file downloads. Compressed correspondence/model archives "
-        "are linked directly from their study galleries.",
+        (
+            "Use the study reports for interpretation. The links below open compact themed "
+            "previews with complete-file downloads. Compressed correspondence/model archives "
+            "are linked directly from their study galleries."
+        ),
         "",
     ]
     grouped: dict[str, list[str]] = {}

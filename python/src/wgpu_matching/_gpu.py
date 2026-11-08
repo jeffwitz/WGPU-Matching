@@ -47,13 +47,19 @@ def create_buffer(device: Any, scope: ResourceScope, size: int, usage: int, labe
     return scope.keep(device.create_buffer(size=size, usage=usage, label=label))
 
 
-def upload_buffer(device: Any, scope: ResourceScope, data: np.ndarray, usage: int, label: str) -> Any:
+def upload_buffer(
+    device: Any, scope: ResourceScope, data: np.ndarray, usage: int, label: str
+) -> Any:
     array = np.ascontiguousarray(data)
     return scope.keep(device.create_buffer_with_data(data=array, usage=usage, label=label))
 
 
 def uniform_buffer(device: Any, scope: ResourceScope, data: bytes | np.ndarray, label: str) -> Any:
-    array = np.frombuffer(data, dtype=np.uint8) if isinstance(data, bytes) else np.ascontiguousarray(data)
+    array = (
+        np.frombuffer(data, dtype=np.uint8)
+        if isinstance(data, bytes)
+        else np.ascontiguousarray(data)
+    )
     usage = wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
     buffer = create_buffer(device, scope, max(4, array.nbytes), usage, label)
     device.queue.write_buffer(buffer, 0, array)
@@ -94,7 +100,9 @@ def make_bind_group(device: Any, pipeline: Any, entries: list[dict[str, Any]]) -
     return device.create_bind_group(layout=pipeline.get_bind_group_layout(0), entries=entries)
 
 
-def dispatch(encoder: Any, pipeline: Any, group: Any, x: int, y: int = 1, z: int = 1, label: str = "") -> None:
+def dispatch(
+    encoder: Any, pipeline: Any, group: Any, x: int, y: int = 1, z: int = 1, label: str = ""
+) -> None:
     compute = encoder.begin_compute_pass(label=label or None)
     compute.set_pipeline(pipeline)
     compute.set_bind_group(0, group)
@@ -103,12 +111,18 @@ def dispatch(encoder: Any, pipeline: Any, group: Any, x: int, y: int = 1, z: int
 
 
 def read_array(device: Any, buffer: Any, dtype: np.dtype[Any], count: int) -> np.ndarray:
-    return np.frombuffer(device.queue.read_buffer(buffer, 0, count * np.dtype(dtype).itemsize), dtype=dtype).copy()
+    return np.frombuffer(
+        device.queue.read_buffer(buffer, 0, count * np.dtype(dtype).itemsize), dtype=dtype
+    ).copy()
 
 
-def make_params(device: Any, scope: ResourceScope, words: list[int], label: str, length: int = 16) -> Any:
+def make_params(
+    device: Any, scope: ResourceScope, words: list[int], label: str, length: int = 16
+) -> Any:
     values = np.zeros(length, dtype=np.uint32)
     count = min(length, len(words))
     if count:
-        values[:count] = np.asarray([int(value) & 0xFFFFFFFF for value in words[:count]], dtype=np.uint32)
+        values[:count] = np.asarray(
+            [int(value) & 0xFFFFFFFF for value in words[:count]], dtype=np.uint32
+        )
     return uniform_buffer(device, scope, values, label)

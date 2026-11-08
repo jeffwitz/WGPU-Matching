@@ -15,10 +15,20 @@ DEFAULT_LIVE_DIC = Path("/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/
 DEFAULT_OUTPUT = REPOSITORY / "results/uniaxial/sparse_deepmatching_study.csv"
 ERROR_CSV = "frame_{frame}_horg_subpixel_analytic_error.csv"
 FIELDS = (
-    "frame", "requested_seed_count", "mode", "global_root_count", "evaluated_root_count",
-    "root_fraction_percent", "estimated_descriptor_comparisons", "accepted_count",
-    "within_2px_count", "accepted_rmse_px", "median_call_s", "timings_s",
-    "same_accepted_as_dense", "same_displacement_as_dense",
+    "frame",
+    "requested_seed_count",
+    "mode",
+    "global_root_count",
+    "evaluated_root_count",
+    "root_fraction_percent",
+    "estimated_descriptor_comparisons",
+    "accepted_count",
+    "within_2px_count",
+    "accepted_rmse_px",
+    "median_call_s",
+    "timings_s",
+    "same_accepted_as_dense",
+    "same_displacement_as_dense",
 )
 
 
@@ -77,7 +87,12 @@ def quality_by_seed(field, stretch_x: float, stretch_y: float):
         key = (match.seed_x, match.seed_y)
         truth_dx = (stretch_x - 1) * (match.x - 1920)
         truth_dy = (stretch_y - 1) * (match.y - 1080)
-        results[key] = (match.usable, match.dx, match.dy, ((match.dx - truth_dx) ** 2 + (match.dy - truth_dy) ** 2) ** 0.5)
+        results[key] = (
+            match.usable,
+            match.dx,
+            match.dy,
+            ((match.dx - truth_dx) ** 2 + (match.dy - truth_dy) ** 2) ** 0.5,
+        )
     return results
 
 
@@ -100,14 +115,18 @@ def main() -> None:
 
     reference = load_gray(args.live_dic / "reference.png")
     target = load_gray(args.live_dic / f"frame_{args.frame}.png")
-    stretch_x, stretch_y = analytic_truth(REPOSITORY / "results/uniaxial" / ERROR_CSV.format(frame=args.frame))
+    stretch_x, stretch_y = analytic_truth(
+        REPOSITORY / "results/uniaxial" / ERROR_CSV.format(frame=args.frame)
+    )
     all_seeds = visible_grid_seeds(stretch_x, stretch_y, reference.shape[1], reference.shape[0])
     if seed_counts[-1] > len(all_seeds):
         parser.error(f"Largest seed count exceeds the {len(all_seeds)} visible grid seeds")
 
     rows = []
     with WGPUMatching() as matcher:
-        print(f"Adapter: {matcher.device_name}; frame {args.frame}; visible grid seeds: {len(all_seeds)}")
+        print(
+            f"Adapter: {matcher.device_name}; frame {args.frame}; visible grid seeds: {len(all_seeds)}"
+        )
         for seed_count in seed_counts:
             seeds = all_seeds[:seed_count]
             fields = {}
@@ -126,30 +145,36 @@ def main() -> None:
             shared = set(dense) & set(sparse)
             same_accepted = sum(dense[key][0] == sparse[key][0] for key in shared)
             shared_accepted = [key for key in shared if dense[key][0] and sparse[key][0]]
-            same_displacement = sum(
-                dense[key][1:3] == sparse[key][1:3] for key in shared_accepted
-            )
+            same_displacement = sum(dense[key][1:3] == sparse[key][1:3] for key in shared_accepted)
 
             for mode in ("inria", "inria_sparse"):
                 field = fields[mode]
                 errors = accepted_errors(field, stretch_x, stretch_y)
                 repeat_times = timings[mode]
-                rows.append({
-                    "frame": args.frame,
-                    "requested_seed_count": seed_count,
-                    "mode": mode,
-                    "global_root_count": field.metadata["global_root_count"],
-                    "evaluated_root_count": field.metadata["evaluated_root_count"],
-                    "root_fraction_percent": f"{100 * field.metadata['evaluated_root_count'] / field.metadata['global_root_count']:.2f}",
-                    "estimated_descriptor_comparisons": field.metadata["estimated_descriptor_comparisons"],
-                    "accepted_count": len(errors),
-                    "within_2px_count": sum(error <= 2 for error in errors),
-                    "accepted_rmse_px": f"{statistics.mean(error * error for error in errors) ** 0.5:.6f}" if errors else "",
-                    "median_call_s": f"{statistics.median(repeat_times):.6f}",
-                    "timings_s": ";".join(f"{value:.6f}" for value in repeat_times),
-                    "same_accepted_as_dense": f"{same_accepted}/{len(shared)}",
-                    "same_displacement_as_dense": f"{same_displacement}/{len(shared_accepted)}" if shared_accepted else "n/a",
-                })
+                rows.append(
+                    {
+                        "frame": args.frame,
+                        "requested_seed_count": seed_count,
+                        "mode": mode,
+                        "global_root_count": field.metadata["global_root_count"],
+                        "evaluated_root_count": field.metadata["evaluated_root_count"],
+                        "root_fraction_percent": f"{100 * field.metadata['evaluated_root_count'] / field.metadata['global_root_count']:.2f}",
+                        "estimated_descriptor_comparisons": field.metadata[
+                            "estimated_descriptor_comparisons"
+                        ],
+                        "accepted_count": len(errors),
+                        "within_2px_count": sum(error <= 2 for error in errors),
+                        "accepted_rmse_px": f"{statistics.mean(error * error for error in errors) ** 0.5:.6f}"
+                        if errors
+                        else "",
+                        "median_call_s": f"{statistics.median(repeat_times):.6f}",
+                        "timings_s": ";".join(f"{value:.6f}" for value in repeat_times),
+                        "same_accepted_as_dense": f"{same_accepted}/{len(shared)}",
+                        "same_displacement_as_dense": f"{same_displacement}/{len(shared_accepted)}"
+                        if shared_accepted
+                        else "n/a",
+                    }
+                )
             print(
                 f"{seed_count} seeds: roots {fields['inria_sparse'].metadata['evaluated_root_count']}/"
                 f"{fields['inria_sparse'].metadata['global_root_count']}; "

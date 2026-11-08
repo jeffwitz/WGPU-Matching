@@ -35,15 +35,11 @@ def _strain(case: str) -> str:
     return case.split("_")[1].replace("pct", "%")
 
 
-def _find(
-    rows: list[dict[str, Any]], case: str, model: str, requested: str
-) -> dict[str, Any]:
+def _find(rows: list[dict[str, Any]], case: str, model: str, requested: str) -> dict[str, Any]:
     return next(
         row
         for row in rows
-        if row["dataset"] == case
-        and row["model"] == model
-        and row["basis_requested"] == requested
+        if row["dataset"] == case and row["model"] == model and row["basis_requested"] == requested
     )
 
 

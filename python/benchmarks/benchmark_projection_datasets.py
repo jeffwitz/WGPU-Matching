@@ -123,7 +123,9 @@ def create_webgpu_sessions(raco_path: Path, loftr_path: Path, intra_op_threads: 
     ort.register_execution_provider_library(
         "wgpu_matching_projection", webgpu_ep.get_library_path()
     )
-    devices = [device for device in ort.get_ep_devices() if device.ep_name == webgpu_ep.get_ep_name()]
+    devices = [
+        device for device in ort.get_ep_devices() if device.ep_name == webgpu_ep.get_ep_name()
+    ]
     if not devices:
         raise RuntimeError("ONNX Runtime found no WebGPU execution device")
 
@@ -210,9 +212,7 @@ def render_projected_pair(
 
     output_width = min(native_width, 1920)
     output_height = round(native_height * output_width / native_width)
-    preview_reference = reference.resize(
-        (output_width, output_height), Image.Resampling.BILINEAR
-    )
+    preview_reference = reference.resize((output_width, output_height), Image.Resampling.BILINEAR)
     corrected = np.zeros((output_height, output_width), dtype=np.uint8)
     x_out = np.arange(output_width, dtype=np.float32)
     output_x_scale = native_width / output_width
@@ -259,8 +259,7 @@ def render_projected_pair(
     linked_paths = []
     for offset, source_path in enumerate((reference_path, corrected_path)):
         sequence_name = (
-            f"{sequence_index + offset:03d}_{case['name']}_{model_name}_{basis}_"
-            f"{source_path.name}"
+            f"{sequence_index + offset:03d}_{case['name']}_{model_name}_{basis}_{source_path.name}"
         )
         destination = sequence_dir / sequence_name
         sequence_dir.mkdir(parents=True, exist_ok=True)
@@ -272,7 +271,9 @@ def render_projected_pair(
     return [reference_path, corrected_path, *linked_paths], sequence_index + 2
 
 
-def analytic_target(source: np.ndarray, truth: dict[str, float], width: int, height: int) -> np.ndarray:
+def analytic_target(
+    source: np.ndarray, truth: dict[str, float], width: int, height: int
+) -> np.ndarray:
     return np.column_stack(
         (
             width / 2.0 + truth["stretch_x"] * (source[:, 0] - width / 2.0),
@@ -454,7 +455,9 @@ def project_case(
                 "field_residual_median_px": float(np.median(model.residuals_px)),
                 "field_residual_p95_px": float(np.percentile(model.residuals_px, 95)),
                 "seed_error_median_px": float(np.median(errors)) if errors else None,
-                "seed_error_rmse_px": float(np.sqrt(np.mean(np.square(errors)))) if errors else None,
+                "seed_error_rmse_px": float(np.sqrt(np.mean(np.square(errors))))
+                if errors
+                else None,
                 "seed_error_p95_px": float(np.percentile(errors, 95)) if errors else None,
                 "seed_error_le2_count": sum(error <= 2.0 for error in errors) if errors else None,
                 "seed_error_lt5_count": sum(error < 5.0 for error in errors) if errors else None,
@@ -462,7 +465,9 @@ def project_case(
                 "seed_support_rms_median_px": float(np.median(supports)) if supports else None,
                 "seed_support_rms_p95_px": float(np.percentile(supports, 95)) if supports else None,
                 "candidate_scores": diagnostics["candidate_scores"],
-                "visualization_files": [str(path.relative_to(output_dir)) for path in image_paths[:2]],
+                "visualization_files": [
+                    str(path.relative_to(output_dir)) for path in image_paths[:2]
+                ],
                 **raw_quality,
             }
         )
@@ -504,8 +509,16 @@ def main() -> None:
     sequence_index = 1
     raw_path = output_dir / "raw_correspondences.csv"
     raw_fields = (
-        "dataset", "model", "match_id", "source_x_px", "source_y_px",
-        "target_x_px", "target_y_px", "score", "accepted_roi", "analytic_error_px",
+        "dataset",
+        "model",
+        "match_id",
+        "source_x_px",
+        "source_y_px",
+        "target_x_px",
+        "target_y_px",
+        "score",
+        "accepted_roi",
+        "analytic_error_px",
     )
     tensor_cache: dict[tuple[str, int, int, int], np.ndarray] = {}
     cache_dims: dict[tuple[str, int, int, int], tuple[int, int]] = {}
@@ -514,9 +527,10 @@ def main() -> None:
         ("efficientloftr", args.loftr_model, 1),
     )
 
-    with WGPUMatching(device_type="gpu") as matcher, raw_path.open(
-        "w", newline="", encoding="utf-8"
-    ) as raw_stream:
+    with (
+        WGPUMatching(device_type="gpu") as matcher,
+        raw_path.open("w", newline="", encoding="utf-8") as raw_stream,
+    ):
         raw_writer = csv.DictWriter(raw_stream, fieldnames=raw_fields)
         raw_writer.writeheader()
         projection_adapter = matcher.adapter_info
@@ -547,7 +561,9 @@ def main() -> None:
                 source, destination, scores = infer_pairs(model_name, session, reference, target)
                 inference_ms = (time.perf_counter() - inference_start) * 1000.0
                 if len(source) != len(destination):
-                    raise RuntimeError(f"{model_name} returned mismatched source/target pair counts")
+                    raise RuntimeError(
+                        f"{model_name} returned mismatched source/target pair counts"
+                    )
                 if scores is not None and len(scores) != len(source):
                     scores = None
 
@@ -573,7 +589,9 @@ def main() -> None:
                     accepted=accepted,
                     rejection_reasons=tuple(
                         None if value else "outside_adrien_mask_roi" for value in accepted
-                    ) if mask is not None else None,
+                    )
+                    if mask is not None
+                    else None,
                     coordinate_mapping={
                         "content_size_px": [content_width, content_height],
                         "padded_size_px": list(padded_size),
@@ -611,7 +629,9 @@ def main() -> None:
                             "target_y_px": target_point[1],
                             "score": "" if score_values is None else score_values[index],
                             "accepted_roi": bool(accepted[index]),
-                            "analytic_error_px": "" if raw_error_values is None else raw_error_values[index],
+                            "analytic_error_px": ""
+                            if raw_error_values is None
+                            else raw_error_values[index],
                         }
                     )
                 direct_kept = raw_error_values[accepted] if raw_error_values is not None else None
@@ -635,10 +655,14 @@ def main() -> None:
                     row["raw_match_count"] = len(source)
                     row["mask_roi_match_count"] = int(accepted.sum())
                     row["raw_direct_error_median_px"] = (
-                        float(np.median(direct_kept)) if direct_kept is not None and len(direct_kept) else None
+                        float(np.median(direct_kept))
+                        if direct_kept is not None and len(direct_kept)
+                        else None
                     )
                     row["raw_direct_error_rmse_px"] = (
-                        float(np.sqrt(np.mean(direct_kept**2))) if direct_kept is not None and len(direct_kept) else None
+                        float(np.sqrt(np.mean(direct_kept**2)))
+                        if direct_kept is not None and len(direct_kept)
+                        else None
                     )
                 summary_rows.extend(rows)
                 patch_rows.extend(patches)
@@ -693,9 +717,23 @@ def main() -> None:
     )
     patch_path = output_dir / "patch_predictions.csv"
     patch_fields = (
-        "dataset", "model", "basis_requested", "basis_effective", "seed_id", "x_px", "y_px",
-        "status", "u_px", "v_px", "du_dx", "du_dy", "dv_dx", "dv_dy",
-        "analytic_error_px", "support_rms_px", "support_max_px",
+        "dataset",
+        "model",
+        "basis_requested",
+        "basis_effective",
+        "seed_id",
+        "x_px",
+        "y_px",
+        "status",
+        "u_px",
+        "v_px",
+        "du_dx",
+        "du_dy",
+        "dv_dx",
+        "dv_dy",
+        "analytic_error_px",
+        "support_rms_px",
+        "support_max_px",
     )
     with patch_path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=patch_fields)

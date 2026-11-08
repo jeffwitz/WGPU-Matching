@@ -550,8 +550,7 @@ def rewrite_raco_gather_index_expands(input_path: Path, output_path: Path) -> di
     model = onnx.load(str(input_path))
     graph = model.graph
     if any(
-        entry.key == "com.wgpu_matching.raco_int32_gather_indices"
-        for entry in model.metadata_props
+        entry.key == "com.wgpu_matching.raco_int32_gather_indices" for entry in model.metadata_props
     ):
         raise ValueError("Model already contains the WGPU-Matching int32-index rewrite.")
 
@@ -637,8 +636,7 @@ def rewrite_raco_gather_index_expands(input_path: Path, output_path: Path) -> di
         )
         known_dynamic_exports = {"node_expand_4", "node_expand_18"}
         axis_size_is_safe = (
-            isinstance(gather_axis_size, int)
-            and 0 < gather_axis_size < 2**31
+            isinstance(gather_axis_size, int) and 0 < gather_axis_size < 2**31
         ) or (expand.name in known_dynamic_exports and isinstance(gather_axis_size, str))
         if (
             axis != 2
@@ -805,11 +803,7 @@ def rewrite_raco_sparse_index_arithmetic_int32(
         "node_unsqueeze_6",
         "node_expand_4",
     }
-    int32_values = {
-        value
-        for name in int32_node_names
-        for value in node_by_name[name].output
-    }
+    int32_values = {value for name in int32_node_names for value in node_by_name[name].output}
     rewritten_nodes = []
     for node in graph.node:
         rewritten_nodes.extend(casts_by_node.get(id(node), []))

@@ -33,7 +33,9 @@ def state(frame: int, max_engineering_strain: float) -> dict[str, float | int]:
     if frame <= 40:
         engineering = yield_strain * frame / 40
     else:
-        engineering = yield_strain + (max_engineering_strain - yield_strain) * (frame - 40) / (COUNT - 1 - 40)
+        engineering = yield_strain + (max_engineering_strain - yield_strain) * (frame - 40) / (
+            COUNT - 1 - 40
+        )
     true_strain = math.log1p(engineering)
     if true_strain <= YIELD_MPA / YOUNG_MPA + 1e-14:
         stress, plastic = YOUNG_MPA * true_strain, 0.0
@@ -74,27 +76,40 @@ def render(base: np.ndarray, row: dict[str, float | int]) -> np.ndarray:
     height, width = base.shape
     x = np.arange(width, dtype=np.float32)[None, :]
     y = np.arange(height, dtype=np.float32)[:, None]
-    mx = np.broadcast_to((x - width / 2) / float(row["stretch_x"]) + width / 2, (height, width)).copy()
-    my = np.broadcast_to((y - height / 2) / float(row["stretch_y"]) + height / 2, (height, width)).copy()
-    return cv2.remap(base, mx, my, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
+    mx = np.broadcast_to(
+        (x - width / 2) / float(row["stretch_x"]) + width / 2, (height, width)
+    ).copy()
+    my = np.broadcast_to(
+        (y - height / 2) / float(row["stretch_y"]) + height / 2, (height, width)
+    ).copy()
+    return cv2.remap(
+        base, mx, my, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101
+    )
 
 
 def write_contact_sheet(output: Path, selected: list[dict[str, float | int | str]]) -> None:
     cell_w, cell_h, label_h, gap = 640, 360, 40, 16
     columns = 3
     rows = math.ceil(len(selected) / columns)
-    sheet = Image.new("RGB", (columns * cell_w + (columns + 1) * gap,
-                               rows * (cell_h + label_h) + (rows + 1) * gap), (248, 248, 248))
+    sheet = Image.new(
+        "RGB",
+        (columns * cell_w + (columns + 1) * gap, rows * (cell_h + label_h) + (rows + 1) * gap),
+        (248, 248, 248),
+    )
     draw = ImageDraw.Draw(sheet)
     font = ImageFont.load_default()
     for index, item in enumerate(selected):
         x = gap + (index % columns) * (cell_w + gap)
         y = gap + (index // columns) * (cell_h + label_h + gap)
         with Image.open(output / str(item["file"])) as image:
-            preview = image.convert("L").resize((cell_w, cell_h), Image.Resampling.LANCZOS).convert("RGB")
+            preview = (
+                image.convert("L").resize((cell_w, cell_h), Image.Resampling.LANCZOS).convert("RGB")
+            )
         sheet.paste(preview, (x, y))
-        label = (f"{100 * float(item['actual_engineering_strain']):.1f}% engineering strain "
-                 f"- frame {int(item['frame']):03d}")
+        label = (
+            f"{100 * float(item['actual_engineering_strain']):.1f}% engineering strain "
+            f"- frame {int(item['frame']):03d}"
+        )
         draw.text((x, y + cell_h + 8), label, fill=(20, 20, 20), font=font)
     sheet.save(output / "contact_sheet.png")
 
@@ -129,15 +144,20 @@ def main() -> None:
         path = output / f"frame_{int(row['frame']):03d}_eng_{label:02d}pct.png"
         if not cv2.imwrite(str(path), image):
             raise OSError(f"Could not write {path}")
-        selected.append({
-            "requested_engineering_strain": level,
-            "file": path.name,
-            "frame": int(row["frame"]),
-            "actual_engineering_strain": float(row["engineering_axial"]),
-            "stretch_x": float(row["stretch_x"]),
-            "stretch_y": float(row["stretch_y"]),
-        })
-        print(f"wrote {path.name}: {100 * float(row['engineering_axial']):.3f}% engineering strain", flush=True)
+        selected.append(
+            {
+                "requested_engineering_strain": level,
+                "file": path.name,
+                "frame": int(row["frame"]),
+                "actual_engineering_strain": float(row["engineering_axial"]),
+                "stretch_x": float(row["stretch_x"]),
+                "stretch_y": float(row["stretch_y"]),
+            }
+        )
+        print(
+            f"wrote {path.name}: {100 * float(row['engineering_axial']):.3f}% engineering strain",
+            flush=True,
+        )
         del image
 
     metadata = {

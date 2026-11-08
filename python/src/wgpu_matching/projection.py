@@ -88,9 +88,7 @@ def _fit_model_webgpu(
         raise ValueError("WebGPU projection inputs must be finite")
     if len(x) != len(density):
         raise ValueError("each WebGPU projection pair needs one density weight")
-    params = struct.pack(
-        "<II6f", len(x), len(centers), ell, ridge, huber, tolerance, damping, 0.0
-    )
+    params = struct.pack("<II6f", len(x), len(centers), ell, ridge, huber, tolerance, damping, 0.0)
     max_params = 67
     matrix_size = max_params * (max_params + 2) * np.dtype(np.float32).itemsize
     design_size = len(x) * nparam * np.dtype(np.float32).itemsize
@@ -127,7 +125,10 @@ def _fit_model_webgpu(
             "projection GPU basis matrix",
         )
         status_b = create_buffer(
-            device, scope, 12, wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+            device,
+            scope,
+            12,
+            wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
             "projection solver status",
         )
         change_b = create_buffer(
@@ -141,16 +142,24 @@ def _fit_model_webgpu(
             "projection GPU residuals",
         )
         prm_b = upload_buffer(
-            device, scope, np.frombuffer(params, dtype=np.uint8),
-            wgpu.BufferUsage.UNIFORM, "projection solver parameters",
+            device,
+            scope,
+            np.frombuffer(params, dtype=np.uint8),
+            wgpu.BufferUsage.UNIFORM,
+            "projection solver parameters",
         )
         pipelines = _cached_pipelines(
             device,
             "projection_fit",
             "projection-fit.wgsl",
             (
-                "build_design", "clear_status", "clear_change", "accumulate",
-                "solve", "update_weights", "check_convergence",
+                "build_design",
+                "clear_status",
+                "clear_change",
+                "accumulate",
+                "solve",
+                "update_weights",
+                "check_convergence",
             ),
         )
         shared = {
@@ -214,14 +223,18 @@ def _fit_model_webgpu(
         statuses = read_array(device, status_b, np.dtype(np.uint32), 3)
         if statuses[0]:
             raise RuntimeError(f"WebGPU projection solver failed (status {statuses[0]})")
-        normal = read_array(
-            device, normal_b, np.dtype(np.float32), nparam * matrix_stride
-        ).reshape(nparam, matrix_stride)
+        normal = read_array(device, normal_b, np.dtype(np.float32), nparam * matrix_stride).reshape(
+            nparam, matrix_stride
+        )
         result = normal[:, nparam : nparam + 2].astype(np.float64)
         robust = read_array(device, robust_b, np.dtype(np.float32), len(x)).astype(np.float64)
         residuals = read_array(device, residual_b, np.dtype(np.float32), len(x)).astype(np.float64)
     elapsed_ms = (time.perf_counter() - started) * 1000.0
-    if not np.isfinite(result).all() or not np.isfinite(robust).all() or not np.isfinite(residuals).all():
+    if (
+        not np.isfinite(result).all()
+        or not np.isfinite(robust).all()
+        or not np.isfinite(residuals).all()
+    ):
         raise RuntimeError("WebGPU projection solver returned non-finite values")
     final_delta = float(np.asarray(statuses[2], dtype=np.uint32).view(np.float32))
     return result[:3], result[3:], robust, residuals, elapsed_ms, 4, bool(statuses[1]), final_delta
@@ -339,11 +352,17 @@ class CorrespondenceSet:
                 accepted=None if accepted is None else np.asarray(accepted, dtype=bool),
                 raw_scores=None if scores is None else np.asarray(scores, dtype=np.float64),
                 rejection_reasons=None if reasons is None else tuple(reasons),
-                coordinate_mapping={"frame": "native image pixels", "source": metadata.get("raw_correspondence_kind", "HORG detector"), "target": metadata.get("raw_correspondence_kind", "HORG detector")},
+                coordinate_mapping={
+                    "frame": "native image pixels",
+                    "source": metadata.get("raw_correspondence_kind", "HORG detector"),
+                    "target": metadata.get("raw_correspondence_kind", "HORG detector"),
+                },
             )
 
         matches = list(field.matches)
-        source = np.asarray([[match.x, match.y] for match in matches], dtype=np.float64).reshape(-1, 2)
+        source = np.asarray([[match.x, match.y] for match in matches], dtype=np.float64).reshape(
+            -1, 2
+        )
         target = np.full_like(source, np.nan)
         accepted = np.zeros(len(matches), dtype=bool)
         kinds = []
@@ -351,8 +370,9 @@ class CorrespondenceSet:
         scores = []
         for index, match in enumerate(matches):
             tx, ty = getattr(match, "target_x", None), getattr(match, "target_y", None)
-            has_direct_target = (tx is not None and ty is not None
-                                 and not matcher_id.startswith("CPM"))
+            has_direct_target = (
+                tx is not None and ty is not None and not matcher_id.startswith("CPM")
+            )
             if has_direct_target:
                 target[index] = [tx, ty]
                 kinds.append("direct_measured")
@@ -372,7 +392,10 @@ class CorrespondenceSet:
             measurement_kind=tuple(kinds),
             raw_scores=np.asarray(scores, dtype=np.float64),
             rejection_reasons=tuple(reasons),
-            coordinate_mapping={"frame": "native image pixels", "method_scale": getattr(field, "scale", 1)},
+            coordinate_mapping={
+                "frame": "native image pixels",
+                "method_scale": getattr(field, "scale", 1),
+            },
         )
 
     @classmethod
@@ -402,12 +425,20 @@ class CorrespondenceSet:
         paddings = (source_padding_xy, target_padding_xy)
         crops = (source_crop_origin_xy, target_crop_origin_xy)
         mapped = []
-        for points, scale_xy, padding_xy, crop_xy in zip(pairs, scales, paddings, crops, strict=True):
+        for points, scale_xy, padding_xy, crop_xy in zip(
+            pairs, scales, paddings, crops, strict=True
+        ):
             scale_array = np.asarray(scale_xy, dtype=np.float64)
             padding_array = np.asarray(padding_xy, dtype=np.float64)
             crop_array = np.asarray(crop_xy, dtype=np.float64)
-            if scale_array.shape != (2,) or np.any(scale_array <= 0) or not np.isfinite(scale_array).all():
-                raise ValueError("each preprocessing scale must contain two finite positive factors")
+            if (
+                scale_array.shape != (2,)
+                or np.any(scale_array <= 0)
+                or not np.isfinite(scale_array).all()
+            ):
+                raise ValueError(
+                    "each preprocessing scale must contain two finite positive factors"
+                )
             if (
                 padding_array.shape != (2,)
                 or crop_array.shape != (2,)
@@ -628,19 +659,28 @@ def _run_projection_evaluation(
     started = time.perf_counter()
     with ResourceScope() as scope:
         point_b = upload_buffer(
-            device, scope, np.asarray(points, dtype=np.float32),
-            wgpu.BufferUsage.STORAGE, "projection evaluation points",
+            device,
+            scope,
+            np.asarray(points, dtype=np.float32),
+            wgpu.BufferUsage.STORAGE,
+            "projection evaluation points",
         )
         affine_b = upload_buffer(
-            device, scope, model.affine.astype(np.float32),
-            wgpu.BufferUsage.STORAGE, "projection affine coefficients",
+            device,
+            scope,
+            model.affine.astype(np.float32),
+            wgpu.BufferUsage.STORAGE,
+            "projection affine coefficients",
         )
         center_b = upload_buffer(
             device, scope, center_data, wgpu.BufferUsage.STORAGE, "projection RBF centers"
         )
         coefficient_b = upload_buffer(
-            device, scope, coeff_data,
-            wgpu.BufferUsage.STORAGE, "projection RBF coefficients",
+            device,
+            scope,
+            coeff_data,
+            wgpu.BufferUsage.STORAGE,
+            "projection RBF coefficients",
         )
         output_b = create_buffer(
             device,
@@ -690,9 +730,7 @@ def _run_projection_evaluation(
     return output.reshape(len(points), 8).astype(np.float64)
 
 
-def _evaluate_field_webgpu(
-    model: ProjectionModel, points: np.ndarray, device: Any
-) -> np.ndarray:
+def _evaluate_field_webgpu(model: ProjectionModel, points: np.ndarray, device: Any) -> np.ndarray:
     if points.ndim != 2 or points.shape[1] != 2 or not np.isfinite(points).all():
         raise ValueError("points_xy must be a finite Nx2 array")
     return _run_projection_evaluation(model, points, device)[:, :2]
@@ -830,7 +868,9 @@ def fit_initialization_field(
         or cfg.huber_delta <= 0
         or cfg.minimum_scale_px <= 0
     ):
-        raise ValueError("IRLS iterations, tolerance, Huber delta, and minimum scale must be positive")
+        raise ValueError(
+            "IRLS iterations, tolerance, Huber delta, and minimum scale must be positive"
+        )
     if not 0.0 <= cfg.irls_damping < 1.0:
         raise ValueError("irls_damping must be in [0, 1)")
     if len(cfg.density_cells) != 2 or min(cfg.density_cells) < 1:
@@ -887,9 +927,7 @@ def fit_initialization_field(
     )
     eligible = finite & accepted_rows & direct & in_bounds
     eligible_rows = np.flatnonzero(eligible)
-    unique_pairs, first_occurrences = np.unique(
-        raw_pairs[eligible], axis=0, return_index=True
-    )
+    unique_pairs, first_occurrences = np.unique(raw_pairs[eligible], axis=0, return_index=True)
     selected_rows = eligible_rows[first_occurrences]
     pairs = unique_pairs
     if len(pairs) < 3:
@@ -906,11 +944,25 @@ def fit_initialization_field(
     candidate_log = []
     selection_reason = "affine_requested"
     affine, coeff, robust, residual_scale = _fit_model(
-        z, dn, density, np.empty((0, 2)), None, 0.0, cfg,
+        z,
+        dn,
+        density,
+        np.empty((0, 2)),
+        None,
+        0.0,
+        cfg,
         minimum_scale=cfg.minimum_scale_px / scale,
     )
     best = (affine, coeff, np.empty((0, 2)), None, 0.0, robust, "affine")
-    affine_fallback = (affine.copy(), coeff.copy(), np.empty((0, 2)), None, 0.0, robust.copy(), "affine")
+    affine_fallback = (
+        affine.copy(),
+        coeff.copy(),
+        np.empty((0, 2)),
+        None,
+        0.0,
+        robust.copy(),
+        "affine",
+    )
     affine_residual_scale = residual_scale
     scores: list[tuple[float, int, float, float, np.ndarray, list[float], np.ndarray]] = []
     if cfg.basis == "gaussian_rbf" and len(z) >= 12:
@@ -927,7 +979,13 @@ def fit_initialization_field(
             if train.sum() < 6 or not test.any():
                 continue
             af, cf, _, _ = _fit_model(
-                z[train], dn[train], density[train], np.empty((0, 2)), None, 0.0, cfg,
+                z[train],
+                dn[train],
+                density[train],
+                np.empty((0, 2)),
+                None,
+                0.0,
+                cfg,
                 minimum_scale=cfg.minimum_scale_px / scale,
             )
             prediction = np.column_stack((np.ones(test.sum()), z[test])) @ af
@@ -941,7 +999,9 @@ def fit_initialization_field(
                 "basis": "affine",
                 "centers": 0,
                 "cv_median_px": affine_score,
-                "cv_p95_px": float(np.percentile(affine_errors, 95)) if len(affine_errors) else None,
+                "cv_p95_px": float(np.percentile(affine_errors, 95))
+                if len(affine_errors)
+                else None,
                 "fold_medians_px": affine_fold_scores,
             }
         )
@@ -974,7 +1034,13 @@ def fit_initialization_field(
                             min(ncenter, max(1, int(train.sum() // 3))),
                         )
                         af, cf, _, _ = _fit_model(
-                            z[train], dn[train], density[train], centers, ell, ridge, cfg,
+                            z[train],
+                            dn[train],
+                            density[train],
+                            centers,
+                            ell,
+                            ridge,
+                            cfg,
                             minimum_scale=cfg.minimum_scale_px / scale,
                         )
                         kd = np.exp(
@@ -993,11 +1059,15 @@ def fit_initialization_field(
                             "ell_normalized": ell,
                             "ridge": ridge,
                             "cv_median_px": score,
-                            "cv_p95_px": float(np.percentile(error_array, 95)) if len(error_array) else None,
+                            "cv_p95_px": float(np.percentile(error_array, 95))
+                            if len(error_array)
+                            else None,
                             "fold_medians_px": fold_medians,
                         }
                     )
-                    scores.append((score, ncenter, ell, float(ridge), center_ids, fold_medians, error_array))
+                    scores.append(
+                        (score, ncenter, ell, float(ridge), center_ids, fold_medians, error_array)
+                    )
         if scores:
             best_rbf = min(scores, key=lambda row: (row[0], row[1], row[2], row[3]))
             best_folds = best_rbf[5]
@@ -1013,7 +1083,13 @@ def fit_initialization_field(
             else:
                 score, ncenter, ell, ridge, selected, _, _ = best_rbf
                 affine, coeff, robust, residual_scale = _fit_model(
-                    z, dn, density, selected, ell, ridge, cfg,
+                    z,
+                    dn,
+                    density,
+                    selected,
+                    ell,
+                    ridge,
+                    cfg,
                     minimum_scale=cfg.minimum_scale_px / scale,
                 )
                 best = (affine, coeff, selected, ell, ridge, robust, "gaussian_rbf")
@@ -1150,10 +1226,10 @@ def fit_initialization_field(
             except RuntimeError as error:
                 gpu_attempt_ms += (time.perf_counter() - attempt_started) * 1000.0
                 gpu_syncs += 1
-                gpu_solver_failures.append(
-                    {"basis": "affine", "centers": 0, "reason": str(error)}
-                )
-                raise RuntimeError("WebGPU affine and Gaussian-RBF projection fallbacks failed") from error
+                gpu_solver_failures.append({"basis": "affine", "centers": 0, "reason": str(error)})
+                raise RuntimeError(
+                    "WebGPU affine and Gaussian-RBF projection fallbacks failed"
+                ) from error
         gpu_fit_ms = gpu_attempt_ms
         backend = (
             "webgpu_irls_and_patch_projection_cpu_candidate_selection"
@@ -1234,7 +1310,9 @@ def fit_initialization_field(
         "candidate_scores": candidate_log,
         "residual_scale_px": residual_scale * scale,
         "backend": backend,
-        "candidate_selection_backend": "numpy_float64" if cfg.basis == "gaussian_rbf" else "not_applicable",
+        "candidate_selection_backend": "numpy_float64"
+        if cfg.basis == "gaussian_rbf"
+        else "not_applicable",
         "cpu_selection_and_scale_pilot_ms": host_selection_ms,
         "selection_reason": selection_reason,
         "gpu_final_fit_wall_ms": gpu_fit_ms,
@@ -1244,7 +1322,9 @@ def fit_initialization_field(
         "irls_max_iterations": cfg.max_irls_iterations if device is not None else None,
         "irls_damping": cfg.irls_damping,
         "irls_scale_policy": (
-            "fixed_scale_from_float64_cpu_pilot" if device is not None else "reestimated_each_cpu_iteration"
+            "fixed_scale_from_float64_cpu_pilot"
+            if device is not None
+            else "reestimated_each_cpu_iteration"
         ),
         "solver": (
             "WGSL Cholesky solve on FP32 normal equations"
@@ -1252,7 +1332,9 @@ def fit_initialization_field(
             else "NumPy float64 reference solve"
         ),
         "gpu_input_staging": (
-            "host arrays uploaded to the matcher WebGPU device" if device is not None else "not_applicable"
+            "host arrays uploaded to the matcher WebGPU device"
+            if device is not None
+            else "not_applicable"
         ),
         "gpu_design_buffer_bytes": len(z) * (3 + len(centers)) * 4 if device is not None else 0,
         "selected_center_count": len(centers),

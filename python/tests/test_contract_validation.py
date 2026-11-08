@@ -28,19 +28,35 @@ def test_contract_constraints_cover_every_declared_option() -> None:
 @pytest.mark.parametrize(
     ("algorithm", "options", "message"),
     [
-        ("deepmatching", {**asdict(DeepMatchingOptions()), "downscale_levels": 9}, "downscale_levels"),
-        ("deepmatching", {**asdict(DeepMatchingOptions()), "search_radius_px": -1}, "search_radius_px"),
+        (
+            "deepmatching",
+            {**asdict(DeepMatchingOptions()), "downscale_levels": 9},
+            "downscale_levels",
+        ),
+        (
+            "deepmatching",
+            {**asdict(DeepMatchingOptions()), "search_radius_px": -1},
+            "search_radius_px",
+        ),
         ("deepmatching", {**asdict(DeepMatchingOptions()), "minimum_score": 1.1}, "minimum_score"),
         ("deepmatching", {**asdict(DeepMatchingOptions()), "patch_size": 12.5}, "patch_size_px"),
         ("horg", {**asdict(HORGOptions()), "max_features": 0}, "max_features"),
         ("horg", {**asdict(HORGOptions()), "reduction": 1.5}, "reduction"),
         ("horg", {**asdict(HORGOptions()), "seed_points": ((-1, 10),)}, "inside the image"),
-        ("horg", {**asdict(HORGOptions()), "seed_points": ((float("nan"), 10),)}, "inside the image"),
+        (
+            "horg",
+            {**asdict(HORGOptions()), "seed_points": ((float("nan"), 10),)},
+            "inside the image",
+        ),
         ("cpm", {**asdict(CPMOptions()), "matching_support_px": 4}, "matching_support_px"),
         ("cpm", {**asdict(CPMOptions()), "initial_hypotheses": 65}, "initial_hypotheses"),
         ("cpm", {**asdict(CPMOptions()), "seed": 2**32}, "seed"),
         ("projection", {**asdict(ProjectionOptions()), "basis": "thin_plate"}, "basis"),
-        ("projection", {**asdict(ProjectionOptions()), "max_irls_iterations": 0}, "max_irls_iterations"),
+        (
+            "projection",
+            {**asdict(ProjectionOptions()), "max_irls_iterations": 0},
+            "max_irls_iterations",
+        ),
         ("projection", {**asdict(ProjectionOptions()), "irls_damping": 1.0}, "irls_damping"),
     ],
 )

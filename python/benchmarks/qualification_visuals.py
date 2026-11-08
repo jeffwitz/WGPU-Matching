@@ -14,7 +14,7 @@ def statistics(values: np.ndarray) -> dict[str, float | None]:
     values = np.asarray(values, dtype=np.float64)
     values = values[np.isfinite(values)]
     if not len(values):
-        return dict(median=None, rmse=None, p95=None, maximum=None)
+        return {"median": None, "rmse": None, "p95": None, "maximum": None}
     return {
         "median": float(np.median(values)),
         "rmse": float(np.sqrt(np.mean(values**2))),

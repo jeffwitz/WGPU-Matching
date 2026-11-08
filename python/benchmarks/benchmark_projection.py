@@ -90,7 +90,11 @@ def benchmark(repeats: int) -> dict[str, Any]:
             "host_roundtrip": "input arrays are uploaded; final pair diagnostics and patch outputs are read back",
             "irls_damping": 0.0,
         },
-        "software": {"python": platform.python_version(), "numpy": np.__version__, "wgpu_py": wgpu.__version__},
+        "software": {
+            "python": platform.python_version(),
+            "numpy": np.__version__,
+            "wgpu_py": wgpu.__version__,
+        },
         "methods": {},
     }
     options_by_basis = {
@@ -140,10 +144,14 @@ def benchmark(repeats: int) -> dict[str, Any]:
                 "gpu_solver_failures": last_model.diagnostics["gpu_solver_failures"],
                 "candidate_scores": last_model.diagnostics["candidate_scores"],
                 "irls_converged": last_model.diagnostics["irls_converged"],
-                "irls_final_max_weight_delta": last_model.diagnostics["irls_final_max_weight_delta"],
+                "irls_final_max_weight_delta": last_model.diagnostics[
+                    "irls_final_max_weight_delta"
+                ],
                 "host_synchronizations_per_fit": last_model.diagnostics["gpu_fit_host_sync_count"],
                 "estimated_design_buffer_bytes": last_model.diagnostics["gpu_design_buffer_bytes"],
-                "robust_weight_below_0_25_count": int(np.count_nonzero(last_model.robust_weights < 0.25)),
+                "robust_weight_below_0_25_count": int(
+                    np.count_nonzero(last_model.robust_weights < 0.25)
+                ),
                 "fit_residual_median_px": float(np.median(residuals)),
                 "fit_residual_p95_px": float(np.percentile(residuals, 95)),
                 "analytic_point_error_median_px": float(np.median(point_errors)),
@@ -155,8 +163,7 @@ def benchmark(repeats: int) -> dict[str, Any]:
                 "patch_gradient_error_frobenius_median": float(np.median(gradient_errors)),
                 "patch_support_rms_px": [patch.support_rms_px for patch in last_patches],
                 "timings": {
-                    field: quantiles([sample[field] for sample in samples])
-                    for field in samples[0]
+                    field: quantiles([sample[field] for sample in samples]) for field in samples[0]
                 },
             }
     return result

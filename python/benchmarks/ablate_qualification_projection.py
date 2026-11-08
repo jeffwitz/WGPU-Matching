@@ -12,9 +12,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-from wgpu_matching import CorrespondenceSet, WGPUMatching
-from wgpu_matching.images import load_gray
-
 from qualification_visuals import assess_parameters, render_pair
 from qualify_all_initializers import (
     LABELS,
@@ -25,6 +22,8 @@ from qualify_all_initializers import (
     sha256,
     write_json,
 )
+from wgpu_matching import CorrespondenceSet, WGPUMatching
+from wgpu_matching.images import load_gray
 
 
 def run(root, output, selected_cases):
@@ -136,19 +135,25 @@ def run(root, output, selected_cases):
     lines = [
         "# Does robust projection alone reject the false matches?",
         "",
-        "This controlled ablation uses the exact cached observations from the complete qualification. "
-        "Native acceptance masks are retained; only the additional common local affine consensus is "
-        "omitted. No detector is rerun, no truth filters pairs and the same spatial solver-capacity "
-        "reduction applies. This is a diagnostic comparison, not a replacement for the main protocol.",
+        (
+            "This controlled ablation uses the exact cached observations from the complete qualification. "
+            "Native acceptance masks are retained; only the additional common local affine consensus is "
+            "omitted. No detector is rerun, no truth filters pairs and the same spatial solver-capacity "
+            "reduction applies. This is a diagnostic comparison, not a replacement for the main protocol."
+        ),
         "",
-        "The affine ablation covers every case. Both basis requests are included for 60 percent "
-        "and Adrien. On sparse detectors, the fixed local minimum of 8 candidates can reject "
-        "otherwise useful pairs; this ablation also exposes that coverage cost rather than "
-        "assuming the filter always improves the field.",
+        (
+            "The affine ablation covers every case. Both basis requests are included for 60 percent "
+            "and Adrien. On sparse detectors, the fixed local minimum of 8 candidates can reject "
+            "otherwise useful pairs; this ablation also exposes that coverage cost rather than "
+            "assuming the filter always improves the field."
+        ),
         "",
-        "A raw robust field can converge numerically while being physically wrong. Results concern "
-        "smooth initialization fields; they do not evaluate IC-GN convergence. The Adrien pair has no "
-        "analytic error or accuracy verdict.",
+        (
+            "A raw robust field can converge numerically while being physically wrong. Results concern "
+            "smooth initialization fields; they do not evaluate IC-GN convergence. The Adrien pair has no "
+            "analytic error or accuracy verdict."
+        ),
         "",
         "| Case | Method | Requested → effective | Raw-projection correct <5 px / requested | With common verification | Raw RMSE (px) |",
         "|---|---|---|---:|---:|---:|",

@@ -286,20 +286,14 @@ def main() -> None:
     if not args.model.is_file():
         parser.error(f"ONNX model not found: {args.model}")
     if (
-        args.decompose_selu
-        or args.decompose_grid_sample
-        or args.optimize_raco_indices
+        args.decompose_selu or args.decompose_grid_sample or args.optimize_raco_indices
     ) and args.provider != "WebGpuExecutionProvider":
         parser.error("ONNX graph rewrites are intended for WebGpuExecutionProvider runs")
 
     session_model = args.model
     graph_transforms = []
     temporary_model_directory = None
-    if (
-        args.decompose_selu
-        or args.decompose_grid_sample
-        or args.optimize_raco_indices
-    ):
+    if args.decompose_selu or args.decompose_grid_sample or args.optimize_raco_indices:
         try:
             from optimize_onnx_webgpu import (
                 decompose_raco_grid_sample,

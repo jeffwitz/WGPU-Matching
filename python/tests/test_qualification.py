@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import numpy as np
 from PIL import Image
+from wgpu_matching import CorrespondenceSet
 
 from python.benchmarks.qualification_visuals import (
     assess_parameters,
@@ -11,7 +12,6 @@ from python.benchmarks.qualification_visuals import (
     restore_centres,
     warp_preview,
 )
-from wgpu_matching import CorrespondenceSet
 
 
 def test_inverse_resize_preserves_pixel_centres_and_anisotropic_coordinates():

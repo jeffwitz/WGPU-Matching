@@ -16,9 +16,7 @@ from pathlib import Path
 from wgpu_matching import DeepMatchingOptions, HORGOptions, WGPUMatching, load_gray
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-DEFAULT_LIVE_DIC = Path(
-    "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile"
-)
+DEFAULT_LIVE_DIC = Path("/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile")
 DEFAULT_OUTPUT = REPOSITORY / "results/uniaxial/python_runtime_comparison.csv"
 FRAMES = ("040", "100", "199")
 ANALYTIC_FILES = {
@@ -27,12 +25,26 @@ ANALYTIC_FILES = {
     "199": "frame_199_horg_subpixel_analytic_error.csv",
 }
 FIELDS = (
-    "frame", "method", "image_width", "image_height", "poi_count", "visible_poi_count",
-    "accepted_count", "within_2px_count", "accepted_coverage_visible_percent",
-    "accurate_coverage_visible_percent", "accepted_rmse_px",
-    "accepted_median_error_px", "accepted_p95_error_px", "first_call_s",
-    "repeat_median_s", "repeat_min_s", "repeat_max_s", "repeat_timings_s",
-    "repeats", "adapter",
+    "frame",
+    "method",
+    "image_width",
+    "image_height",
+    "poi_count",
+    "visible_poi_count",
+    "accepted_count",
+    "within_2px_count",
+    "accepted_coverage_visible_percent",
+    "accurate_coverage_visible_percent",
+    "accepted_rmse_px",
+    "accepted_median_error_px",
+    "accepted_p95_error_px",
+    "first_call_s",
+    "repeat_median_s",
+    "repeat_min_s",
+    "repeat_max_s",
+    "repeat_timings_s",
+    "repeats",
+    "adapter",
 )
 
 
@@ -59,6 +71,7 @@ def visible_grid_seeds(stretch_x: float, stretch_y: float, width: int, height: i
 
 def measure(matcher: WGPUMatching, method: str, reference, target, repeats: int, seed_points):
     if method == "HORG":
+
         def call():
             return matcher.match_horg(
                 reference,
@@ -72,6 +85,7 @@ def measure(matcher: WGPUMatching, method: str, reference, target, repeats: int,
                 ),
             )
     else:
+
         def call():
             return matcher.match_deepmatching(
                 reference,
@@ -111,13 +125,21 @@ def main() -> None:
     for frame in FRAMES:
         reference = load_gray(args.live_dic / "reference.png")
         target = load_gray(args.live_dic / f"frame_{frame}.png")
-        stretch_x, stretch_y = analytic_truth(REPOSITORY / "results/uniaxial" / ANALYTIC_FILES[frame])
-        seed_points = visible_grid_seeds(stretch_x, stretch_y, reference.shape[1], reference.shape[0])
+        stretch_x, stretch_y = analytic_truth(
+            REPOSITORY / "results/uniaxial" / ANALYTIC_FILES[frame]
+        )
+        seed_points = visible_grid_seeds(
+            stretch_x, stretch_y, reference.shape[1], reference.shape[0]
+        )
         for method in ("HORG", "DeepMatching-INRIA"):
             with WGPUMatching() as matcher:
                 field, first_s, repeat_times = measure(
-                    matcher, "HORG" if method == "HORG" else "DeepMatching",
-                    reference, target, args.repeats, seed_points,
+                    matcher,
+                    "HORG" if method == "HORG" else "DeepMatching",
+                    reference,
+                    target,
+                    args.repeats,
+                    seed_points,
                 )
                 accepted = []
                 visible_count = 0
@@ -137,29 +159,45 @@ def main() -> None:
                     dy = (stretch_y - 1) * (match.y - 1080)
                     accepted.append(((match.dx - dx) ** 2 + (match.dy - dy) ** 2) ** 0.5)
                 errors_sorted = sorted(accepted)
-                rows.append({
-                    "frame": frame,
-                    "method": method,
-                    "image_width": field.width,
-                    "image_height": field.height,
-                    "poi_count": len(field.matches),
-                    "visible_poi_count": visible_count,
-                    "accepted_count": len(accepted),
-                    "within_2px_count": sum(error <= 2.0 for error in accepted),
-                    "accepted_coverage_visible_percent": f"{100 * len(accepted) / visible_count:.3f}" if visible_count else "",
-                    "accurate_coverage_visible_percent": f"{100 * sum(error <= 2.0 for error in accepted) / visible_count:.3f}" if visible_count else "",
-                    "accepted_rmse_px": f"{statistics.mean(error * error for error in accepted) ** 0.5:.6f}" if accepted else "",
-                    "accepted_median_error_px": f"{statistics.median(accepted):.6f}" if accepted else "",
-                    "accepted_p95_error_px": f"{errors_sorted[min(len(errors_sorted) - 1, int(0.95 * len(errors_sorted)))]:.6f}" if errors_sorted else "",
-                    "first_call_s": f"{first_s:.6f}",
-                    "repeat_median_s": f"{statistics.median(repeat_times):.6f}",
-                    "repeat_min_s": f"{min(repeat_times):.6f}",
-                    "repeat_max_s": f"{max(repeat_times):.6f}",
-                    "repeat_timings_s": ";".join(f"{value:.6f}" for value in repeat_times),
-                    "repeats": args.repeats,
-                    "adapter": matcher.device_name,
-                })
-                rmse_text = f"{statistics.mean(error * error for error in accepted) ** 0.5:.3f}px" if accepted else "n/a"
+                rows.append(
+                    {
+                        "frame": frame,
+                        "method": method,
+                        "image_width": field.width,
+                        "image_height": field.height,
+                        "poi_count": len(field.matches),
+                        "visible_poi_count": visible_count,
+                        "accepted_count": len(accepted),
+                        "within_2px_count": sum(error <= 2.0 for error in accepted),
+                        "accepted_coverage_visible_percent": f"{100 * len(accepted) / visible_count:.3f}"
+                        if visible_count
+                        else "",
+                        "accurate_coverage_visible_percent": f"{100 * sum(error <= 2.0 for error in accepted) / visible_count:.3f}"
+                        if visible_count
+                        else "",
+                        "accepted_rmse_px": f"{statistics.mean(error * error for error in accepted) ** 0.5:.6f}"
+                        if accepted
+                        else "",
+                        "accepted_median_error_px": f"{statistics.median(accepted):.6f}"
+                        if accepted
+                        else "",
+                        "accepted_p95_error_px": f"{errors_sorted[min(len(errors_sorted) - 1, int(0.95 * len(errors_sorted)))]:.6f}"
+                        if errors_sorted
+                        else "",
+                        "first_call_s": f"{first_s:.6f}",
+                        "repeat_median_s": f"{statistics.median(repeat_times):.6f}",
+                        "repeat_min_s": f"{min(repeat_times):.6f}",
+                        "repeat_max_s": f"{max(repeat_times):.6f}",
+                        "repeat_timings_s": ";".join(f"{value:.6f}" for value in repeat_times),
+                        "repeats": args.repeats,
+                        "adapter": matcher.device_name,
+                    }
+                )
+                rmse_text = (
+                    f"{statistics.mean(error * error for error in accepted) ** 0.5:.3f}px"
+                    if accepted
+                    else "n/a"
+                )
                 print(
                     f"{frame} {method}: first={first_s:.3f}s, "
                     f"repeat median={statistics.median(repeat_times):.3f}s, "

@@ -22,21 +22,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from PIL import Image
-from wgpu_matching import (
-    CPMOptions,
-    CorrespondenceSet,
-    DICDetectorOptions,
-    DeepMatchingOptions,
-    DeDoDeBDescriptor,
-    HORGOptions,
-    OnnxWGPUKeypointDetector,
-    ProjectionOptions,
-    WGPUMatching,
-    mutual_nearest_cosine,
-)
-from wgpu_matching.images import load_gray
-
 from benchmark_projection_datasets import (
     analytic_target,
     build_cases,
@@ -45,13 +30,29 @@ from benchmark_projection_datasets import (
     read_truth,
     visible_tensile_seeds,
 )
+from geometric_consensus import LocalConsensus, bounded_pairs
+from PIL import Image
 from qualification_visuals import (
     assess_parameters,
     render_pair,
     restore_centres,
+)
+from qualification_visuals import (
     statistics as error_statistics,
 )
-from geometric_consensus import LocalConsensus, bounded_pairs
+from wgpu_matching import (
+    CorrespondenceSet,
+    CPMOptions,
+    DeDoDeBDescriptor,
+    DeepMatchingOptions,
+    DICDetectorOptions,
+    HORGOptions,
+    OnnxWGPUKeypointDetector,
+    ProjectionOptions,
+    WGPUMatching,
+    mutual_nearest_cosine,
+)
+from wgpu_matching.images import load_gray
 
 ROOT = Path(__file__).resolve().parents[2]
 METHODS = (
@@ -827,7 +828,7 @@ def main():
                             args.render_width,
                         )
                     )
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - record per-method failures and continue campaign
                     failure = {
                         "case": case["name"],
                         "method": method,

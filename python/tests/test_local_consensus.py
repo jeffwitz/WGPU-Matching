@@ -2,14 +2,14 @@
 
 import numpy as np
 import pytest
-
-from python.benchmarks.geometric_consensus import LocalConsensus, bounded_pairs
 from wgpu_matching import (
-    CPMOptions,
     CorrespondenceSet,
+    CPMOptions,
     DeepMatchingOptions,
     WGPUMatching,
 )
+
+from python.benchmarks.geometric_consensus import LocalConsensus, bounded_pairs
 
 
 def test_capacity_reduction_is_deterministic_spatial_and_preserves_measurements():

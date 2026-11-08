@@ -21,9 +21,7 @@ from PIL import Image
 from wgpu_matching import WGPUMatching
 
 REPOSITORY = Path(__file__).resolve().parents[2]
-DEFAULT_PROGRESSIVE = Path(
-    "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile"
-)
+DEFAULT_PROGRESSIVE = Path("/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/assets/uhd_tensile")
 DEFAULT_STRESS = REPOSITORY / "results/uniaxial/tensile_60pct"
 DEFAULT_OUTPUT = REPOSITORY / "results/features/xfeat_onnx_tensile.json"
 PROGRESSIVE_FRAMES = (40, 100, 199)
@@ -93,7 +91,9 @@ def evaluate_pair(
 ) -> dict[str, Any]:
     input_names = [item.name for item in session.get_inputs()]
     if input_names != ["image0", "image1"]:
-        raise ValueError(f"Expected XFeat-ONNX dense e2e input names image0/image1, got {input_names}.")
+        raise ValueError(
+            f"Expected XFeat-ONNX dense e2e input names image0/image1, got {input_names}."
+        )
     feeds = {input_names[0]: reference, input_names[1]: target}
     start = time.perf_counter()
     outputs = session.run(None, feeds)
@@ -109,15 +109,21 @@ def evaluate_pair(
 
     stretch_x = truth["stretch_x"]
     stretch_y = truth["stretch_y"]
-    expected_target = np.column_stack((
-        1920 + stretch_x * (source[:, 0] - 1920),
-        1080 + stretch_y * (source[:, 1] - 1080),
-    ))
+    expected_target = np.column_stack(
+        (
+            1920 + stretch_x * (source[:, 0] - 1920),
+            1080 + stretch_y * (source[:, 1] - 1080),
+        )
+    )
     visible_match = (
-        (source[:, 0] >= 0) & (source[:, 0] < IMAGE_WIDTH)
-        & (source[:, 1] >= 0) & (source[:, 1] < IMAGE_HEIGHT)
-        & (expected_target[:, 0] >= 0) & (expected_target[:, 0] < IMAGE_WIDTH)
-        & (expected_target[:, 1] >= 0) & (expected_target[:, 1] < IMAGE_HEIGHT)
+        (source[:, 0] >= 0)
+        & (source[:, 0] < IMAGE_WIDTH)
+        & (source[:, 1] >= 0)
+        & (source[:, 1] < IMAGE_HEIGHT)
+        & (expected_target[:, 0] >= 0)
+        & (expected_target[:, 0] < IMAGE_WIDTH)
+        & (expected_target[:, 1] >= 0)
+        & (expected_target[:, 1] < IMAGE_HEIGHT)
     )
     raw_error = np.linalg.norm(matched_target - expected_target, axis=1)[visible_match].tolist()
 
@@ -134,22 +140,26 @@ def evaluate_pair(
         )
         records = []
         for center, match in zip(seeds, affine.matches, strict=True):
-            true_target = np.array((
-                1920 + stretch_x * (center[0] - 1920),
-                1080 + stretch_y * (center[1] - 1080),
-            ))
+            true_target = np.array(
+                (
+                    1920 + stretch_x * (center[0] - 1920),
+                    1080 + stretch_y * (center[1] - 1080),
+                )
+            )
             predicted = np.array((match.x + match.dx, match.y + match.dy))
             error = float(np.linalg.norm(predicted - true_target)) if match.inliers else None
-            records.append({
-                "center": [center[0], center[1]],
-                "predicted_target": predicted.tolist() if match.inliers else None,
-                "error_px": error,
-                "inliers": match.inliers,
-                "candidates": match.candidates,
-                "inlier_fraction": match.inlier_fraction,
-                "residual_px": finite_or_none(match.residual),
-                "usable": match.usable,
-            })
+            records.append(
+                {
+                    "center": [center[0], center[1]],
+                    "predicted_target": predicted.tolist() if match.inliers else None,
+                    "error_px": error,
+                    "inliers": match.inliers,
+                    "candidates": match.candidates,
+                    "inlier_fraction": match.inlier_fraction,
+                    "residual_px": finite_or_none(match.residual),
+                    "usable": match.usable,
+                }
+            )
         accepted = [item for item in records if item["usable"]]
         accepted_errors = [float(item["error_px"]) for item in accepted]
         local_fits[str(radius)] = {
@@ -158,7 +168,9 @@ def evaluate_pair(
             "fitted_with_error_lt5_px": sum(error < 5 for error in accepted_errors),
             "fitted_with_error_le2_px": sum(error <= 2 for error in accepted_errors),
             "fit_error": quantiles(accepted_errors),
-            "median_local_candidate_count": float(statistics.median(item["candidates"] for item in records)),
+            "median_local_candidate_count": float(
+                statistics.median(item["candidates"] for item in records)
+            ),
             "fit_compute_ms": affine.gpu_compute_ms,
             "fit_call_wall_ms": (time.perf_counter() - fit_start) * 1000.0,
             "per_seed": records,
@@ -192,7 +204,9 @@ def sha256_file(path: Path) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", type=Path, required=True, help="Path to XFeat-ONNX *_dense_e2e.onnx.")
+    parser.add_argument(
+        "--model", type=Path, required=True, help="Path to XFeat-ONNX *_dense_e2e.onnx."
+    )
     parser.add_argument("--progressive-dir", type=Path, default=DEFAULT_PROGRESSIVE)
     parser.add_argument("--stress-dir", type=Path, default=DEFAULT_STRESS)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -220,12 +234,16 @@ def main() -> None:
         except ImportError as exc:
             parser.error(f"Install the optional native WebGPU EP to run this study: {exc}")
         ort.register_execution_provider_library("xfeat_webgpu_ep", webgpu_ep.get_library_path())
-        provider_devices = [device for device in ort.get_ep_devices() if device.ep_name == webgpu_ep.get_ep_name()]
+        provider_devices = [
+            device for device in ort.get_ep_devices() if device.ep_name == webgpu_ep.get_ep_name()
+        ]
         if not provider_devices:
             parser.error("The WebGPU EP loaded, but no WebGPU adapter was discovered.")
         options.add_provider_for_devices(provider_devices, {"preferredLayout": "NHWC"})
     elif args.provider not in ort.get_available_providers():
-        parser.error(f"Provider {args.provider!r} unavailable; installed providers: {ort.get_available_providers()}")
+        parser.error(
+            f"Provider {args.provider!r} unavailable; installed providers: {ort.get_available_providers()}"
+        )
     session = ort.InferenceSession(
         str(args.model),
         sess_options=options,
@@ -239,24 +257,28 @@ def main() -> None:
     reports = []
     with WGPUMatching(device_type=args.wgpu_device_type) as matcher:
         for frame in PROGRESSIVE_FRAMES:
-            reports.append(evaluate_pair(
+            reports.append(
+                evaluate_pair(
+                    session,
+                    matcher,
+                    progressive_reference,
+                    load_image(args.progressive_dir / f"frame_{frame:03d}.png"),
+                    frame,
+                    progressive_truth[frame],
+                    args.repeats,
+                )
+            )
+        reports.append(
+            evaluate_pair(
                 session,
                 matcher,
-                progressive_reference,
-                load_image(args.progressive_dir / f"frame_{frame:03d}.png"),
-                frame,
-                progressive_truth[frame],
+                stress_reference,
+                load_image(args.stress_dir / "frame_199_eng_60pct.png"),
+                199,
+                stress_truth[199],
                 args.repeats,
-            ))
-        reports.append(evaluate_pair(
-            session,
-            matcher,
-            stress_reference,
-            load_image(args.stress_dir / "frame_199_eng_60pct.png"),
-            199,
-            stress_truth[199],
-            args.repeats,
-        ))
+            )
+        )
 
     result = {
         "experiment": "XFeat-ONNX dense end-to-end matching with local affine DIC initialization",

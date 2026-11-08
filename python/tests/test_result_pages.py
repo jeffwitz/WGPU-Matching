@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-
 SOURCE = Path(__file__).resolve().parents[2] / "docs/_ext/result_pages.py"
 spec = importlib.util.spec_from_file_location("result_pages", SOURCE)
 module = importlib.util.module_from_spec(spec)

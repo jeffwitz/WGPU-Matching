@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import collections
 import hashlib
+import itertools
 import json
 import time
 from pathlib import Path
@@ -39,7 +40,7 @@ def _fuse_adjacent_conv_batch_norm(torch: Any, model: Any) -> int:
         if not isinstance(parent, (torch.nn.Sequential, torch.nn.ModuleList)):
             continue
         child_names = list(parent._modules)
-        for left_name, right_name in zip(child_names, child_names[1:]):
+        for left_name, right_name in itertools.pairwise(child_names):
             convolution = parent._modules[left_name]
             normalization = parent._modules[right_name]
             if isinstance(convolution, torch.nn.Conv2d) and isinstance(

@@ -65,7 +65,9 @@ def test_correspondence_set_keeps_provenance_and_excludes_inferred_rows() -> Non
     model = fit_initialization_field(data, (64, 64), options=ProjectionOptions(basis="affine"))
     assert model.source_matcher == "fixture"
     assert set(model.correspondence_ids) == {"a", "b", "c"}
-    assert dict(zip(model.correspondence_ids, model.diagnostics["retained_raw_scores"], strict=True)) == {
+    assert dict(
+        zip(model.correspondence_ids, model.diagnostics["retained_raw_scores"], strict=True)
+    ) == {
         "a": 0.9,
         "b": 0.8,
         "c": 0.7,
@@ -174,8 +176,7 @@ def test_webgpu_gaussian_rbf_projection_and_patch_parameters() -> None:
     radial = source - np.asarray([128.0, 96.0])
     bump = np.exp(-np.sum(radial**2, axis=1) / (2.0 * 45.0**2))
     displacement = np.column_stack(
-        (5.0 + 0.01 * source[:, 0] + 30.0 * bump,
-         -3.0 + 0.02 * source[:, 1] + 15.0 * bump)
+        (5.0 + 0.01 * source[:, 0] + 30.0 * bump, -3.0 + 0.02 * source[:, 1] + 15.0 * bump)
     )
     pairs = CorrespondenceSet(
         source,

@@ -88,7 +88,8 @@ def _fit_local_affine(
     work_matches: list[dict[str, Any]], x: float, y: float, radius_px: float
 ) -> dict[str, Any] | None:
     candidates = [
-        match for match in work_matches
+        match
+        for match in work_matches
         if match["usable"] and math.hypot(match["x"] - x, match["y"] - y) <= radius_px
     ]
     if len(candidates) < 6:
@@ -117,8 +118,9 @@ def _fit_local_affine(
             local_x, local_y = match["x"] - x, match["y"] - y
             predicted_x = coefficients_x @ (1.0, local_x, local_y)
             predicted_y = coefficients_y @ (1.0, local_x, local_y)
-            residuals.append((match, math.hypot(match["dx"] - predicted_x,
-                                                match["dy"] - predicted_y)))
+            residuals.append(
+                (match, math.hypot(match["dx"] - predicted_x, match["dy"] - predicted_y))
+            )
         errors = sorted(error for _, error in residuals)
         cutoff = max(2.0, 2.5 * errors[len(errors) // 2])
         next_inliers = [match for match, error in residuals if error <= cutoff]
@@ -151,9 +153,13 @@ class CPMBackend:
         self.device = device
         self.deepmatching = DeepMatchingBackend(device)
 
-    def _pyramid(self, scope: ResourceScope, descriptors: dict[str, Any], requested: int) -> list[dict[str, Any]]:
+    def _pyramid(
+        self, scope: ResourceScope, descriptors: dict[str, Any], requested: int
+    ) -> list[dict[str, Any]]:
         device = self.device
-        module = device.create_shader_module(code=shader_source("cpm-pyramid.wgsl"), label="CPM HOG pyramid")
+        module = device.create_shader_module(
+            code=shader_source("cpm-pyramid.wgsl"), label="CPM HOG pyramid"
+        )
         pipeline = make_pipeline(device, module, "downsample_hog", "CPM HOG pyramid downsample")
         levels = [descriptors]
         texture_usage = wgpu.TextureUsage.STORAGE_BINDING | wgpu.TextureUsage.TEXTURE_BINDING
@@ -165,25 +171,54 @@ class CPMBackend:
             level: dict[str, Any] = {"width": width, "height": height}
             for image_name in ("reference", "target"):
                 level[image_name] = {
-                    "first": create_texture(device, scope, width, height, "rgba16float", texture_usage,
-                                             f"CPM level {level_index} {image_name} HOG 1-4"),
-                    "second": create_texture(device, scope, width, height, "rgba16float", texture_usage,
-                                              f"CPM level {level_index} {image_name} HOG 5-8"),
+                    "first": create_texture(
+                        device,
+                        scope,
+                        width,
+                        height,
+                        "rgba16float",
+                        texture_usage,
+                        f"CPM level {level_index} {image_name} HOG 1-4",
+                    ),
+                    "second": create_texture(
+                        device,
+                        scope,
+                        width,
+                        height,
+                        "rgba16float",
+                        texture_usage,
+                        f"CPM level {level_index} {image_name} HOG 5-8",
+                    ),
                 }
-            params = make_params(device, scope, [source["width"], source["height"], width, height],
-                                 f"CPM pyramid level {level_index} dimensions", length=4)
+            params = make_params(
+                device,
+                scope,
+                [source["width"], source["height"], width, height],
+                f"CPM pyramid level {level_index} dimensions",
+                length=4,
+            )
             encoder = device.create_command_encoder(label=f"CPM pyramid level {level_index}")
             for image_name in ("reference", "target"):
                 input_set, output_set = source[image_name], level[image_name]
-                group = make_bind_group(device, pipeline, [
-                    {"binding": 0, "resource": input_set["first"].create_view()},
-                    {"binding": 1, "resource": input_set["second"].create_view()},
-                    {"binding": 2, "resource": output_set["first"].create_view()},
-                    {"binding": 3, "resource": output_set["second"].create_view()},
-                    {"binding": 4, "resource": {"buffer": params}},
-                ])
-                dispatch(encoder, pipeline, group, math.ceil(width / 8), math.ceil(height / 8),
-                         label=f"CPM pooled HOG {image_name}")
+                group = make_bind_group(
+                    device,
+                    pipeline,
+                    [
+                        {"binding": 0, "resource": input_set["first"].create_view()},
+                        {"binding": 1, "resource": input_set["second"].create_view()},
+                        {"binding": 2, "resource": output_set["first"].create_view()},
+                        {"binding": 3, "resource": output_set["second"].create_view()},
+                        {"binding": 4, "resource": {"buffer": params}},
+                    ],
+                )
+                dispatch(
+                    encoder,
+                    pipeline,
+                    group,
+                    math.ceil(width / 8),
+                    math.ceil(height / 8),
+                    label=f"CPM pooled HOG {image_name}",
+                )
             device.queue.submit([encoder.finish()])
             levels.append(level)
         return levels
@@ -206,23 +241,51 @@ class CPMBackend:
     ) -> tuple[np.ndarray, list[list[dict[str, Any]]] | None]:
         device = self.device
         state_bytes = point_count * 16
-        previous = create_buffer(device, scope, state_bytes,
-                                 wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC, "CPM states A")
-        next_state = create_buffer(device, scope, state_bytes,
-                                   wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC, "CPM states B")
-        readback = create_buffer(device, scope, state_bytes,
-                                 wgpu.BufferUsage.COPY_DST | wgpu.BufferUsage.COPY_SRC, "CPM state readback")
+        previous = create_buffer(
+            device,
+            scope,
+            state_bytes,
+            wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+            "CPM states A",
+        )
+        next_state = create_buffer(
+            device,
+            scope,
+            state_bytes,
+            wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+            "CPM states B",
+        )
+        readback = create_buffer(
+            device,
+            scope,
+            state_bytes,
+            wgpu.BufferUsage.COPY_DST | wgpu.BufferUsage.COPY_SRC,
+            "CPM state readback",
+        )
         groups = []
         level_ends = []
         read_state, write_state = previous, next_state
         iteration = 0
         for level_index in reversed(range(len(levels))):
             level = levels[level_index]
-            level_scale = base_scale * (2 ** level_index)
+            level_scale = base_scale * (2**level_index)
             patch_size = max(2, round(support_px / level_scale))
-            search_radius = math.floor(radius_px / level_scale) if radius_px > 0 else max(level["width"], level["height"])
-            random_radius_at_level = search_radius if level_index == len(levels) - 1 else max(
-                1, min(search_radius, math.ceil(options.local_search_radius_px * (2 ** level_index) / level_scale)))
+            search_radius = (
+                math.floor(radius_px / level_scale)
+                if radius_px > 0
+                else max(level["width"], level["height"])
+            )
+            random_radius_at_level = (
+                search_radius
+                if level_index == len(levels) - 1
+                else max(
+                    1,
+                    min(
+                        search_radius,
+                        math.ceil(options.local_search_radius_px * (2**level_index) / level_scale),
+                    ),
+                )
+            )
 
             def append_pass(
                 initialize: bool,
@@ -235,22 +298,44 @@ class CPMBackend:
                 search_radius: int = search_radius,
             ) -> None:
                 nonlocal read_state, write_state, iteration
-                params = make_params(device, scope, [
-                    grid_width, grid_height, level["width"], level["height"], patch_size,
-                    search_radius, seed, iteration, random_radius, options.random_trials,
-                    int(initialize), int(scale_previous), options.initial_hypotheses, 0, 0, 0,
-                ], f"CPM direction pass {iteration}")
+                params = make_params(
+                    device,
+                    scope,
+                    [
+                        grid_width,
+                        grid_height,
+                        level["width"],
+                        level["height"],
+                        patch_size,
+                        search_radius,
+                        seed,
+                        iteration,
+                        random_radius,
+                        options.random_trials,
+                        int(initialize),
+                        int(scale_previous),
+                        options.initial_hypotheses,
+                        0,
+                        0,
+                        0,
+                    ],
+                    f"CPM direction pass {iteration}",
+                )
                 source_set, target_set = level["reference"], level["target"]
-                group = make_bind_group(device, pipeline, [
-                    {"binding": 0, "resource": source_set["first"].create_view()},
-                    {"binding": 1, "resource": source_set["second"].create_view()},
-                    {"binding": 2, "resource": target_set["first"].create_view()},
-                    {"binding": 3, "resource": target_set["second"].create_view()},
-                    {"binding": 4, "resource": {"buffer": point_buffers[level_index]}},
-                    {"binding": 5, "resource": {"buffer": read_state}},
-                    {"binding": 6, "resource": {"buffer": write_state}},
-                    {"binding": 7, "resource": {"buffer": params}},
-                ])
+                group = make_bind_group(
+                    device,
+                    pipeline,
+                    [
+                        {"binding": 0, "resource": source_set["first"].create_view()},
+                        {"binding": 1, "resource": source_set["second"].create_view()},
+                        {"binding": 2, "resource": target_set["first"].create_view()},
+                        {"binding": 3, "resource": target_set["second"].create_view()},
+                        {"binding": 4, "resource": {"buffer": point_buffers[level_index]}},
+                        {"binding": 5, "resource": {"buffer": read_state}},
+                        {"binding": 6, "resource": {"buffer": write_state}},
+                        {"binding": 7, "resource": {"buffer": params}},
+                    ],
+                )
                 groups.append(group)
                 read_state, write_state = write_state, read_state
                 iteration += 1
@@ -258,48 +343,62 @@ class CPMBackend:
             if level_index == len(levels) - 1:
                 append_pass(True, False, search_radius)
                 for pass_index in range(options.propagation_iterations):
-                    append_pass(False, False, max(1, math.ceil(search_radius / (2 ** pass_index))))
+                    append_pass(False, False, max(1, math.ceil(search_radius / (2**pass_index))))
             else:
                 for pass_index in range(options.propagation_iterations):
-                    random_radius = max(1, min(search_radius,
-                                               math.ceil(random_radius_at_level / (2 ** pass_index))))
+                    random_radius = max(
+                        1, min(search_radius, math.ceil(random_radius_at_level / (2**pass_index)))
+                    )
                     append_pass(False, pass_index == 0, random_radius)
             level_ends.append((level_index, len(groups), read_state))
 
         snapshot_readback = None
         if diagnostics:
             snapshot_readback = create_buffer(
-                device, scope, len(levels) * len(diagnostics) * 16,
+                device,
+                scope,
+                len(levels) * len(diagnostics) * 16,
                 wgpu.BufferUsage.COPY_DST | wgpu.BufferUsage.COPY_SRC,
                 "CPM per-level diagnostic readback",
             )
         encoder = device.create_command_encoder(label="CPM coarse-to-fine PatchMatch")
         for group_index, group in enumerate(groups, 1):
-            dispatch(encoder, pipeline, group, math.ceil(point_count / 64), label="CPM PatchMatch pass")
+            dispatch(
+                encoder, pipeline, group, math.ceil(point_count / 64), label="CPM PatchMatch pass"
+            )
             if snapshot_readback is not None:
                 for level_index, after_count, state_buffer in level_ends:
                     if after_count != group_index:
                         continue
                     for sample_index, state_index in enumerate(diagnostics):
                         encoder.copy_buffer_to_buffer(
-                            state_buffer, state_index * 16, snapshot_readback,
-                            (level_index * len(diagnostics) + sample_index) * 16, 16,
+                            state_buffer,
+                            state_index * 16,
+                            snapshot_readback,
+                            (level_index * len(diagnostics) + sample_index) * 16,
+                            16,
                         )
         encoder.copy_buffer_to_buffer(read_state, 0, readback, 0, state_bytes)
         device.queue.submit([encoder.finish()])
         states = read_array(device, readback, np.dtype(np.int32), point_count * 4).reshape(-1, 4)
         snapshots = None
         if snapshot_readback is not None:
-            raw = read_array(device, snapshot_readback, np.dtype(np.int32), len(levels) * len(diagnostics) * 4)
+            raw = read_array(
+                device, snapshot_readback, np.dtype(np.int32), len(levels) * len(diagnostics) * 4
+            )
             floats = raw.view(np.float32)
             snapshots = [[] for _ in levels]
             for level_index in range(len(levels)):
                 for sample_index in range(len(diagnostics)):
                     offset = (level_index * len(diagnostics) + sample_index) * 4
-                    snapshots[level_index].append({
-                        "dx": int(raw[offset]), "dy": int(raw[offset + 1]),
-                        "cost": float(floats[offset + 2]), "valid": bool(raw[offset + 3]),
-                    })
+                    snapshots[level_index].append(
+                        {
+                            "dx": int(raw[offset]),
+                            "dy": int(raw[offset + 1]),
+                            "cost": float(floats[offset + 2]),
+                            "valid": bool(raw[offset + 3]),
+                        }
+                    )
         return states, snapshots
 
     def compute(
@@ -317,9 +416,12 @@ class CPMBackend:
         if reference.ndim != 2 or target.ndim != 2 or reference.shape != target.shape:
             raise ValueError("CPM expects same-sized two-dimensional grayscale uint8 images")
         height, width = reference.shape
-        if width > self.device.limits["max-texture-dimension-2d"] or height > self.device.limits["max-texture-dimension-2d"]:
+        if (
+            width > self.device.limits["max-texture-dimension-2d"]
+            or height > self.device.limits["max-texture-dimension-2d"]
+        ):
             raise ValueError("Image exceeds the adapter's maximum texture dimension")
-        scale = 2 ** options.downscale_levels
+        scale = 2**options.downscale_levels
         support = options.matching_support_px
         effective_patch = max(2, math.floor(support / scale + 0.5))
         max_levels = max(1, math.floor(math.log2(effective_patch / 4)) + 1)
@@ -339,7 +441,9 @@ class CPMBackend:
         half = (options.patch_size - 1) / 2
         for index, (x, y) in enumerate(seeds, 1):
             if not (half <= x <= width - 1 - half and half <= y <= height - 1 - half):
-                raise ValueError(f"CPM seed {index} does not fit a full DIC patch in the reference image")
+                raise ValueError(
+                    f"CPM seed {index} does not fit a full DIC patch in the reference image"
+                )
         grid_width = 1 + (width - support) // options.work_grid_stride
         grid_height = 1 + (height - support) // options.work_grid_stride
         if grid_width * grid_height != len(work_centers):
@@ -364,7 +468,11 @@ class CPMBackend:
         try:
             progress("CPM-HOG: building shared GPU descriptors")
             descriptors = self.deepmatching.build_hog_descriptors(
-                scope, reference, target, options.downscale_levels, progress,
+                scope,
+                reference,
+                target,
+                options.downscale_levels,
+                progress,
             )
             descriptor_ms = (time.perf_counter() - start_descriptor) * 1000
             if effective_patch > descriptors["width"] or effective_patch > descriptors["height"]:
@@ -374,20 +482,32 @@ class CPMBackend:
             pyramid_ms = (time.perf_counter() - pyramid_start) * 1000
             if len(levels) < effective_levels:
                 progress("CPM pyramid depth reduced because the descriptor image became too small")
-            module = self.device.create_shader_module(code=shader_source("cpm-match.wgsl"), label="CPM PatchMatch")
-            search_pipeline = make_pipeline(self.device, module, "patchmatch_step", "CPM sparse HOG PatchMatch")
-            oracle_pipeline = make_pipeline(self.device, module, "evaluate_oracle", "CPM analytic oracle cost")
+            module = self.device.create_shader_module(
+                code=shader_source("cpm-match.wgsl"), label="CPM PatchMatch"
+            )
+            search_pipeline = make_pipeline(
+                self.device, module, "patchmatch_step", "CPM sparse HOG PatchMatch"
+            )
+            oracle_pipeline = make_pipeline(
+                self.device, module, "evaluate_oracle", "CPM analytic oracle cost"
+            )
             point_buffers = []
             for level_index in range(len(levels)):
-                level_scale = scale * (2 ** level_index)
-                coordinates = np.asarray([
-                    (math.floor(x / level_scale + 0.5), math.floor(y / level_scale + 0.5))
-                    for x, y in work_centers
-                ], dtype=np.int32)
-                point_buffers.append(self.device.create_buffer_with_data(
-                    data=coordinates, usage=wgpu.BufferUsage.STORAGE,
-                    label=f"CPM source points at level {level_index}",
-                ))
+                level_scale = scale * (2**level_index)
+                coordinates = np.asarray(
+                    [
+                        (math.floor(x / level_scale + 0.5), math.floor(y / level_scale + 0.5))
+                        for x, y in work_centers
+                    ],
+                    dtype=np.int32,
+                )
+                point_buffers.append(
+                    self.device.create_buffer_with_data(
+                        data=coordinates,
+                        usage=wgpu.BufferUsage.STORAGE,
+                        label=f"CPM source points at level {level_index}",
+                    )
+                )
                 scope.keep(point_buffers[-1])
             diagnostic_indices = [
                 _nearest_index(work_centers, x, y, grid_width, options.work_grid_stride)[0]
@@ -395,15 +515,37 @@ class CPMBackend:
             ]
             matching_start = time.perf_counter()
             forward, level_snapshots = self._run_direction(
-                scope, search_pipeline, levels, point_buffers, grid_width, grid_height,
-                len(work_centers), support, scale, radius_px, options.seed & 0xFFFFFFFF,
-                options, diagnostic_indices if options.oracle_affine is not None else None,
+                scope,
+                search_pipeline,
+                levels,
+                point_buffers,
+                grid_width,
+                grid_height,
+                len(work_centers),
+                support,
+                scale,
+                radius_px,
+                options.seed & 0xFFFFFFFF,
+                options,
+                diagnostic_indices if options.oracle_affine is not None else None,
             )
-            reverse_levels = [{**level, "reference": level["target"], "target": level["reference"]}
-                              for level in levels]
+            reverse_levels = [
+                {**level, "reference": level["target"], "target": level["reference"]}
+                for level in levels
+            ]
             backward, _ = self._run_direction(
-                scope, search_pipeline, reverse_levels, point_buffers, grid_width, grid_height,
-                len(work_centers), support, scale, radius_px, options.seed & 0xFFFFFFFF, options,
+                scope,
+                search_pipeline,
+                reverse_levels,
+                point_buffers,
+                grid_width,
+                grid_height,
+                len(work_centers),
+                support,
+                scale,
+                radius_px,
+                options.seed & 0xFFFFFFFF,
+                options,
             )
             matching_ms = (time.perf_counter() - matching_start) * 1000
 
@@ -414,85 +556,151 @@ class CPMBackend:
                 dy = int(forward[index, 1]) * scale if valid else 0
                 cost = float(forward[index].view(np.float32)[2])
                 score = 1 - min(1.0, max(0.0, cost))
-                inverse = _interpolate(backward, work_centers, grid_width, grid_height,
-                                        x + dx, y + dy, options.work_grid_stride) if valid else None
-                reciprocal_error = math.hypot(dx + inverse[0] * scale, dy + inverse[1] * scale) if inverse else math.inf
-                reciprocal = inverse is not None and reciprocal_error <= options.reciprocal_threshold_px
-                work_matches.append({
-                    "x": x, "y": y, "dx": dx, "dy": dy, "score": score,
-                    "valid": valid, "reciprocal": reciprocal,
-                    "reciprocal_error_px": reciprocal_error,
-                    "usable": valid and reciprocal and score >= options.minimum_similarity,
-                })
+                inverse = (
+                    _interpolate(
+                        backward,
+                        work_centers,
+                        grid_width,
+                        grid_height,
+                        x + dx,
+                        y + dy,
+                        options.work_grid_stride,
+                    )
+                    if valid
+                    else None
+                )
+                reciprocal_error = (
+                    math.hypot(dx + inverse[0] * scale, dy + inverse[1] * scale)
+                    if inverse
+                    else math.inf
+                )
+                reciprocal = (
+                    inverse is not None and reciprocal_error <= options.reciprocal_threshold_px
+                )
+                work_matches.append(
+                    {
+                        "x": x,
+                        "y": y,
+                        "dx": dx,
+                        "dy": dy,
+                        "score": score,
+                        "valid": valid,
+                        "reciprocal": reciprocal,
+                        "reciprocal_error_px": reciprocal_error,
+                        "usable": valid and reciprocal and score >= options.minimum_similarity,
+                    }
+                )
             reciprocal_count = sum(match["reciprocal"] for match in work_matches)
             usable_work_count = sum(match["usable"] for match in work_matches)
 
             requested_matches = []
             diagnostics: list[dict[str, Any]] = []
             for x, y in seeds:
-                nearest, grid_distance = _nearest_index(work_centers, x, y, grid_width, options.work_grid_stride)
+                nearest, grid_distance = _nearest_index(
+                    work_centers, x, y, grid_width, options.work_grid_stride
+                )
                 measured = work_matches[nearest]
                 fit = _fit_local_affine(work_matches, x, y, affine_radius)
                 usable = fit is not None
                 dx = float(fit["coefficients_x"][0]) if fit else float(measured["dx"])
                 dy = float(fit["coefficients_y"][0]) if fit else float(measured["dy"])
-                requested_matches.append({
-                    "x": x, "y": y, "dx": dx, "dy": dy, "usable": usable,
-                    "seed_x": x, "seed_y": y,
-                    "target_x": x + dx, "target_y": y + dy,
-                    "score": float(fit["mean_score"]) if fit else measured["score"],
-                    "reciprocal": usable,
-                    "inliers": fit["support_count"] if fit else 0,
-                    "candidates": fit["candidate_count"] if fit else 0,
-                    "inlier_fraction": fit["support_count"] / fit["candidate_count"] if fit else 0.0,
-                    "residual": fit["rmse_px"] if fit else None,
-                })
+                requested_matches.append(
+                    {
+                        "x": x,
+                        "y": y,
+                        "dx": dx,
+                        "dy": dy,
+                        "usable": usable,
+                        "seed_x": x,
+                        "seed_y": y,
+                        "target_x": x + dx,
+                        "target_y": y + dy,
+                        "score": float(fit["mean_score"]) if fit else measured["score"],
+                        "reciprocal": usable,
+                        "inliers": fit["support_count"] if fit else 0,
+                        "candidates": fit["candidate_count"] if fit else 0,
+                        "inlier_fraction": fit["support_count"] / fit["candidate_count"]
+                        if fit
+                        else 0.0,
+                        "residual": fit["rmse_px"] if fit else None,
+                    }
+                )
                 affine_parameters = None
                 if fit:
                     cx, cy = fit["coefficients_x"], fit["coefficients_y"]
                     affine_parameters = [x + cx[0], 1 + cx[1], cx[2], y + cy[0], cy[1], 1 + cy[2]]
-                diagnostics.append({
-                    "requested_x": x, "requested_y": y,
-                    "measured_x": measured["x"], "measured_y": measured["y"],
-                    "measured_dx": measured["dx"], "measured_dy": measured["dy"],
-                    "grid_distance_px": grid_distance,
-                    "directly_evaluated": False,
-                    "projection_method": "local-affine-fit" if fit else "nearest-grid-fallback-rejected",
-                    "affine_support_count": fit["support_count"] if fit else 0,
-                    "affine_candidate_count": fit["candidate_count"] if fit else 0,
-                    "affine_fit_rmse_px": fit["rmse_px"] if fit else None,
-                    "affine_parameters": affine_parameters,
-                    "reciprocal_error_px": (fit["reciprocal_error_px"] if fit else
-                                             measured["reciprocal_error_px"] if math.isfinite(measured["reciprocal_error_px"])
-                                             else None),
-                })
+                diagnostics.append(
+                    {
+                        "requested_x": x,
+                        "requested_y": y,
+                        "measured_x": measured["x"],
+                        "measured_y": measured["y"],
+                        "measured_dx": measured["dx"],
+                        "measured_dy": measured["dy"],
+                        "grid_distance_px": grid_distance,
+                        "directly_evaluated": False,
+                        "projection_method": "local-affine-fit"
+                        if fit
+                        else "nearest-grid-fallback-rejected",
+                        "affine_support_count": fit["support_count"] if fit else 0,
+                        "affine_candidate_count": fit["candidate_count"] if fit else 0,
+                        "affine_fit_rmse_px": fit["rmse_px"] if fit else None,
+                        "affine_parameters": affine_parameters,
+                        "reciprocal_error_px": (
+                            fit["reciprocal_error_px"]
+                            if fit
+                            else measured["reciprocal_error_px"]
+                            if math.isfinite(measured["reciprocal_error_px"])
+                            else None
+                        ),
+                    }
+                )
 
             oracle_diagnostics = None
             if options.oracle_affine is not None:
                 oracle_diagnostics = self._evaluate_oracle(
-                    scope, oracle_pipeline, levels, point_buffers, work_centers,
-                    grid_width, grid_height, support, scale, options.oracle_affine,
-                    seeds, diagnostic_indices, level_snapshots or [],
+                    scope,
+                    oracle_pipeline,
+                    levels,
+                    point_buffers,
+                    work_centers,
+                    grid_width,
+                    grid_height,
+                    support,
+                    scale,
+                    options.oracle_affine,
+                    seeds,
+                    diagnostic_indices,
+                    level_snapshots or [],
                 )
             raw_export = {}
             if include_correspondences:
                 raw_export = {
-                    "raw_correspondences_xyxy": [[m["x"], m["y"], m["x"] + m["dx"], m["y"] + m["dy"]] for m in work_matches],
+                    "raw_correspondences_xyxy": [
+                        [m["x"], m["y"], m["x"] + m["dx"], m["y"] + m["dy"]] for m in work_matches
+                    ],
                     "raw_match_scores": [m["score"] for m in work_matches],
                     "raw_correspondence_accepted": [m["usable"] for m in work_matches],
-                    "raw_correspondence_rejection_reasons": [None if m["usable"] else "work_grid_rejected" for m in work_matches],
+                    "raw_correspondence_rejection_reasons": [
+                        None if m["usable"] else "work_grid_rejected" for m in work_matches
+                    ],
                     "raw_correspondence_kind": "direct_CPM_work_grid_matches",
                 }
             return {
                 "algorithm": "CPM-WebGPU",
-                "width": width, "height": height, "patch_size": options.patch_size,
-                "stride": options.stride, "scale": scale,
-                "grid_width": grid_width, "grid_height": grid_height,
+                "width": width,
+                "height": height,
+                "patch_size": options.patch_size,
+                "stride": options.stride,
+                "scale": scale,
+                "grid_width": grid_width,
+                "grid_height": grid_height,
                 "matches": requested_matches,
                 **raw_export,
                 "matching_support_px": support,
                 "affine_radius_px": affine_radius,
-                "levels": len(levels), "requested_levels": requested_levels,
+                "levels": len(levels),
+                "requested_levels": requested_levels,
                 "count": len(requested_matches),
                 "seed_mode": "manual" if options.seed_points else "grid",
                 "work_grid_stride_px": options.work_grid_stride,
@@ -535,7 +743,7 @@ class CPMBackend:
             raise ValueError("CPM oracle affine must contain six finite values")
         result_levels = []
         for level_index, level in enumerate(levels):
-            level_scale = base_scale * (2 ** level_index)
+            level_scale = base_scale * (2**level_index)
             candidates = np.zeros((len(centers), 4), dtype=np.int32)
             max_radius = 0
             for index, (x, y) in enumerate(centers):
@@ -545,33 +753,70 @@ class CPMBackend:
                 candidates[index, :2] = (tx - sx, ty - sy)
                 max_radius = max(max_radius, abs(tx - sx), abs(ty - sy))
             candidate_buffer = self.device.create_buffer_with_data(
-                data=candidates, usage=wgpu.BufferUsage.STORAGE, label="CPM oracle candidate offsets")
+                data=candidates,
+                usage=wgpu.BufferUsage.STORAGE,
+                label="CPM oracle candidate offsets",
+            )
             scope.keep(candidate_buffer)
-            output = create_buffer(self.device, scope, len(centers) * 16,
-                                   wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
-                                   "CPM oracle cost states")
-            readback = create_buffer(self.device, scope, len(sample_indices) * 16,
-                                     wgpu.BufferUsage.COPY_DST | wgpu.BufferUsage.COPY_SRC,
-                                     "CPM oracle result readback")
-            params = make_params(self.device, scope, [
-                grid_width, grid_height, level["width"], level["height"],
-                max(2, round(support / level_scale)), max_radius,
-                0, level_index, 0, 0, 0, 0, 0, 0, 0, 0,
-            ], "CPM oracle parameters")
-            group = make_bind_group(self.device, pipeline, [
-                {"binding": 0, "resource": level["reference"]["first"].create_view()},
-                {"binding": 1, "resource": level["reference"]["second"].create_view()},
-                {"binding": 2, "resource": level["target"]["first"].create_view()},
-                {"binding": 3, "resource": level["target"]["second"].create_view()},
-                {"binding": 4, "resource": {"buffer": point_buffers[level_index]}},
-                {"binding": 5, "resource": {"buffer": candidate_buffer}},
-                {"binding": 6, "resource": {"buffer": output}},
-                {"binding": 7, "resource": {"buffer": params}},
-            ])
+            output = create_buffer(
+                self.device,
+                scope,
+                len(centers) * 16,
+                wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+                "CPM oracle cost states",
+            )
+            readback = create_buffer(
+                self.device,
+                scope,
+                len(sample_indices) * 16,
+                wgpu.BufferUsage.COPY_DST | wgpu.BufferUsage.COPY_SRC,
+                "CPM oracle result readback",
+            )
+            params = make_params(
+                self.device,
+                scope,
+                [
+                    grid_width,
+                    grid_height,
+                    level["width"],
+                    level["height"],
+                    max(2, round(support / level_scale)),
+                    max_radius,
+                    0,
+                    level_index,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ],
+                "CPM oracle parameters",
+            )
+            group = make_bind_group(
+                self.device,
+                pipeline,
+                [
+                    {"binding": 0, "resource": level["reference"]["first"].create_view()},
+                    {"binding": 1, "resource": level["reference"]["second"].create_view()},
+                    {"binding": 2, "resource": level["target"]["first"].create_view()},
+                    {"binding": 3, "resource": level["target"]["second"].create_view()},
+                    {"binding": 4, "resource": {"buffer": point_buffers[level_index]}},
+                    {"binding": 5, "resource": {"buffer": candidate_buffer}},
+                    {"binding": 6, "resource": {"buffer": output}},
+                    {"binding": 7, "resource": {"buffer": params}},
+                ],
+            )
             encoder = self.device.create_command_encoder(label="CPM oracle HOG costs")
-            dispatch(encoder, pipeline, group, math.ceil(len(centers) / 64), label="CPM oracle costs")
+            dispatch(
+                encoder, pipeline, group, math.ceil(len(centers) / 64), label="CPM oracle costs"
+            )
             for output_index, state_index in enumerate(sample_indices):
-                encoder.copy_buffer_to_buffer(output, state_index * 16, readback, output_index * 16, 16)
+                encoder.copy_buffer_to_buffer(
+                    output, state_index * 16, readback, output_index * 16, 16
+                )
             self.device.queue.submit([encoder.finish()])
             raw = read_array(self.device, readback, np.dtype(np.int32), len(sample_indices) * 4)
             floats = raw.view(np.float32)
@@ -580,29 +825,34 @@ class CPMBackend:
                 offset = sample_index * 4
                 found = found_levels[level_index][sample_index]
                 valid = bool(raw[offset + 3])
-                level_result.append({
-                    "level": level_index,
-                    "descriptor_scale_px": level_scale,
-                    "found_dx_px": found["dx"] * level_scale,
-                    "found_dy_px": found["dy"] * level_scale,
-                    "found_cost": found["cost"] if found["valid"] else None,
-                    "found_valid": found["valid"],
-                    "oracle_dx_px": int(raw[offset]) * level_scale,
-                    "oracle_dy_px": int(raw[offset + 1]) * level_scale,
-                    "oracle_cost": float(floats[offset + 2]) if valid else None,
-                    "oracle_valid": valid,
-                    "oracle_minus_found_cost": float(floats[offset + 2]) - found["cost"]
-                    if valid and found["valid"] else None,
-                })
+                level_result.append(
+                    {
+                        "level": level_index,
+                        "descriptor_scale_px": level_scale,
+                        "found_dx_px": found["dx"] * level_scale,
+                        "found_dy_px": found["dy"] * level_scale,
+                        "found_cost": found["cost"] if found["valid"] else None,
+                        "found_valid": found["valid"],
+                        "oracle_dx_px": int(raw[offset]) * level_scale,
+                        "oracle_dy_px": int(raw[offset + 1]) * level_scale,
+                        "oracle_cost": float(floats[offset + 2]) if valid else None,
+                        "oracle_valid": valid,
+                        "oracle_minus_found_cost": float(floats[offset + 2]) - found["cost"]
+                        if valid and found["valid"]
+                        else None,
+                    }
+                )
             result_levels.append(level_result)
         per_seed = []
         for seed_index, state_index in enumerate(sample_indices):
             requested_x, requested_y = seeds[seed_index]
-            per_seed.append({
-                "requested_x": requested_x,
-                "requested_y": requested_y,
-                "measured_x": centers[state_index][0],
-                "measured_y": centers[state_index][1],
-                "levels": [result_levels[level][seed_index] for level in range(len(levels))],
-            })
+            per_seed.append(
+                {
+                    "requested_x": requested_x,
+                    "requested_y": requested_y,
+                    "measured_x": centers[state_index][0],
+                    "measured_y": centers[state_index][1],
+                    "levels": [result_levels[level][seed_index] for level in range(len(levels))],
+                }
+            )
         return {"affine_source_to_target": affine, "per_seed": per_seed}
