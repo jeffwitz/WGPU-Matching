@@ -339,7 +339,7 @@ class CorrespondenceSet:
                 accepted=None if accepted is None else np.asarray(accepted, dtype=bool),
                 raw_scores=None if scores is None else np.asarray(scores, dtype=np.float64),
                 rejection_reasons=None if reasons is None else tuple(reasons),
-                coordinate_mapping={"frame": "native image pixels", "source": "HORG detector", "target": "HORG detector"},
+                coordinate_mapping={"frame": "native image pixels", "source": metadata.get("raw_correspondence_kind", "HORG detector"), "target": metadata.get("raw_correspondence_kind", "HORG detector")},
             )
 
         matches = list(field.matches)
@@ -351,7 +351,8 @@ class CorrespondenceSet:
         scores = []
         for index, match in enumerate(matches):
             tx, ty = getattr(match, "target_x", None), getattr(match, "target_y", None)
-            has_direct_target = tx is not None and ty is not None
+            has_direct_target = (tx is not None and ty is not None
+                                 and not matcher_id.startswith("CPM"))
             if has_direct_target:
                 target[index] = [tx, ty]
                 kinds.append("direct_measured")

@@ -6,14 +6,6 @@ proposes pairs; geometric fitting estimates motion at requested DIC centres.
 DeepMatching and EfficientLoFTR establish correspondences without first
 requiring an independently detected sparse point set.
 
-.. toctree::
-   :maxdepth: 1
-
-   dad
-   dedode
-   dic-detector
-   learned-feature-pipelines
-
 The classical DoG detector is explained in :doc:`horg`; the hierarchical and
 grid matchers in :doc:`deepmatching` and :doc:`cpm`.
 
@@ -22,6 +14,7 @@ Method roles in this repository
 
 .. list-table::
    :header-rows: 1
+   :widths: 30 28 42
 
    * - Component
      - Produces
@@ -109,3 +102,8 @@ Undoing a resize restores coordinate units, not spatial detail. Read
 :doc:`../reference/benchmark-definitions` before comparing errors or FPS.
 Network input resolution, point budget, descriptor, acceptance rule, reference
 reuse and readback scope must accompany each result.
+
+
+Continue with :doc:`dad`, :doc:`dedode`, :doc:`dic-detector` and
+:doc:`learned-feature-pipelines` for the individual mechanisms, published
+sources and repository adaptations.

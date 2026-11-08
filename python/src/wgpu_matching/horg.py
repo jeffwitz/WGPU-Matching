@@ -627,6 +627,7 @@ class HORGBackend:
         threshold_px: float = 3.0,
         max_iterations: int = 256,
         candidate_capacity: int = MAX_RANSAC_CANDIDATES,
+        include_affine_models: bool = False,
     ) -> dict[str, Any]:
         """Fit local affine models to supplied ``(x0, y0, x1, y1)`` pairs.
 
@@ -650,10 +651,11 @@ class HORGBackend:
             raise ValueError("RANSAC iterations and candidate_capacity are out of range")
 
         pair_count, seed_count = len(pairs), len(centers)
+        result_stride = 16 if include_affine_models else 8
         max_binding_size = self.device.limits["max-storage-buffer-binding-size"]
         candidate_bytes = seed_count * candidate_capacity * np.dtype(np.uint32).itemsize
         if (
-            max(pair_count * 16, seed_count * 16, candidate_bytes, seed_count * 32)
+            max(pair_count * 16, seed_count * 16, candidate_bytes, seed_count * result_stride * 4)
             > max_binding_size
         ):
             raise ValueError("Local affine buffers exceed the adapter storage-buffer limit")
@@ -694,7 +696,7 @@ class HORGBackend:
             result_buffer = create_buffer(
                 self.device,
                 resources,
-                seed_count * 32,
+                seed_count * result_stride * 4,
                 wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
                 "Local affine RANSAC results",
             )
@@ -714,7 +716,7 @@ class HORGBackend:
             ransac_params = self._ransac_uniform(
                 resources,
                 [seed_count, pair_count, candidate_capacity, max_iterations],
-                [threshold_px, 0, 0, 0],
+                [threshold_px, float(include_affine_models), 0, 0],
             )
             ransac_group = make_bind_group(
                 self.device,
@@ -739,12 +741,14 @@ class HORGBackend:
             )
             dispatch(encoder, ransac, ransac_group, seed_count, label="Local affine GPU RANSAC")
             self.device.queue.submit([encoder.finish()])
-            values = read_array(self.device, result_buffer, np.dtype(np.float32), seed_count * 8)
+            values = read_array(
+                self.device, result_buffer, np.dtype(np.float32), seed_count * result_stride
+            )
             compute_ms = (time.perf_counter() - start) * 1000.0
 
             matches = []
             for index, (x, y) in enumerate(centers):
-                raw = values[index * 8 : index * 8 + 8]
+                raw = values[index * result_stride : (index + 1) * result_stride]
                 inliers = round(float(raw[2]))
                 candidates = round(float(raw[3]))
                 fraction = float(raw[4])
@@ -767,6 +771,11 @@ class HORGBackend:
                 "matches": matches,
                 "gpu_compute_ms": compute_ms,
                 "candidate_capacity": candidate_capacity,
+                "affine_models": (
+                    values.reshape(seed_count, result_stride)[:, 8:16].copy()
+                    if include_affine_models
+                    else None
+                ),
             }
         finally:
             resources.close()

@@ -179,13 +179,20 @@ class MatchField:
 
 @dataclass(slots=True)
 class LocalAffineField:
-    """GPU affine fits built from an external set of point correspondences."""
+    """GPU affine fits built from an external set of point correspondences.
+
+    Optional ``affine_models`` has shape (seed_count, 8). Each row stores
+    ``a1,a2,a0,1,b1,b2,b0,1`` for the target coordinates
+    ``x'=a1*(x-xc)+a2*(y-yc)+a0`` and its y counterpart. Only models whose
+    corresponding match is usable should be consumed.
+    """
 
     matches: list[Match]
     correspondence_count: int
     radius_px: float
     threshold_px: float
     gpu_compute_ms: float
+    affine_models: np.ndarray | None = None
 
     @property
     def accepted(self) -> list[Match]:
@@ -363,6 +370,7 @@ class WGPUMatching:
         target: np.ndarray | str | Path,
         *,
         options: DeepMatchingOptions | None = None,
+        include_correspondences: bool = False,
         on_progress: Callable[[str], None] | None = None,
     ) -> MatchField:
         """Compute hierarchical, sparse hierarchical, or direct correspondences.
@@ -373,8 +381,15 @@ class WGPUMatching:
         rejected seed from a seed that was never requested. Sparse INRIA mode
         requires explicit seeds and limits reciprocal competition to the roots
         selected for those seeds.
+
+        In hierarchical mode, ``include_correspondences=True`` exports the
+        full observed atomic candidate set and reciprocal acceptance mask in
+        metadata. These are actual atomic source coordinates, not fitted
+        displacements at requested window centres.
         """
         self._ensure_open()
+        if not isinstance(include_correspondences, bool):
+            raise TypeError("include_correspondences must be a boolean")
         from .deepmatching import DeepMatchingBackend
 
         settings = options or DeepMatchingOptions()
@@ -383,7 +398,13 @@ class WGPUMatching:
             raise ValueError("DeepMatching expects same-sized grayscale images")
         validate_matcher_options("deepmatching", asdict(settings), ref.shape[1], ref.shape[0])
         backend = DeepMatchingBackend(self.device)
-        result = backend.compute(ref, tar, settings, on_progress=on_progress)
+        result = backend.compute(
+            ref,
+            tar,
+            settings,
+            on_progress=on_progress,
+            include_correspondences=include_correspondences,
+        )
         return _field_from_dict(result)
 
     def match_cpm(
@@ -392,6 +413,7 @@ class WGPUMatching:
         target: np.ndarray | str | Path,
         *,
         options: CPMOptions | None = None,
+        include_correspondences: bool = False,
         on_progress: Callable[[str], None] | None = None,
     ) -> MatchField:
         """Compute sparse-grid CPM-HOG correspondences and local affine seeds.
@@ -400,8 +422,14 @@ class WGPUMatching:
         random search, and reciprocal checking on WebGPU. Requested DIC seeds
         are fitted from nearby accepted work-grid matches when the local affine
         support is adequate; rejected fits remain in the returned field.
+
+        ``include_correspondences=True`` additionally exports the observed
+        work-grid pairs and rejection mask. The normal seed outputs are local
+        affine estimates and must not be reused as independent measurements.
         """
         self._ensure_open()
+        if not isinstance(include_correspondences, bool):
+            raise TypeError("include_correspondences must be a boolean")
         settings = options or CPMOptions()
         ref, tar = _as_gray(reference), _as_gray(target)
         if ref.shape != tar.shape:
@@ -411,7 +439,13 @@ class WGPUMatching:
         validate_matcher_options("cpm", asdict(settings), ref.shape[1], ref.shape[0])
         from .cpm import CPMBackend
 
-        result = CPMBackend(self.device).compute(ref, tar, settings, on_progress=on_progress)
+        result = CPMBackend(self.device).compute(
+            ref,
+            tar,
+            settings,
+            on_progress=on_progress,
+            include_correspondences=include_correspondences,
+        )
         return _field_from_dict(result)
 
     def detect_dic(
@@ -452,6 +486,7 @@ class WGPUMatching:
         min_candidates: int = 8,
         min_inlier_fraction: float = 0.2,
         max_iterations: int = 256,
+        include_affine_models: bool = False,
     ) -> LocalAffineField:
         """Fit one robust affine model per requested center on WebGPU.
 
@@ -459,6 +494,10 @@ class WGPUMatching:
         ``(x_reference, y_reference, x_target, y_target)``. This method reuses
         HORG's WGSL candidate-selection and RANSAC kernels, allowing a different
         detector/descriptor or external learned matcher to provide the pairs.
+
+        ``include_affine_models=True`` retains the six target-map coefficients
+        of each fitted model, in addition to its centre translation. This
+        permits testing original measured pairs against the local model.
         """
         self._ensure_open()
         result = self._horg.fit_local_correspondences(
@@ -467,6 +506,7 @@ class WGPUMatching:
             radius_px=radius_px,
             threshold_px=threshold_px,
             max_iterations=max_iterations,
+            include_affine_models=include_affine_models,
         )
         matches = []
         for item in result["matches"]:
@@ -499,6 +539,7 @@ class WGPUMatching:
             radius_px=radius_px,
             threshold_px=threshold_px,
             gpu_compute_ms=result["gpu_compute_ms"],
+            affine_models=result["affine_models"],
         )
 
     def match_features(

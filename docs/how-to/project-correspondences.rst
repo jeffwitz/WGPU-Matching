@@ -30,16 +30,22 @@ coordinates. A field that only contains an already fitted local displacement
 is not expanded into synthetic point pairs. This avoids treating an inferred
 field as independent measurements.
 
-For these two matchers, use the returned measured target coordinates directly:
+For these two matchers, explicitly export the underlying measured coordinates.
+DeepMatching exports atomic pairs; CPM exports work-grid observations, preserving
+each method's native acceptance flags:
 
 .. code-block:: python
 
    from wgpu_matching import CPMOptions, DeepMatchingOptions
 
-   deep = matcher.match_deepmatching(reference, target, options=DeepMatchingOptions())
+   deep = matcher.match_deepmatching(
+       reference, target, options=DeepMatchingOptions(), include_correspondences=True
+   )
    deep_observations = CorrespondenceSet.from_match_field(deep)
 
-   cpm = matcher.match_cpm(reference, target, options=CPMOptions())
+   cpm = matcher.match_cpm(
+       reference, target, options=CPMOptions(), include_correspondences=True
+   )
    cpm_observations = CorrespondenceSet.from_match_field(cpm)
 
 HORG's normal output is already a local affine estimate, so request its raw
@@ -52,6 +58,10 @@ Adapt external matcher coordinates
 For XFeat, ALIKED/LightGlue, EfficientLoFTR, or another matcher, pass its direct
 source/target keypoints through the explicit resize, padding, and crop mapping.
 Source and target scales are separate and use ``(x, y)`` order.
+The adapter implements ``p = scale * (native - crop) + padding``. For a
+pixel-centred raster resize with scale ``s`` and no leading padding, supply
+``padding = (s - 1) / 2`` on each axis. This yields the inverse mapping
+``native = (p + 0.5) / s - 0.5``. Bottom/right padding adds no leading offset.
 
 .. code-block:: python
 
@@ -62,8 +72,10 @@ Source and target scales are separate and use ``(x, y)`` order.
        matcher_id="EfficientLoFTR",
        source_scale_xy=(model_width / native_width, model_height / native_height),
        target_scale_xy=(model_width / native_width, model_height / native_height),
-       source_padding_xy=(0.0, 0.0),
-       target_padding_xy=(0.0, 0.0),
+       source_padding_xy=((model_width / native_width - 1) / 2,
+                          (model_height / native_height - 1) / 2),
+       target_padding_xy=((model_width / native_width - 1) / 2,
+                          (model_height / native_height - 1) / 2),
    )
 
 `CorrespondenceSet` coordinates are converted to original image pixels before

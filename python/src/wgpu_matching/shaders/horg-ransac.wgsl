@@ -90,13 +90,14 @@ fn random_index(state: ptr<function, u32>, maximum: u32) -> u32 {
 @compute @workgroup_size(1)
 fn ransac_local(@builtin(global_invocation_id) id: vec3<u32>) {
     let seed_index = id.x;
+    let result_stride = select(2u, 4u, params.settings.y > 0.5);
     if seed_index >= params.counts.x { return; }
     let metadata = seeds.values[seed_index];
     let center = metadata.xy;
     let candidate_count = u32(metadata.z);
     if candidate_count < 3u {
-        results.values[seed_index * 2u] = vec4<f32>(0.0, 0.0, 0.0, f32(candidate_count));
-        results.values[seed_index * 2u + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
+        results.values[seed_index * result_stride] = vec4<f32>(0.0, 0.0, 0.0, f32(candidate_count));
+        results.values[seed_index * result_stride + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
         return;
     }
 
@@ -131,16 +132,16 @@ fn ransac_local(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
     if best_count < 3u || best_model.valid == 0u {
-        results.values[seed_index * 2u] = vec4<f32>(0.0, 0.0, f32(best_count), f32(candidate_count));
-        results.values[seed_index * 2u + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
+        results.values[seed_index * result_stride] = vec4<f32>(0.0, 0.0, f32(best_count), f32(candidate_count));
+        results.values[seed_index * result_stride + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
         return;
     }
 
     var model = fit_affine(center, candidate_start, candidate_count, vec3<u32>(0u),
         1u, best_model, threshold);
     if model.valid == 0u {
-        results.values[seed_index * 2u] = vec4<f32>(0.0, 0.0, f32(best_count), f32(candidate_count));
-        results.values[seed_index * 2u + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
+        results.values[seed_index * result_stride] = vec4<f32>(0.0, 0.0, f32(best_count), f32(candidate_count));
+        results.values[seed_index * result_stride + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
         return;
     }
     var inlier_count = 0u;
@@ -151,8 +152,8 @@ fn ransac_local(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
     if inlier_count < 3u {
-        results.values[seed_index * 2u] = vec4<f32>(0.0, 0.0, f32(inlier_count), f32(candidate_count));
-        results.values[seed_index * 2u + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
+        results.values[seed_index * result_stride] = vec4<f32>(0.0, 0.0, f32(inlier_count), f32(candidate_count));
+        results.values[seed_index * result_stride + 1u] = vec4<f32>(0.0, 1e30, 0.0, 0.0);
         return;
     }
     let refined = fit_affine(center, candidate_start, candidate_count, vec3<u32>(0u), 1u, model, threshold);
@@ -168,8 +169,12 @@ fn ransac_local(@builtin(global_invocation_id) id: vec3<u32>) {
         }
     }
     residual = residual / f32(max(inlier_count, 1u));
-    results.values[seed_index * 2u] = vec4<f32>(
+    results.values[seed_index * result_stride] = vec4<f32>(
         model.x.z - center.x, model.y.z - center.y, f32(inlier_count), f32(candidate_count));
-    results.values[seed_index * 2u + 1u] = vec4<f32>(
+    results.values[seed_index * result_stride + 1u] = vec4<f32>(
         f32(inlier_count) / f32(candidate_count), residual, f32(model.valid), 0.0);
+    if params.settings.y > 0.5 {
+        results.values[seed_index * result_stride + 2u] = vec4<f32>(model.x, 1.0);
+        results.values[seed_index * result_stride + 3u] = vec4<f32>(model.y, 1.0);
+    }
 }

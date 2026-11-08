@@ -37,3 +37,11 @@ The default INRIA-style mode evaluates the complete root grid even when `seed_po
 This saves work in proportion to the number of distinct seed roots, but reciprocal candidate competition is then limited to the selected roots. The result can differ from the global reciprocal field if an unselected root contains a competing match. On the tested Live-DIC subsets, sparse and global modes returned identical decisions and displacements; this is measured evidence for those inputs, not a general parity guarantee. See :doc:`the sparse study <../benchmarks>` and the :doc:`usage example <../how-to/seeds-and-fields>`.
 
 The Live-DIC parity experiment shows the distinction between implementation parity and accuracy: WebGPU and INRIA vectors are identical for shared matches in the measured setup, yet analytic truth shows errors above 2 px. See :doc:`the benchmark report <../benchmarks>` and the `original DeepMatching paper <https://arxiv.org/abs/1506.07656>`_.
+
+
+The :doc:`complete initializer qualification
+<../_generated_results/qualification/all_methods_20261107/index>` re-runs
+the current pipelines on the same progressive and 10–60 percent tensile
+cases, with both projection requests and a visual comparison for every
+outcome. It evaluates inferred field initializations and preserves the
+older local-initializer experiments separately.

@@ -13,7 +13,12 @@ support and scientific metrics. Continue to a method page, then to
 
    dic-initialization
    detector-principles
+   dad
+   dedode
+   dic-detector
+   learned-feature-pipelines
    deepmatching
    horg
    cpm
+   field-projection
    quality-and-confidence

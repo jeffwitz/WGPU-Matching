@@ -3,20 +3,27 @@ Coverage, error, and confidence
 
 The number of accepted matches alone does not summarize initializer quality. To compare methods on images with known truth, use the same visible seeds and report coverage, precision, and error separately.
 
-Let:
-
-* `N_visible` be the number of seeds whose analytically transformed location lies inside the target;
-* `N_accepted` be the number of those seeds marked `usable`;
-* `e_i` be the vector error between an estimated displacement and analytic truth.
+Let :math:`S` be the visible requested seeds and :math:`A\subseteq S` the
+accepted estimates. Their counts are :math:`N_v=|S|` and :math:`N_a=|A|`.
+For an accepted centre, define the scalar Euclidean displacement error
+:math:`e_i=\|\widehat{\mathbf u}_i-\mathbf u_i^{\rm true}\|_2` in pixels.
 
 Useful measurements are:
 
-* **Accepted coverage:** `N_accepted / N_visible`.
-* **Precision within 2 px among accepted:** `count(e_i <= 2) / N_accepted`.
-* **Accurate coverage:** `count(e_i <= 2) / N_visible`. This penalizes both incorrect matches and rejected seeds.
-* **Conditional RMSE:** `sqrt(mean(e_i**2))` over accepted correspondences only. A low RMSE does not imply high coverage.
+* **Accepted coverage:** :math:`N_a/N_v`.
+* **Precision within 2 px among accepted:**
+  :math:`\#\{i\in A:e_i\le2\}/N_a`.
+* **Accurate coverage:** :math:`\#\{i\in A:e_i\le2\}/N_v`.
+  This penalizes both incorrect matches and missing estimates.
+* **Conditional RMSE:** :math:`\sqrt{N_a^{-1}\sum_{i\in A}e_i^2}`.
+  A low value does not imply high coverage. Precision and error are undefined
+  when no estimates are accepted; they must not be reported as zero.
 
-The 2 px threshold is used to compare methods in the Live-DIC reports; it is not a universal confidence threshold. Real applications usually lack analytic truth, so internal diagnostics must be distinguished from error measured against an independent reference.
+The repairable benchmark threshold is strictly :math:`e_i<5`; the tighter
+comparison uses :math:`e_i\le2`. Neither is a universal confidence threshold
+or a measured IC-GN convergence guarantee. Experimental images usually lack
+analytic truth, so internal diagnostics must be distinguished from independent
+error measurements.
 
 HORG leave-one-out diagnostic
 -----------------------------
@@ -25,8 +32,7 @@ The current diagnostic fits an affine transform to the eight accepted POIs neare
 
 In an exploratory holdout of 576 synthetic seeds, a 1.5 px leave-one-out threshold lets 7 false positives pass and rejects 6 correct POIs. Absolute RANSAC support is more discriminative in that sample, but a threshold of 10 inliers also rejects 93 correct results. These observations do not yet justify automatic rejection.
 
-.. seealso::
-
-   * :doc:`../benchmarks` for protocols, denominators, and CSV data.
-   * :doc:`Detailed confidence-indicator report <../_generated_results/uniaxial/horg_quality_indicators>`.
-   * :doc:`Confidence data preview <../_generated_results/uniaxial/horg_quality_indicators.csv>`.
+The :doc:`benchmark guide <../benchmarks>` explains the protocols. The web
+edition retains the :doc:`confidence-indicator study
+<../_generated_results/uniaxial/horg_quality_indicators>` and its
+:doc:`source data <../_generated_results/uniaxial/horg_quality_indicators.csv>`.

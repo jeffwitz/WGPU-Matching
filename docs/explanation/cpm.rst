@@ -71,3 +71,11 @@ Python/browser implementations; it does not qualify CPM on large or
 heterogeneous deformation. The published 60% CPM measurements predate a
 work-grid geometry correction and must be rerun before describing current
 large-strain performance.
+
+
+The :doc:`complete initializer qualification
+<../_generated_results/qualification/all_methods_20261107/index>` re-runs
+the current pipelines on the same progressive and 10–60 percent tensile
+cases, with both projection requests and a visual comparison for every
+outcome. It evaluates inferred field initializations and preserves the
+older local-initializer experiments separately.

@@ -309,6 +309,7 @@ class CPMBackend:
         options: Any,
         *,
         on_progress: Callable[[str], None] | None = None,
+        include_correspondences: bool = False,
     ) -> dict[str, Any]:
         progress = on_progress or (lambda _: None)
         reference = np.ascontiguousarray(reference, dtype=np.uint8)
@@ -473,12 +474,22 @@ class CPMBackend:
                     grid_width, grid_height, support, scale, options.oracle_affine,
                     seeds, diagnostic_indices, level_snapshots or [],
                 )
+            raw_export = {}
+            if include_correspondences:
+                raw_export = {
+                    "raw_correspondences_xyxy": [[m["x"], m["y"], m["x"] + m["dx"], m["y"] + m["dy"]] for m in work_matches],
+                    "raw_match_scores": [m["score"] for m in work_matches],
+                    "raw_correspondence_accepted": [m["usable"] for m in work_matches],
+                    "raw_correspondence_rejection_reasons": [None if m["usable"] else "work_grid_rejected" for m in work_matches],
+                    "raw_correspondence_kind": "direct_CPM_work_grid_matches",
+                }
             return {
                 "algorithm": "CPM-WebGPU",
                 "width": width, "height": height, "patch_size": options.patch_size,
                 "stride": options.stride, "scale": scale,
                 "grid_width": grid_width, "grid_height": grid_height,
                 "matches": requested_matches,
+                **raw_export,
                 "matching_support_px": support,
                 "affine_radius_px": affine_radius,
                 "levels": len(levels), "requested_levels": requested_levels,

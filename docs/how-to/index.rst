@@ -11,5 +11,6 @@ Each guide addresses a practical task. For the reasoning behind thresholds and s
    project-correspondences
    train-dic-detector
    reproduce-benchmarks
+   qualify-all-initializers
 
    run-learned-detectors

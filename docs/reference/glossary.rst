@@ -318,3 +318,30 @@ have hover definitions. Literal code and equations keep their exact spelling.
 
    ZNSSD
       zero-normalized sum of squared differences, a normalized photometric mismatch objective.
+
+   PDF
+      Portable Document Format, the fixed-layout format of the printed handbook.
+
+   A4
+      A paper format measuring 210 by 297 millimetres.
+
+   APIs
+      application programming interfaces.
+
+   GIFs
+      Graphics Interchange Format animations.
+
+   POIs
+      points of interest, requested locations for displacement initialization.
+
+   URLs
+      uniform resource locators, web addresses.
+
+   TIFF
+      Tagged Image File Format, an image container format.
+
+   TIFFs
+      Tagged Image File Format images.
+
+   CSVs
+      comma-separated values files.

@@ -20,7 +20,7 @@ descriptor-G has a separate Apache-2.0 license and is not used here. See the
 upstream `DaD repository <https://github.com/Parskatt/dad>`_ and
 `DeDoDe repository <https://github.com/Parskatt/DeDoDe>`_ for current notices.
 Model weights are downloaded to PyTorch's external cache by default and are
-never included in the WGPU-Matching package. Benchmark records include their
+never included in the Python package. Benchmark records include their
 checkpoint SHA-256 when available.
 
 Optional ONNX Runtime/WebGPU inference

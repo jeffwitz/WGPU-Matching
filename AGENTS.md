@@ -965,3 +965,91 @@ HTML tooltips. Preserve literal code, mathematical symbols and file identifiers.
 The glossary is in `docs/reference/glossary.rst`; it supplements first-use
 definitions and never substitutes for them. Do not invent expansions of
 published model names; give their actual paper title or explain the name.
+
+## Complete benchmark refresh before the PDF edition
+
+Re-run every current initializer and detector/descriptor pipeline on shared
+progressive frames, the full synthetic 10–60% series, and the masked Adrien
+pair. Preserve historical measurements. Use source pixel-centre coordinates,
+actual measured pairs (not CPM's fitted seed endpoints), and identical
+projection settings for affine versus automatically selected affine/Gaussian
+RBF fields. Record each effective basis and fit convergence. Ground truth may
+select visible evaluation centres and compute errors, but must never select
+correspondences, tune projection coefficients or decide the model basis.
+A 60% accuracy pass requires all visible seeds to have finite estimated
+displacements with error strictly below 5 px. Show coverage, false accepted
+points and <=2 px accuracy independently. Adrien has no analytic truth and
+cannot receive a synthetic accuracy verdict. Produce reference/corrected GIFs
+for every method/case/basis, including failures. Any visualization obtained
+from rejected pairs must be explicitly diagnostic and excluded from pass
+counts. Record model hashes, input dimensions, stage timings and full pipeline
+wall-clock trials. Refresh the English online report before generating its PDF.
+
+The initial raw-pair projection diagnostic showed that IRLS alone can converge
+to grossly wrong fields under descriptor outliers. The primary refreshed
+protocol therefore preserves the pre-existing geometric-verification stage:
+local WGSL affine RANSAC (radius256, residual3, minimum6/8 supports, fraction0.2),
+then WGSL filtering of ORIGINAL observed pairs by those local models. Never
+substitute predicted or interpolated endpoints as new observations. Preserve
+raw failures as an explicitly separate ablation. A deterministic source-space
+capacity reduction caps the existing GPU projector at8192 pairs, with all
+pre-reduction pairs and chosen identifiers archived. This is not an intrinsic
+matching failure when a dense detector exceeds the solver's input limit.
+
+
+### Refreshed qualification protocol and evidence
+
+The current campaign is `results/qualification/all_methods_20261107/`:
+11 pipelines, 10 cases, two projection requests, and three timed complete
+affine calls after warm-up per method/case. It includes current DaD,
+DeDoDe v2-L, tensor and learned DIC detection with a common DeDoDe-B descriptor.
+The independent audit checks 220 result rows, 264 two-frame animations,
+all analytic centre errors, raw-pair counts, repeat digests and runtime-source
+fingerprints. The 330 timed affine calls use decoded images, both images
+processed per call, no prepared-reference cache. RBF selection is a separate
+single fit on the final observed pair set, not another complete FPS trial.
+
+The controlled raw-projection ablation uses the EXACT archived upstream pairs
+and centres from the main run: `results/qualification/raw_projection_ablation_20261107/`.
+It contains 132 records and 176 animations; detector extraction is not rerun.
+Across the 99 analytic affine comparisons, common verification improves the
+correct-below-5 count in 31 cases, preserves it in 68 and reduces it in none.
+At 60%, verified affine fields pass 16/16 below 5 for eight pipelines; native
+HORG and CPM do not provide a field, and HORG/SIFT+B recovers only 5/16.
+DeepMatching, RaCo, DaD+B, DeDoDe v2+B and learned DIC+B give16/16 at most 2;
+tensor DIC+B gives14/16, EfficientLoFTR10/16 and XFeat0/16 at that stricter bound.
+These are inferred affine-field initializations, NOT direct matches at every
+seed or IC-GN convergence. Do not merge them with old local-initializer counts.
+The automatic affine/Gaussian request improves correct coverage in zero of 99
+analytic comparisons, preserves it in 97 and reduces it in 2. Model selection
+predicts observed residuals, not physical truth. Preserve non-convergence flags
+independently of analytic accuracy; do not relax iteration thresholds to make
+accepted fields appear numerically converged. Adrien has no analytic truth.
+
+DeepMatching's extended 1024-original-pixel search radius gives about 17.13 s
+on the 60% UHD case and 108.21 s on the 7920x6004 Adrien pair. This is a different
+workload from the historical default-radius 1.3 s comparison or sparse-root modes.
+Native matcher defaults were not changed. Current common-B description is a
+CPU reference and dominates the new detectors' 7.5–8.5 s UHD pair times; do not call this a
+pipeline resident on GPU. Tensor/learned scoring and final solves are WGSL,
+with host pilots and cross-validation as documented.
+
+Opt-in native observation export is now supported by hierarchical DeepMatching
+and CPM through `include_correspondences=True`. Ordinary CPM seed endpoints
+are fitted and cannot be treated as independent observations. Optional
+`fit_local_affine(..., include_affine_models=True)` exports target-map rows
+`a1,a2,a0,1,b1,b2,b0,1`; consume only usable models. The canonical optional
+model export and measured-pair filter shaders live in the Python package.
+Default native outputs and Python/browser parity were checked unchanged.
+
+Sphinx now groups report navigation by study and places raw arrays in a
+separate catalogue. JSON previews are limited to 160 lines and CSV previews
+to 50 rows, with complete downloads. Compressed arrays/models are downloads,
+not raw Markdown browser views. Keep the raw pages marked orphan so thousands
+of model records do not fill every page's sidebar. The print root is
+`docs/pdf/index.rst`; `tools/build_handbook.py` produces the curated handbook
+under ignored `output/pdf/`. Generate its evidence from the validated campaign
+with `python/benchmarks/prepare_handbook_evidence.py`. Do not print profiler
+traces or huge raw arrays as chapters. Preserve the English Diataxis paths,
+first-use abbreviation definitions, a separate convergence caveat, static
+native-pixel crop pairs in print and every animated outcome in the web edition.

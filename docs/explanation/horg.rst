@@ -52,3 +52,11 @@ affine motion in a seed neighbourhood.
 Robustness is not a guarantee. A patch with too few keypoints, repetitive texture, or occlusion may not provide a strong consensus. A rejected match does not prove that no motion occurred; an accepted match does not certify that its error is below a chosen tolerance. See :doc:`confidence indicators <quality-and-confidence>` and their evaluation.
 
 This package provides the initialization stage. It does not implement the IC-GN refinement described in the HORG-DIC paper.
+
+
+The :doc:`complete initializer qualification
+<../_generated_results/qualification/all_methods_20261107/index>` re-runs
+the current pipelines on the same progressive and 10–60 percent tensile
+cases, with both projection requests and a visual comparison for every
+outcome. It evaluates inferred field initializations and preserves the
+older local-initializer experiments separately.

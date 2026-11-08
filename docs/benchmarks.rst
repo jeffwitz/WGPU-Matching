@@ -3,12 +3,51 @@ Benchmarks and results
 
 Each table states its machine, image size, evaluated population, and timed stages. Error comparisons use analytic truth from the Live-DIC dataset. Timing results are hardware- and workload-specific.
 
-DeepMatching and HORG-DIC on the same POIs
-------------------------------------------
+Current complete qualification
+------------------------------
+
+Start with the :doc:`refreshed eleven-pipeline comparison
+<_generated_results/qualification/all_methods_20261107/index>`. It re-runs
+all current native and learned pipelines, including DaD, DeDoDe v2, tensor and
+learned DIC detection, on progressive frames 040/100/199, the complete 10–60
+percent tensile series and the masked Adrien pair. Both projection requests
+have a GIF for every outcome. Fixed native-pixel crops accompany the
+60-percent and Adrien comparisons.
+
+A synthetic 60-percent pass requires **every visible requested centre** to have
+a finite estimated displacement with error **strictly below 5 pixels**. Counts
+at most 2 pixels, conditional precision, false estimates, RMSE, P95 and maximum
+error remain separate. The experimental Adrien image has no analytic truth
+and receives no physical-accuracy verdict.
+
+The primary affine field and the automatic affine/Gaussian-RBF request fit
+**verified original observed pairs** through the shared projection stage.
+These reconstructed fields differ from each method's original local seed
+initializer. Global affine traction particularly favours an affine field;
+a successful projection does not prove independent matching at every seed.
+The same predeclared geometric verification is applied to all pipelines,
+without analytic correspondence filtering. All rejections and model-selection
+convergence flags remain available.
+
+Three repeated complete affine calls measure the actual wall-clock pipeline,
+with decoding and figure generation excluded and both images processed each
+time. Automatic-basis fitting reuses the last pair set and has a separate
+single fit duration. See :doc:`how-to/qualify-all-initializers` for reproduction
+and :doc:`explanation/field-projection` for the mathematical assumptions.
+
+The :doc:`controlled raw-pair ablation
+<_generated_results/qualification/raw_projection_ablation_20261107/index>`
+uses exactly the same observations while omitting the additional local
+geometric filter. It is a separate diagnostic, not mixed into the primary
+comparison. The sections below retain historical measurements under their
+original protocols; their numbers are not substituted into the refreshed run.
+
+Historical DeepMatching and HORG-DIC on the same POIs
+-----------------------------------------------------
 
 Three UHD Live-DIC frames, the same grid of 32 POIs, images loaded before timing. The `≤ 2 px` count is **among accepted points**; read it together with accepted/visible coverage.
 
-.. list-table:: Current per-frame comparison
+.. list-table:: Historical per-frame local-initializer comparison
    :header-rows: 1
    :widths: 10 18 17 17 16 12 10
 

@@ -21,7 +21,7 @@ Set ``PYTHON`` or ``CHROMIUM_BIN`` if the executables are not named ``python3`` 
 
 Continuous integration checks the Python package, pure-Python contract tests, lint, wheel resources, and a strict Sphinx HTML build. Those checks do not require a GPU; hardware matcher benchmarks remain explicit experiments.
 
-During each Sphinx build, the report-page extension scans `results/`. Markdown reports become themed pages; CSV and JSON files get data pages with a complete-file download. CSV pages render a 50-row preview so wide or long raw files remain usable in the browser. Generated source pages live under the ignored `docs/_generated_results/` directory and are recreated automatically.
+During each Sphinx build, the report-page extension scans `results/`. Markdown reports become themed pages; CSV and JSON files get data pages with a complete-file download. CSV pages render a 50-row preview and JSON pages at most 160 lines so large raw records remain usable in the browser. Compressed pair/model archives are linked as downloads. Reports are grouped by study; raw pages have a separate catalogue so intermediate model records do not fill the global sidebar. Generated source pages live under the ignored `docs/_generated_results/` directory and are recreated automatically.
 
 Set up a development environment
 ---------------------------------
@@ -89,3 +89,37 @@ Strict Sphinx builds reject unregistered uppercase abbreviations in prose and
 headings, including generated reports. Put executable identifiers in literal
 markup; add scientific abbreviations to the registry rather than suppressing
 the warning.
+
+
+Build the print handbook
+-------------------------
+
+The curated PDF follows the same Diataxis path as the web documentation and
+includes every algorithm explanation, Python reference and a generated
+qualification chapter. Huge raw arrays and profiler traces stay in the web
+edition with complete-file downloads. Animated comparisons become fixed
+reference/corrected crop pairs with links to the corresponding web galleries.
+
+After completing and validating a new campaign, generate its evidence chapter
+in the research environment:
+
+.. code-block:: bash
+
+   PYTHONPATH=python/src python python/benchmarks/prepare_handbook_evidence.py \
+     results/qualification/all_methods_20261107
+
+Then activate the documentation environment and build the PDF:
+
+.. code-block:: bash
+
+   python tools/build_handbook.py
+
+Install XeLaTeX, latexmk, TeX Gyre and DejaVu fonts through the operating
+system first. The Python documentation extra supplies Sphinx and its theme,
+not a TeX distribution. The print template is defined in ``docs/conf.py``.
+It uses A4 paper, Pagella text and mathematics, Heros headings, a dedicated
+cover, bookmarks and running page furniture. The finished artifact goes to
+``output/pdf/``; intermediate TeX files remain under ``docs/_build/print/``.
+Render representative pages with Poppler and inspect equations, tables and
+image pairs before distributing the handbook. A successful build alone is
+not a layout review.

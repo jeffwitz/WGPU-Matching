@@ -87,3 +87,11 @@ It supports observed coverage at common seeds. Isolated speed rankings
 require controlled protocols. GPU provider selection alone does not establish
 GPU residency: CPU fallback, dense tensors, inter-runtime readback and
 reference reuse determine cost per correctly initialized window.
+
+
+The :doc:`complete initializer qualification
+<../_generated_results/qualification/all_methods_20261107/index>` re-runs
+the current pipelines on the same progressive and 10–60 percent tensile
+cases, with both projection requests and a visual comparison for every
+outcome. It evaluates inferred field initializations and preserves the
+older local-initializer experiments separately.

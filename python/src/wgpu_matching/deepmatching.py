@@ -572,6 +572,7 @@ class DeepMatchingBackend:
         height: int,
         settings: DeepMatchingOptions,
         progress: Callable[[str], None],
+        include_correspondences: bool = False,
     ) -> dict[str, Any]:
         scale = 2**settings.downscale_levels
         root_patch = settings.root_patch_size or settings.patch_size
@@ -765,6 +766,24 @@ class DeepMatchingBackend:
             batch_scope.close()
             progress(f"DeepMatching INRIA roots {batch_end}/{len(roots)}")
 
+        raw_export = {}
+        if include_correspondences:
+            candidates = list(source_best.values())
+            flags = []
+            for candidate in candidates:
+                key = f"{candidate['y1'] // (4 * scale)}:{candidate['x1'] // (4 * scale)}"
+                reverse = target_best.get(key)
+                flags.append(bool(reverse and all(
+                    candidate[k] == reverse[k] for k in ("x0", "y0", "x1", "y1", "score")
+                )))
+            raw_export = {
+                "raw_correspondences_xyxy": [[c[k] for k in ("x0", "y0", "x1", "y1")] for c in candidates],
+                "raw_match_scores": [c["score"] for c in candidates],
+                "raw_correspondence_accepted": flags,
+                "raw_correspondence_rejection_reasons": [None if f else "not_reciprocal" for f in flags],
+                "raw_correspondence_kind": "direct_DeepMatching_atomic_matches",
+            }
+
         matches = []
         for seed_x, seed_y in seeds:
             leaf_x = max(2, min(source_width - 2, 2 + round((seed_x / scale - 2) / 4) * 4))
@@ -798,6 +817,7 @@ class DeepMatchingBackend:
             "grid_width": len(seeds) if manual else 1 + (width - settings.patch_size) // settings.stride,
             "grid_height": 1 if manual else 1 + (height - settings.patch_size) // settings.stride,
             "matches": matches,
+            **raw_export,
             "root_patch_size": root_patch,
             "root_center_convention": "complete INRIA non-overlapping root grid at root patch stride",
             "evaluated_root_count": len(roots), "global_root_count": global_root_count,
@@ -820,6 +840,7 @@ class DeepMatchingBackend:
         settings: DeepMatchingOptions,
         *,
         on_progress: Callable[[str], None] | None = None,
+        include_correspondences: bool = False,
     ) -> dict[str, Any]:
         progress = on_progress or (lambda _: None)
         reference = np.ascontiguousarray(reference, dtype=np.uint8)
@@ -839,6 +860,7 @@ class DeepMatchingBackend:
             descriptors = self._descriptors(scope, inputs, width, height, settings.downscale_levels, progress)
             if settings.mode == "direct":
                 return self._direct(scope, descriptors, width, height, settings, progress)
-            return self._inria(scope, descriptors, width, height, settings, progress)
+            return self._inria(scope, descriptors, width, height, settings, progress,
+                               include_correspondences=include_correspondences)
         finally:
             scope.close()

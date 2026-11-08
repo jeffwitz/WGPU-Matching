@@ -12,7 +12,7 @@ produces six-parameter affine initializers for requested DIC windows.
 These methods provide **initial displacement estimates** at points of interest. They do not compute a full DIC field or perform IC-GN refinement.
 
 .. image:: _static/pipeline.svg
-   :alt: Reference and target images enter DeepMatching or HORG-DIC; their correspondences initialize a downstream DIC solver.
+   :alt: Native and learned matchers produce observed pairs, followed by verification and optional smooth field projection to window initializers before an external image-based solver.
    :width: 100%
 
 Choose a path
@@ -24,19 +24,22 @@ Choose a path
 * :doc:`Reference <reference/index>` — look up the Python API, options, result fields, metrics, and raw reports.
 * :doc:`Reports and raw data <_generated_results/index>` — browse rendered experiment reports, CSV previews, and complete data downloads.
 
-Headline results
-----------------
+Current benchmark route
+-----------------------
 
-On three Live-DIC tensile frames, the current comparison accepts **87/96** POIs with HORG and **88/96** with DeepMatching. Of accepted points, **85/87** HORG matches and **79/88** DeepMatching matches are within 2 px of the analytic truth. Their pooled RMSE values are **0.557 px** and **1.378 px**, respectively. On this protocol's native Python runs, mean repeated call times are about **0.151 s** for HORG and **1.319 s** for DeepMatching.
+The :doc:`complete initializer qualification
+<_generated_results/qualification/all_methods_20261107/index>` compares eleven
+current pipelines on progressive tensile frames, synthetic traction through
+60 percent and the masked Adrien experimental pair. It includes the latest
+DaD, DeDoDe v2 and learned DIC detector paths, three repeated complete affine
+calls, both projection requests, raw observations and an animation for every
+success or failure.
 
-These figures describe three frames, one seed grid, and one adapter. They do not summarize every deformation regime: at frame 199, DeepMatching retains more accurate POIs, while HORG is faster and has lower pooled RMSE. The :doc:`benchmark report and protocol <benchmarks>` provide per-frame results and limitations.
-
-An experimental detector study also compares DaD and DeDoDe v2 with HORG/SIFT
-and a trained speckle-specific detector under a common DeDoDe-B descriptor and
-affine RANSAC protocol. The learned DIC detector runs in WGSL at native 4K;
-matching quality and IC-GN convergence remain separate, explicitly reported
-criteria. See the :doc:`feature detector reference <reference/features>` and
-the links to raw measurements in the benchmark report.
+A pass at 60 percent means all visible requested centres have an estimated
+error strictly below 5 pixels. A smooth field reconstructed from matches is
+not an independent measurement at every centre. Adrien has no analytic truth.
+The :doc:`benchmark guide <benchmarks>` separates this current protocol from
+the historical local-initializer studies.
 
 Install
 -------
