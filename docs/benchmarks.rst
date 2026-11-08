@@ -52,6 +52,17 @@ descriptors to NumPy and ranks them on the CPU; only extraction is WebGPU in
 that benchmark. The end-to-end requalification uses the WebGPU reciprocal
 matcher.
 
+The :doc:`oracle affine compensation diagnostic
+<_generated_results/descriptors/oracle_affine_compensation_20261108/README>`
+tests whether fixed square supports explain descriptor failures. It applies
+analytic motion only to rectify target images and score retrieval, never to
+select candidates. Rigid and affine results use 512 source queries and 8,192
+target candidates; the heterogeneous query-local test has only 32 queries.
+The report separates baseline and oracle repeatability counts, states that
+DeDoDe-B uses a 1024 × 576 input while the other listed descriptors use native
+4K pixels, and treats the result as a diagnostic ceiling rather than an
+achievable initializer.
+
 Three repeated complete affine calls measure the actual wall-clock pipeline,
 with decoding and figure generation excluded and both images processed each
 time. Automatic-basis fitting reuses the last pair set and has a separate

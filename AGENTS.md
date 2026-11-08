@@ -1053,3 +1053,59 @@ with `python/benchmarks/prepare_handbook_evidence.py`. Do not print profiler
 traces or huge raw arrays as chapters. Preserve the English Diataxis paths,
 first-use abbreviation definitions, a separate convergence caveat, static
 native-pixel crop pairs in print and every animated outcome in the web edition.
+
+### Affine-normalization descriptor diagnostic (8 November 2026)
+
+Do not continue contrastive training of the compact descriptor until the
+geometry-normalization diagnostic is understood. The experiment
+`python/benchmarks/benchmark_oracle_affine_descriptor_retrieval.py` and its
+report `results/descriptors/oracle_affine_compensation_20261108/README.md`
+compare zero-mean normalized cross-correlation, HORG-64, the learned compact
+DIC convolutional neural network descriptor, and DeDoDe-B on identical source
+queries and target candidate pools. An analytic global or query-local affine
+map rectifies the target image only in the oracle arm; it never chooses or
+pre-ranks a target candidate. This is an upper-bound diagnosis, not a practical
+initializer.
+
+On 3840 × 2160 synthetic images with 8,192 target candidates, oracle
+compensation raised top-1 retrieval within 5 pixels from 0/486 to 474/486 for
+the compact descriptor under rigid motion, and from 5/431 to 290/419 for the
+affine field. DeDoDe-B changed from 0/486 to 485/486 under rigid motion and
+from 218/431 to 413/419 under affine motion. The heterogeneous local-oracle
+sample returned 28/30 compact-descriptor and 27/30 DeDoDe-B top-1 matches
+within 5 pixels, versus 0/29 before compensation; this sample has only 32
+queries. Baseline and oracle repeatability denominators differ because
+rectification changes valid support coverage. DeDoDe-B uses a 1024 × 576
+input; HORG-64 and the compact descriptor use native-resolution pixels. Its
+runtime reports both the WebGPU and CPU providers; this is not a claim of a
+fully GPU-resident path.
+
+Interpretation: local geometric mismatch is a major contributor, not the only
+cause. HORG-64 and zero-mean normalized cross-correlation improve only
+modestly, while the learned descriptors recover much of their ranking ability
+with correct geometry. The oracle uses synthetic truth and does not establish
+performance on unknown motion or convergence of inverse compositional
+Gauss–Newton. The next discriminating experiment is a finite bank of
+image-derived affine hypotheses, several retained candidates per query, and a
+shared geometric-consensus check. Evaluate on frozen cases including the two
+historical failures; do not tune on the test truth or relax consensus thresholds.
+
+Reproduce after exporting the official DeDoDe-B model and providing the
+recorded compact-descriptor weights:
+
+```bash
+PYTHONPATH=python/benchmarks:python/src python3 \
+  python/benchmarks/benchmark_oracle_affine_descriptor_retrieval.py \
+  --cnn-weights results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \
+  --dedode-onnx /path/to/dedode_descriptor_1024x576_k8192.onnx \
+  --output results/descriptors/oracle_affine_compensation_20261108/oracle_retrieval_4k.json \
+  --width 3840 --height 2160 --candidate-budget 8192 \
+  --global-queries 512 --local-queries 32 \
+  --families rigid affine heterogeneous --seed 20261108
+```
+
+The official model graph and weights are external artifacts, not committed.
+Their SHA-256 fingerprints and execution providers are recorded in the JSON
+result. See the dated report for sources on affine-equivariant descriptors,
+deformation-conditioned descriptor transforms, and feature-guided DIC
+initialization.
