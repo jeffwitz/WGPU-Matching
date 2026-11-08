@@ -56,6 +56,32 @@ def test_mutual_cosine_matching_honours_similarity_threshold() -> None:
     assert result.points.shape == (2, 4)
 
 
+def test_webgpu_mutual_cosine_matches_numpy_reference() -> None:
+    from wgpu_matching import WGPUMatching
+    from wgpu_matching.features import mutual_nearest_cosine_wgpu
+
+    rng = np.random.default_rng(402)
+    descriptors_a = rng.normal(size=(37, 24)).astype(np.float32)
+    descriptors_b = descriptors_a.copy()
+    descriptors_b += rng.normal(scale=0.01, size=descriptors_b.shape).astype(np.float32)
+    coordinates = rng.uniform(0, 256, size=(37, 2)).astype(np.float32)
+    reference = DescribedFeatures(FeatureSet(coordinates, np.ones(37)), descriptors_a)
+    target = DescribedFeatures(FeatureSet(coordinates + [2.5, -1.25], np.ones(37)), descriptors_b)
+    expected = mutual_nearest_cosine(reference, target, min_cosine_similarity=0.2)
+    try:
+        matcher = WGPUMatching(device_type="cpu")
+    except RuntimeError as error:
+        pytest.skip(f"No software WebGPU adapter is available: {error}")
+    with matcher:
+        actual = mutual_nearest_cosine_wgpu(
+            matcher.device, reference, target, min_cosine_similarity=0.2
+        )
+    np.testing.assert_array_equal(actual.points, expected.points)
+    np.testing.assert_array_equal(actual.reference_indices, expected.reference_indices)
+    np.testing.assert_array_equal(actual.target_indices, expected.target_indices)
+    np.testing.assert_allclose(actual.cosine_similarity, expected.cosine_similarity, atol=2e-6)
+
+
 def test_horg_keypoints_are_exposed_for_a_common_descriptor() -> None:
     from wgpu_matching import WGPUMatching
 

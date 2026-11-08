@@ -15,8 +15,10 @@ from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
+import wgpu
 from PIL import Image
 
+from ._gpu import ResourceScope, make_bind_group, make_pipeline, shader_source, upload_buffer
 from .images import load_gray
 
 _REGISTERED_WEBGPU_LIBRARIES: set[str] = set()
@@ -723,3 +725,88 @@ def mutual_nearest_cosine(
         target_indices=target_indices,
         cosine_similarity=best_score[keep],
     )
+
+
+def mutual_nearest_cosine_wgpu(
+    device: Any,
+    reference: DescribedFeatures,
+    target: DescribedFeatures,
+    *,
+    min_cosine_similarity: float = 0.0,
+    pipeline: Any | None = None,
+) -> FeatureCorrespondences:
+    """Compute reciprocal cosine neighbours on WebGPU and read back only O(N) results."""
+    if not np.isfinite(min_cosine_similarity) or not -1.0 <= min_cosine_similarity <= 1.0:
+        raise ValueError("min_cosine_similarity must be in [-1, 1]")
+    a = np.asarray(reference.descriptors, dtype=np.float32)
+    b = np.asarray(target.descriptors, dtype=np.float32)
+    if a.ndim != 2 or b.ndim != 2 or a.shape[1] != b.shape[1]:
+        raise ValueError("Descriptor matrices must have the same feature dimension")
+    ids_a = np.flatnonzero(reference.features.valid)
+    ids_b = np.flatnonzero(target.features.valid)
+    a, b = a[ids_a], b[ids_b]
+    if not len(a) or not len(b):
+        return FeatureCorrespondences(
+            np.empty((0, 4), np.float32),
+            np.empty(0, np.int32),
+            np.empty(0, np.int32),
+            np.empty(0, np.float32),
+        )
+    a = a / np.maximum(np.linalg.norm(a, axis=1, keepdims=True), 1e-12)
+    b = b / np.maximum(np.linalg.norm(b, axis=1, keepdims=True), 1e-12)
+    with ResourceScope() as scope:
+        active_pipeline = pipeline
+        if active_pipeline is None:
+            module = device.create_shader_module(code=shader_source("feature-mutual-nearest.wgsl"))
+            active_pipeline = make_pipeline(
+                device, module, "nearest", "Mutual cosine nearest descriptor"
+            )
+
+        def search(queries: np.ndarray, candidates: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            nq, dim = queries.shape
+            nc = len(candidates)
+            qbuf = upload_buffer(
+                device, scope, queries, wgpu.BufferUsage.STORAGE, "query descriptors"
+            )
+            cbuf = upload_buffer(
+                device, scope, candidates, wgpu.BufferUsage.STORAGE, "candidate descriptors"
+            )
+            out = device.create_buffer(
+                size=nq * 8,
+                usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+                label="nearest descriptor results",
+            )
+            scope.keep(out)
+            params = np.asarray([nq, nc, dim, 0], dtype=np.uint32)
+            pbuf = upload_buffer(
+                device, scope, params, wgpu.BufferUsage.UNIFORM, "nearest parameters"
+            )
+            group = make_bind_group(
+                device,
+                active_pipeline,
+                [
+                    {"binding": 0, "resource": {"buffer": qbuf}},
+                    {"binding": 1, "resource": {"buffer": cbuf}},
+                    {"binding": 2, "resource": {"buffer": out}},
+                    {"binding": 3, "resource": {"buffer": pbuf}},
+                ],
+            )
+            encoder = device.create_command_encoder(label="cosine nearest search")
+            compute = encoder.begin_compute_pass()
+            compute.set_pipeline(active_pipeline)
+            compute.set_bind_group(0, group)
+            compute.dispatch_workgroups(nq)
+            compute.end()
+            device.queue.submit([encoder.finish()])
+            values = np.frombuffer(
+                device.queue.read_buffer(out, 0, nq * 8), dtype=np.float32
+            ).reshape(nq, 2)
+            return values[:, 0].astype(np.int32), values[:, 1].copy()
+
+        best_b, score_a = search(a, b)
+        best_a, _ = search(b, a)
+    source = np.arange(len(a), dtype=np.int32)
+    keep = (best_a[best_b] == source) & (score_a >= min_cosine_similarity)
+    source_ids, target_ids = ids_a[source[keep]], ids_b[best_b[keep]]
+    points = np.column_stack((reference.features.xy[source_ids], target.features.xy[target_ids]))
+    return FeatureCorrespondences(points, source_ids, target_ids, score_a[keep])

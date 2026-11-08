@@ -34,9 +34,11 @@ Execution and score contracts
   scores are sigmoid outputs, not calibrated correspondence probabilities.
 * DIC ROI support checks run before selection; DaD/DeDoDe ROI filtering is
   applied after top-K and can leave fewer points than requested.
-* DeDoDe-B description and mutual cosine matching in the common benchmark
-  remain CPU reference stages. WGSL RANSAC alone does not make that pipeline
-  resident on GPU.
+* DeDoDe-B description remains a CPU reference stage. Mutual cosine nearest
+  neighbours now execute in WGSL; descriptor arrays are uploaded per call and
+  only the best index and cosine score per query return to the host. This
+  removes the quadratic CPU similarity matrix but does not make extraction or
+  the full pipeline resident on GPU.
 
 API
 ---
@@ -60,6 +62,7 @@ API
    :members:
 
 .. autofunction:: wgpu_matching.mutual_nearest_cosine
+.. autofunction:: wgpu_matching.mutual_nearest_cosine_wgpu
 
 .. autoclass:: wgpu_matching.FeatureMatchField
    :members:

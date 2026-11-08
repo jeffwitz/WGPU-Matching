@@ -12,13 +12,14 @@ from typing import Any, Literal, Self
 import numpy as np
 import wgpu
 
+from ._gpu import make_pipeline, shader_source
 from .contracts import validate_matcher_options
 from .dic_detector import DICDetectorBackend, DICDetectorOptions, DICDetectorResult
 from .features import (
     DescribedFeatures,
     FeatureCorrespondences,
     FeatureSet,
-    mutual_nearest_cosine,
+    mutual_nearest_cosine_wgpu,
 )
 from .horg import HORGBackend
 from .images import load_gray
@@ -294,6 +295,7 @@ class WGPUMatching:
         self.closed = False
         self._horg = HORGBackend(self.device)
         self._dic_detector = DICDetectorBackend(self.device)
+        self._feature_match_pipeline = None
 
     @property
     def device_name(self) -> str:
@@ -558,17 +560,25 @@ class WGPUMatching:
     ) -> FeatureMatchField:
         """Match a common descriptor and fit local affine seeds on WebGPU.
 
-        Descriptor comparison currently uses a bounded-memory CPU reference
-        implementation of mutual cosine nearest neighbours. The returned pairs
-        are passed to the existing WGSL local-affine RANSAC. This method lets
-        benchmark different detectors with the same descriptor, matcher, and
-        geometric acceptance criteria while the matching kernel is developed.
+        Mutual cosine nearest neighbours and local-affine RANSAC execute on
+        WebGPU. Descriptors are uploaded from host memory and only nearest-index
+        and score arrays are read back; detector and descriptor inference are
+        independent stages and may still execute on the CPU.
         """
         self._ensure_open()
-        pairs = mutual_nearest_cosine(
+        if self._feature_match_pipeline is None:
+            module = self.device.create_shader_module(
+                code=shader_source("feature-mutual-nearest.wgsl")
+            )
+            self._feature_match_pipeline = make_pipeline(
+                self.device, module, "nearest", "Mutual cosine nearest descriptor"
+            )
+        pairs = mutual_nearest_cosine_wgpu(
+            self.device,
             reference_features,
             target_features,
             min_cosine_similarity=min_cosine_similarity,
+            pipeline=self._feature_match_pipeline,
         )
         if len(pairs.points) >= 3:
             initialization = self.fit_local_affine(

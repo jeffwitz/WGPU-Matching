@@ -24,6 +24,7 @@ from .features import (
     KeypointDetector,
     OnnxWGPUKeypointDetector,
     mutual_nearest_cosine,
+    mutual_nearest_cosine_wgpu,
 )
 from .images import load_gray
 from .projection import PatchInitialization
@@ -53,6 +54,7 @@ __all__ = [
     "WGPUMatching",
     "load_gray",
     "mutual_nearest_cosine",
+    "mutual_nearest_cosine_wgpu",
 ]
 
 __version__ = "0.1.0"
