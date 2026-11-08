@@ -14,12 +14,18 @@ import wgpu
 
 from ._gpu import make_pipeline, shader_source
 from .contracts import validate_matcher_options
-from .dic_cnn_descriptor import DICConvDescriptorBackend, DICConvDescriptorWeights
+from .dic_cnn_descriptor import (
+    DICConvDescriptorBackend,
+    DICConvDescriptorImage,
+    DICConvDescriptorSession,
+    DICConvDescriptorWeights,
+)
 from .dic_detector import DICDetectorBackend, DICDetectorOptions, DICDetectorResult
 from .features import (
     DescribedFeatures,
     FeatureCorrespondences,
     FeatureSet,
+    mutual_nearest_cosine_wgpu_buffers,
     mutual_nearest_cosine_wgpu,
 )
 from .horg import HORGBackend
@@ -299,6 +305,7 @@ class WGPUMatching:
         self._dic_cnn_descriptor = DICConvDescriptorBackend(self.device)
         self._dic_cnn_weights: dict[str, DICConvDescriptorWeights] = {}
         self._feature_match_pipeline = None
+        self._feature_match_resident_pipeline = None
 
     @property
     def device_name(self) -> str:
@@ -430,6 +437,62 @@ class WGPUMatching:
             features,
             weights,
             support_jacobian=support_jacobian,
+        )
+
+    def prepare_dic_cnn_keypoints(
+        self,
+        image: np.ndarray | str | Path,
+        features: FeatureSet,
+        *,
+        weights_path: str | Path,
+    ) -> DICConvDescriptorSession:
+        """Prepare a reusable GPU session for many support Jacobians.
+
+        The image, keypoints, model weights, and convolution workspace are
+        uploaded once. Each call to ``session.describe(jacobian)`` updates only
+        the small Jacobian uniform and reuses those resident buffers. Use the
+        returned session as a context manager so its GPU resources are released.
+        Descriptor outputs are still copied to host memory for the current
+        matcher API.
+        """
+        self._ensure_open()
+        path = str(Path(weights_path).expanduser())
+        weights = self._dic_cnn_weights.get(path)
+        if weights is None:
+            weights = DICConvDescriptorWeights.load(path)
+            self._dic_cnn_weights[path] = weights
+        gray = _as_gray(image)
+        return self._dic_cnn_descriptor.prepare(
+            gray.astype(np.float32) / 255.0,
+            features,
+            weights,
+            weights_path=path,
+        )
+
+    def prepare_dic_cnn_image(
+        self,
+        image: np.ndarray | str | Path,
+        *,
+        weights_path: str | Path,
+    ) -> DICConvDescriptorImage:
+        """Upload a target image and model once for multiple keypoint sessions.
+
+        Call ``prepared.prepare(features)`` to make sequential sessions for
+        coarse and full candidate sets. Their keypoint and workspace buffers
+        differ, while the original image and convolution weights stay resident.
+        Close every child session before leaving this context.
+        """
+        self._ensure_open()
+        path = str(Path(weights_path).expanduser())
+        weights = self._dic_cnn_weights.get(path)
+        if weights is None:
+            weights = DICConvDescriptorWeights.load(path)
+            self._dic_cnn_weights[path] = weights
+        gray = _as_gray(image)
+        return self._dic_cnn_descriptor.prepare_image(
+            gray.astype(np.float32) / 255.0,
+            weights,
+            weights_path=path,
         )
 
     def match_deepmatching(
@@ -688,6 +751,48 @@ class WGPUMatching:
             correspondences=pairs,
             initializations=initialization,
             minimum_cosine_similarity=min_cosine_similarity,
+        )
+
+    def match_resident_dic_descriptors(
+        self,
+        reference: DICConvDescriptorSession,
+        target: DICConvDescriptorSession,
+        *,
+        min_cosine_similarity: float = 0.0,
+    ) -> FeatureCorrespondences:
+        """Match DIC CNN descriptors directly from resident WebGPU buffers.
+
+        Both sessions must have called ``compute_resident`` and belong to this
+        matcher. Descriptor vectors remain on the device; only reciprocal
+        indices, scores, and resulting coordinates are read back.
+        """
+        self._ensure_open()
+        if reference.device is not self.device or target.device is not self.device:
+            raise ValueError("Resident descriptor sessions must belong to this matcher")
+        if reference.closed or target.closed:
+            raise RuntimeError("Resident descriptor sessions must remain open during matching")
+        if reference.described_features is None or target.described_features is None:
+            raise RuntimeError("Call compute_resident on both descriptor sessions before matching")
+        if self._feature_match_resident_pipeline is None:
+            module = self.device.create_shader_module(
+                code=shader_source("feature-mutual-nearest.wgsl")
+            )
+            self._feature_match_resident_pipeline = make_pipeline(
+                self.device,
+                module,
+                "nearest_masked",
+                "Resident masked mutual cosine nearest descriptor",
+            )
+        return mutual_nearest_cosine_wgpu_buffers(
+            self.device,
+            reference.described_features,
+            target.described_features,
+            reference.output,
+            target.output,
+            reference.validity,
+            target.validity,
+            min_cosine_similarity=min_cosine_similarity,
+            pipeline=self._feature_match_resident_pipeline,
         )
 
     def fit_initialization_field(

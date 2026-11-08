@@ -81,7 +81,24 @@ and searches rigid rotation without using the analytic angle to select a
 hypothesis. It reports measured direct correspondences separately from affine
 field predictions. The evidence is limited to three globally affine and three
 globally rigid synthetic pairs; the rotation bank remains expensive and the
-matching path still copies descriptors through CPU memory.
+original exhaustive rotation-bank diagnostic copies descriptors through CPU
+memory.
+
+The subsequent :doc:`resident coarse-to-fine rotation study
+<_generated_results/descriptors/affine_hypothesis_resident_20261108/README>`
+reuses image, model, point and convolution buffers across hypotheses and keeps
+descriptor vectors on WebGPU through reciprocal matching. On the same three
+rigid 4K pairs, it recovers 800/941 repeatable queries as direct accepted
+matches (zero false acceptances) with 0.887 s median search time; the complete
+pair path, including both-image detection, takes 1.373 s. This is a matched
+before/after comparison against the earlier coarse-to-fine implementation:
+search time falls 17.6% and the selected direct correspondences are unchanged.
+Each of the three pair seeds was measured once in this pass, so the reported
+median is across different images rather than repeated calls on a fixed pair.
+The fitted global rigid field predicts all 1,536 query centres correctly in
+these synthetic cases, but this extrapolated field score is not direct coverage
+and does not demonstrate IC-GN convergence or performance on heterogeneous
+deformation.
 
 Three repeated complete affine calls measure the actual wall-clock pipeline,
 with decoding and figure generation excluded and both images processed each

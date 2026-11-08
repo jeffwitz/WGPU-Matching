@@ -1208,11 +1208,11 @@ Analytic visibility is never used to filter hypotheses or candidates.
 
 This remains a diagnostic on three globally affine and three globally rigid
 synthetic pairs, with no IC-GN qualification and no heterogeneous field test.
-The current runner still reads descriptor arrays to NumPy, and the existing
-GPU mutual matcher uploads them again; diagnostic ranking is also CPU-side.
-Next, shorten rotation search with a cheap coarse score and refine only a few
-hypotheses, then qualify local hypotheses on heterogeneous fields without
-propagating one global model across the full image.
+The exhaustive rotation-bank diagnostic still reads descriptor arrays to NumPy
+for per-query max-bank ranking, then uploads them to the ordinary WGSL matcher.
+The separate coarse-to-fine path below keeps descriptor vectors resident
+through reciprocal matching. Do not describe that path as fully device-only:
+compact matches are read back before geometric consensus is selected.
 
 Reproduce the campaign with:
 
@@ -1227,4 +1227,57 @@ PYTHONPATH=python/benchmarks:python/src python3 \\
   python/benchmarks/summarize_affine_hypothesis_search.py \\
   results/descriptors/affine_hypothesis_wgpu_20261108/combined_and_rotation_4k.json \\
   --output-dir results/descriptors/affine_hypothesis_wgpu_20261108
+```
+
+### Resident coarse-to-fine rotation search (8 November 2026)
+
+`python/benchmarks/benchmark_affine_hypothesis_search.py` now includes a
+resident coarse-to-fine path. It uploads each native image and the compact CNN
+weights once, reuses the per-point convolution workspace across support
+hypotheses, keeps source and target descriptor vectors in GPU buffers, and
+performs reciprocal matching with the WGSL masked nearest-neighbour kernel.
+Only compact reciprocal indices and similarity scores are transferred before
+the existing affine consensus stage. The exhaustive diagnostic remains
+unchanged and still reads descriptors for its per-query max-score analysis.
+
+On three fixed 3840 × 2160 rigid speckle pairs, with 512 source queries and
+8,192 target candidates, the resident search uses 18 coarse angles, local
+5-degree refinement, then full verification of two hypotheses. It retained
+800/800 direct matches correctly at the 5-pixel criterion, with no false
+acceptances, out of 941 repeatable source queries. Median search time across
+the three pairs was 0.887 s; median total pair time, including feature
+detection and source descriptor preparation, was 1.373 s. Each pair was run
+once in this pass, so these medians are across three different pairs rather
+than repeated calls on one pair. The earlier
+coarse-to-fine path took 1.077 s for search and 1.606 s total on those same
+seeds and settings, with exactly the same accepted direct matches. This is a
+17.6% search-time reduction and 14.5% complete-pair reduction, not a quality
+change. The exhaustive 36-angle bank is a different workload and must not be
+used as an apples-to-apples timing baseline.
+
+The global rigid fit predicts all 1,536 evaluated centres within 5 pixels in
+these three globally rigid synthetic pairs. This is extrapolated field output,
+not 1,536 direct observations. The experiment does not establish performance
+on heterogeneous deformation, discontinuities, or IC-GN convergence. Next,
+evaluate multiple local models on held-out heterogeneous fields, report direct
+matches separately from local interpolation/extrapolation, and do not transfer
+a model across a physical discontinuity without independent evidence.
+
+Raw resident measurements and report:
+`results/descriptors/affine_hypothesis_resident_20261108/`.
+
+Reproduce the resident comparison with:
+
+```bash
+PYTHONPATH=python/benchmarks:python/src python3 \\
+  python/benchmarks/benchmark_affine_hypothesis_search.py \\
+  --mode coarse --coarse-queries 128 --coarse-candidates 2048 \\
+  --cnn-weights results/descriptors/dic_descriptor_hardneg_training_20261108/dic_patch_cnn_descriptor.npz \\
+  --output results/descriptors/affine_hypothesis_wgpu_20261108/coarse_to_fine_4k_resident.json \\
+  --width 3840 --height 2160 --candidate-budget 8192 --query-budget 512 --textures 3
+PYTHONPATH=python/benchmarks:python/src python3 \\
+  python/benchmarks/summarize_affine_hypothesis_search.py \\
+  results/descriptors/affine_hypothesis_wgpu_20261108/affine_search_4k_optimized.json \\
+  --coarse-to-fine-resident results/descriptors/affine_hypothesis_wgpu_20261108/coarse_to_fine_4k_resident.json \\
+  --output-dir results/descriptors/affine_hypothesis_resident_20261108
 ```

@@ -18,7 +18,14 @@ import numpy as np
 import wgpu
 from PIL import Image
 
-from ._gpu import ResourceScope, make_bind_group, make_pipeline, shader_source, upload_buffer
+from ._gpu import (
+    ResourceScope,
+    create_buffer,
+    make_bind_group,
+    make_pipeline,
+    shader_source,
+    upload_buffer,
+)
 from .images import load_gray
 
 _REGISTERED_WEBGPU_LIBRARIES: set[str] = set()
@@ -898,4 +905,110 @@ def mutual_nearest_cosine_wgpu(
     keep = (best_a[best_b] == source) & (score_a >= min_cosine_similarity)
     source_ids, target_ids = ids_a[source[keep]], ids_b[best_b[keep]]
     points = np.column_stack((reference.features.xy[source_ids], target.features.xy[target_ids]))
+    return FeatureCorrespondences(points, source_ids, target_ids, score_a[keep])
+
+
+def mutual_nearest_cosine_wgpu_buffers(
+    device: Any,
+    reference_features: FeatureSet,
+    target_features: FeatureSet,
+    reference_descriptors: Any,
+    target_descriptors: Any,
+    reference_validity: Any,
+    target_validity: Any,
+    *,
+    min_cosine_similarity: float = 0.0,
+    pipeline: Any | None = None,
+) -> FeatureCorrespondences:
+    """Match resident normalized descriptors and read back only reciprocal pairs."""
+    if not np.isfinite(min_cosine_similarity) or not -1.0 <= min_cosine_similarity <= 1.0:
+        raise ValueError("min_cosine_similarity must be in [-1, 1]")
+    count_a = len(reference_features.xy)
+    count_b = len(target_features.xy)
+    if not count_a or not count_b:
+        return FeatureCorrespondences(
+            np.empty((0, 4), np.float32),
+            np.empty(0, np.int32),
+            np.empty(0, np.int32),
+            np.empty(0, np.float32),
+        )
+    with ResourceScope() as scope:
+        active_pipeline = pipeline
+        if active_pipeline is None:
+            module = device.create_shader_module(code=shader_source("feature-mutual-nearest.wgsl"))
+            active_pipeline = make_pipeline(
+                device, module, "nearest_masked", "Resident masked mutual nearest descriptor"
+            )
+
+        def search(
+            query_buffer: Any,
+            candidate_buffer: Any,
+            query_valid: Any,
+            candidate_valid: Any,
+            query_count: int,
+            candidate_count: int,
+        ) -> tuple[np.ndarray, np.ndarray]:
+            output = create_buffer(
+                device,
+                scope,
+                query_count * 8,
+                wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC,
+                "resident nearest descriptor results",
+            )
+            params = upload_buffer(
+                device,
+                scope,
+                np.asarray([query_count, candidate_count, 64, 0], dtype=np.uint32),
+                wgpu.BufferUsage.UNIFORM,
+                "resident nearest parameters",
+            )
+            group = make_bind_group(
+                device,
+                active_pipeline,
+                [
+                    {"binding": 0, "resource": {"buffer": query_buffer}},
+                    {"binding": 1, "resource": {"buffer": candidate_buffer}},
+                    {"binding": 2, "resource": {"buffer": output}},
+                    {"binding": 3, "resource": {"buffer": params}},
+                    {"binding": 4, "resource": {"buffer": query_valid}},
+                    {"binding": 5, "resource": {"buffer": candidate_valid}},
+                ],
+            )
+            encoder = device.create_command_encoder(label="resident cosine nearest search")
+            compute = encoder.begin_compute_pass()
+            compute.set_pipeline(active_pipeline)
+            compute.set_bind_group(0, group)
+            compute.dispatch_workgroups(query_count)
+            compute.end()
+            device.queue.submit([encoder.finish()])
+            values = np.frombuffer(
+                device.queue.read_buffer(output, 0, query_count * 8), dtype=np.float32
+            ).reshape(query_count, 2)
+            return values[:, 0].astype(np.int32), values[:, 1].copy()
+
+        best_b, score_a = search(
+            reference_descriptors,
+            target_descriptors,
+            reference_validity,
+            target_validity,
+            count_a,
+            count_b,
+        )
+        best_a, _ = search(
+            target_descriptors,
+            reference_descriptors,
+            target_validity,
+            reference_validity,
+            count_b,
+            count_a,
+        )
+    source = np.arange(count_a, dtype=np.int32)
+    keep = (best_b >= 0) & (score_a >= min_cosine_similarity)
+    valid_rows = np.flatnonzero(keep)
+    keep[valid_rows] &= best_a[best_b[valid_rows]] == valid_rows
+    source_ids = source[keep]
+    target_ids = best_b[keep]
+    points = np.column_stack(
+        (reference_features.xy[source_ids], target_features.xy[target_ids])
+    ).astype(np.float32, copy=False)
     return FeatureCorrespondences(points, source_ids, target_ids, score_a[keep])

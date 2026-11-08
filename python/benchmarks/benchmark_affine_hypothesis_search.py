@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from benchmark_dic_descriptor_retrieval import spatial_budget, take
 from benchmark_oracle_affine_descriptor_retrieval import bilinear
-from wgpu_matching import DICDetectorOptions, WGPUMatching
+from wgpu_matching import DICDetectorOptions, DescribedFeatures, FeatureSet, WGPUMatching
 from wgpu_matching.dic_synthetic import generate_speckle_pair
 
 
@@ -186,6 +186,7 @@ def prepare_case(
     query_count: int,
     candidate_budget: int,
     weights_path: Path,
+    describe_source: bool = True,
 ) -> dict:
     pair = generate_speckle_pair(texture_seed, warp_seed, width, height, motion_mode=family)
     reference = np.rint(pair.reference * 255).astype(np.uint8)
@@ -231,10 +232,12 @@ def prepare_case(
         & (mapped_queries[:, 1] < height - margin)
     )
     descriptor_start = time.perf_counter()
-    source_described = matcher.describe_dic_cnn_keypoints(
-        reference, source_features, weights_path=weights_path
+    source_described = (
+        matcher.describe_dic_cnn_keypoints(reference, source_features, weights_path=weights_path)
+        if describe_source
+        else None
     )
-    source_descriptor_s = time.perf_counter() - descriptor_start
+    source_descriptor_s = time.perf_counter() - descriptor_start if describe_source else 0.0
     return {
         "pair": pair,
         "reference": reference,
@@ -262,70 +265,67 @@ def evaluate_combined_case(matcher, case: dict, weights_path: Path) -> dict:
     pair = case["pair"]
     true_jacobian = np.asarray(pair.metadata["affine_matrix"], dtype=np.float64)
     conditions = []
-    baseline_start = time.perf_counter()
-    baseline = matcher.describe_dic_cnn_keypoints(
-        case["target"],
-        case["target_features"],
-        weights_path=weights_path,
+    prepare_start = time.perf_counter()
+    target_session = matcher.prepare_dic_cnn_keypoints(
+        case["target"], case["target_features"], weights_path=weights_path
     )
-    baseline_scores = score_descriptors(
-        case["source_described"].descriptors,
-        baseline.descriptors,
-        baseline.features.valid,
-    )
-    baseline_retrieval, baseline_ids = rank_scores(baseline_scores, case["distances"])
-    baseline_pairs = np.column_stack(
-        (case["source_xy"], case["target_xy"][baseline_ids])
-    ).astype(np.float32)
-    baseline_consensus = fit_consensus(
-        matcher,
-        baseline_pairs,
-        case["source_xy"],
-        case["mapped_queries"],
-        width=case["image_size_px"][0],
-        height=case["image_size_px"][1],
-        pair_valid=baseline.features.valid[baseline_ids],
-    )
-    baseline_elapsed = time.perf_counter() - baseline_start
-    for parameters in combined_error_grid():
-        jacobian = perturbed_jacobian(true_jacobian, parameters)
-        descriptor_start = time.perf_counter()
-        described = matcher.describe_dic_cnn_keypoints(
-            case["target"],
-            case["target_features"],
-            weights_path=weights_path,
-            support_jacobian=jacobian,
-        )
-        descriptor_s = time.perf_counter() - descriptor_start
-        scores = score_descriptors(
+    session_prepare_s = time.perf_counter() - prepare_start
+    with target_session:
+        baseline_start = time.perf_counter()
+        baseline = target_session.describe()
+        baseline_scores = score_descriptors(
             case["source_described"].descriptors,
-            described.descriptors,
-            described.features.valid,
+            baseline.descriptors,
+            baseline.features.valid,
         )
-        retrieval, best_ids = rank_scores(scores, case["distances"])
-        pairs = np.column_stack((case["source_xy"], case["target_xy"][best_ids])).astype(np.float32)
-        consensus = fit_consensus(
+        baseline_retrieval, baseline_ids = rank_scores(baseline_scores, case["distances"])
+        baseline_pairs = np.column_stack(
+            (case["source_xy"], case["target_xy"][baseline_ids])
+        ).astype(np.float32)
+        baseline_consensus = fit_consensus(
             matcher,
-            pairs,
+            baseline_pairs,
             case["source_xy"],
             case["mapped_queries"],
             width=case["image_size_px"][0],
             height=case["image_size_px"][1],
-            pair_valid=described.features.valid[best_ids],
+            pair_valid=baseline.features.valid[baseline_ids],
         )
-        conditions.append(
-            {
-                **parameters,
-                "jacobian_determinant": float(np.linalg.det(jacobian)),
-                "jacobian_condition_number": float(np.linalg.cond(jacobian)),
-                "candidate_support_valid_count": int(described.features.valid.sum()),
-                "retrieval": retrieval,
-                "all_query_denominator": len(case["source_xy"]),
-                "repeatable_query_count_fixed": int(case["repeatable"].sum()),
-                "consensus": consensus,
-                "descriptor_s": descriptor_s,
-            }
-        )
+        baseline_elapsed = time.perf_counter() - baseline_start
+        for parameters in combined_error_grid():
+            jacobian = perturbed_jacobian(true_jacobian, parameters)
+            descriptor_start = time.perf_counter()
+            described = target_session.describe(jacobian)
+            descriptor_s = time.perf_counter() - descriptor_start
+            scores = score_descriptors(
+                case["source_described"].descriptors,
+                described.descriptors,
+                described.features.valid,
+            )
+            retrieval, best_ids = rank_scores(scores, case["distances"])
+            pairs = np.column_stack((case["source_xy"], case["target_xy"][best_ids])).astype(np.float32)
+            consensus = fit_consensus(
+                matcher,
+                pairs,
+                case["source_xy"],
+                case["mapped_queries"],
+                width=case["image_size_px"][0],
+                height=case["image_size_px"][1],
+                pair_valid=described.features.valid[best_ids],
+            )
+            conditions.append(
+                {
+                    **parameters,
+                    "jacobian_determinant": float(np.linalg.det(jacobian)),
+                    "jacobian_condition_number": float(np.linalg.cond(jacobian)),
+                    "candidate_support_valid_count": int(described.features.valid.sum()),
+                    "retrieval": retrieval,
+                    "all_query_denominator": len(case["source_xy"]),
+                    "repeatable_query_count_fixed": int(case["repeatable"].sum()),
+                    "consensus": consensus,
+                    "descriptor_s": descriptor_s,
+                }
+            )
     return {
         "texture_seed": case["texture_seed"],
         "warp_seed": case["warp_seed"],
@@ -344,6 +344,7 @@ def evaluate_combined_case(matcher, case: dict, weights_path: Path) -> dict:
         "out_of_image_target_centers": int(np.count_nonzero(~case["mapped_center_inside_image"])),
         "detection_s": case["detection_s"],
         "source_descriptor_s": case["source_descriptor_s"],
+        "target_session_prepare_s": session_prepare_s,
         "uncompensated_baseline": {
             "retrieval": baseline_retrieval,
             "consensus": baseline_consensus,
@@ -373,79 +374,81 @@ def evaluate_rotation_case(matcher, case: dict, weights_path: Path) -> dict:
     width, height = case["image_size_px"]
     center = np.asarray([[width / 2.0, height / 2.0]], dtype=np.float32)
     true_angle = float(case["pair"].metadata["angle_rad"])
-    baseline_target = matcher.describe_dic_cnn_keypoints(
-        case["target"], case["target_features"], weights_path=weights_path
-    )
-    baseline_scores = score_descriptors(
-        case["source_described"].descriptors,
-        baseline_target.descriptors,
-        baseline_target.features.valid,
-    )
-    baseline_retrieval, _ = rank_scores(baseline_scores, case["distances"])
-    for index, angle in enumerate(angles):
-        jacobian = np.asarray(
-            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]],
-            dtype=np.float64,
-        )
-        total_start = time.perf_counter()
-        descriptor_start = time.perf_counter()
-        target_described = matcher.describe_dic_cnn_keypoints(
-            case["target"],
-            case["target_features"],
-            weights_path=weights_path,
-            support_jacobian=jacobian,
-        )
-        descriptor_s = time.perf_counter() - descriptor_start
-        scores = score_descriptors(
-            case["source_described"].descriptors,
-            target_described.descriptors,
-            target_described.features.valid,
-        )
-        for size, divisor in ((18, 4), (36, 2), (72, 1)):
-            if index % divisor == 0:
-                np.maximum(bank_scores[size], scores, out=bank_scores[size])
-        match_start = time.perf_counter()
-        reciprocal = matcher.match_features(
-            case["source_described"],
-            target_described,
-            center,
-            radius_px=float(np.hypot(width, height)),
-            threshold_px=4.0,
-            min_inliers=6,
-            min_candidates=8,
-            min_inlier_fraction=0.05,
-            max_iterations=256,
-            fit_local_models=False,
-        ).correspondences
-        matching_s = time.perf_counter() - match_start
-        pairs = reciprocal.points
-        fit_start = time.perf_counter()
-        consensus = fit_consensus(
-            matcher,
-            pairs,
-            case["source_xy"][reciprocal.reference_indices],
-            case["mapped_queries"][reciprocal.reference_indices],
-            width=width,
-            height=height,
-        )
-        fit_s = time.perf_counter() - fit_start
-        rows.append(
-            {
-                "angle_hypothesis_deg": float(np.rad2deg(angle)),
-                "angle_index": index,
-                "descriptor_s": descriptor_s,
-                "matching_s": matching_s,
-                "consensus_s": fit_s,
-                "total_s": time.perf_counter() - total_start,
-                "reciprocal_match_count": len(pairs),
-                "consensus": consensus,
-            }
-        )
+    prepare_start = time.perf_counter()
+    prepared = matcher.prepare_dic_cnn_image(case["target"], weights_path=weights_path)
+    session_prepare_s = time.perf_counter() - prepare_start
+    with prepared:
+        session_start = time.perf_counter()
+        target_session = prepared.prepare(case["target_features"])
+        session_prepare_s += time.perf_counter() - session_start
+        with target_session:
+            baseline_target = target_session.describe()
+            baseline_scores = score_descriptors(
+                case["source_described"].descriptors,
+                baseline_target.descriptors,
+                baseline_target.features.valid,
+            )
+            baseline_retrieval, _ = rank_scores(baseline_scores, case["distances"])
+            for index, angle in enumerate(angles):
+                jacobian = np.asarray(
+                    [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]],
+                    dtype=np.float64,
+                )
+                total_start = time.perf_counter()
+                descriptor_start = time.perf_counter()
+                target_described = target_session.describe(jacobian)
+                descriptor_s = time.perf_counter() - descriptor_start
+                scores = score_descriptors(
+                    case["source_described"].descriptors,
+                    target_described.descriptors,
+                    target_described.features.valid,
+                )
+                for size, divisor in ((18, 4), (36, 2), (72, 1)):
+                    if index % divisor == 0:
+                        np.maximum(bank_scores[size], scores, out=bank_scores[size])
+                match_start = time.perf_counter()
+                reciprocal = matcher.match_features(
+                    case["source_described"],
+                    target_described,
+                    center,
+                    radius_px=float(np.hypot(width, height)),
+                    threshold_px=4.0,
+                    min_inliers=6,
+                    min_candidates=8,
+                    min_inlier_fraction=0.05,
+                    max_iterations=256,
+                    fit_local_models=False,
+                ).correspondences
+                matching_s = time.perf_counter() - match_start
+                fit_start = time.perf_counter()
+                consensus = fit_consensus(
+                    matcher,
+                    reciprocal.points,
+                    case["source_xy"][reciprocal.reference_indices],
+                    case["mapped_queries"][reciprocal.reference_indices],
+                    width=width,
+                    height=height,
+                )
+                fit_s = time.perf_counter() - fit_start
+                rows.append(
+                    {
+                        "angle_hypothesis_deg": float(np.rad2deg(angle)),
+                        "angle_index": index,
+                        "descriptor_s": descriptor_s,
+                        "matching_s": matching_s,
+                        "consensus_s": fit_s,
+                        "total_s": time.perf_counter() - total_start,
+                        "reciprocal_match_count": len(reciprocal.points),
+                        "per_angle_retrieval": rank_scores(scores, case["distances"])[0],
+                        "consensus": consensus,
+                    }
+                )
     banks = {}
     for size, divisor in ((18, 4), (36, 2), (72, 1)):
         retrieval, _ = rank_scores(bank_scores[size], case["distances"])
         eligible = [
-            row for row in rows
+            row
+            for row in rows
             if row["angle_index"] % divisor == 0 and row["consensus"].get("usable", False)
         ]
         selected = max(
@@ -457,21 +460,23 @@ def evaluate_rotation_case(matcher, case: dict, weights_path: Path) -> dict:
             ),
             default=None,
         )
-        selected_model = None if selected is None else selected["consensus"]["model"]
         output = {"usable": selected is not None}
         if selected is not None:
-            model = np.asarray(selected_model, dtype=np.float64)
+            model = np.asarray(selected["consensus"]["model"], dtype=np.float64)
             matrix = np.asarray([[model[0], model[1]], [model[4], model[5]]])
             model_offset = np.asarray([model[2], model[6]])
             predicted = (case["source_xy"] - center) @ matrix.T + model_offset
             error = np.linalg.norm(predicted - case["mapped_queries"], axis=1)
-            estimated_angle = selected["consensus"]["estimated_angle_rad"]
             output.update(selected["consensus"])
             output.update(
                 {
                     "selected_bank_angle_deg": selected["angle_hypothesis_deg"],
                     "estimated_rotation_error_deg": float(
-                        np.rad2deg(angular_error(estimated_angle, true_angle))
+                        np.rad2deg(
+                            angular_error(
+                                selected["consensus"]["estimated_angle_rad"], true_angle
+                            )
+                        )
                     ),
                     "selected_angle_offset_error_deg": float(
                         np.rad2deg(
@@ -487,9 +492,14 @@ def evaluate_rotation_case(matcher, case: dict, weights_path: Path) -> dict:
             "hypothesis_count": size,
             "angular_spacing_deg": 360.0 / size,
             "retrieval": retrieval,
+            "selected_angle_retrieval": (
+                None if selected is None else selected["per_angle_retrieval"]
+            ),
             "selected_consensus": output,
+            "target_session_prepare_s": session_prepare_s,
             "total_bank_s": float(
-                sum(row["total_s"] for row in rows if row["angle_index"] % divisor == 0)
+                session_prepare_s
+                + sum(row["total_s"] for row in rows if row["angle_index"] % divisor == 0)
             ),
         }
     true_jacobian = np.asarray(case["pair"].metadata["affine_matrix"], dtype=np.float64)
@@ -516,6 +526,7 @@ def evaluate_rotation_case(matcher, case: dict, weights_path: Path) -> dict:
         "true_rotation_deg": float(np.rad2deg(true_angle)),
         "detection_s": case["detection_s"],
         "source_descriptor_s": case["source_descriptor_s"],
+        "target_session_prepare_s": session_prepare_s,
         "uncompensated_baseline": baseline_retrieval,
         "exact_jacobian_oracle_ceiling": oracle_retrieval,
         "bank_results": banks,
@@ -523,9 +534,237 @@ def evaluate_rotation_case(matcher, case: dict, weights_path: Path) -> dict:
     }
 
 
+def _subset_features(features: FeatureSet, ids: np.ndarray) -> FeatureSet:
+    return FeatureSet(
+        features.xy[ids],
+        features.scores[ids],
+        valid=features.valid[ids],
+        scales=None if features.scales is None else features.scales[ids],
+        orientations=None if features.orientations is None else features.orientations[ids],
+        metadata=features.metadata,
+    )
+
+
+def _subset_described(features: DescribedFeatures, ids: np.ndarray) -> DescribedFeatures:
+    return DescribedFeatures(
+        _subset_features(features.features, ids),
+        features.descriptors[ids],
+        features.metadata,
+    )
+
+
+def _consensus_rank(consensus: dict) -> tuple[bool, int, float]:
+    return (
+        bool(consensus.get("usable", False)),
+        int(consensus.get("inliers", 0)),
+        -float(consensus.get("residual_px") or float("inf")),
+    )
+
+
+def evaluate_rotation_coarse_to_fine(
+    matcher,
+    case: dict,
+    weights_path: Path,
+    *,
+    coarse_queries: int = 128,
+    coarse_candidates: int = 2048,
+    refine_seeds: int = 2,
+    final_hypotheses: int = 2,
+) -> dict:
+    """Screen rotations on resident GPU descriptors, then verify a short list."""
+    width, height = case["image_size_px"]
+    source_ids = np.arange(min(coarse_queries, len(case["source_xy"])), dtype=np.int64)
+    target_ids = np.arange(min(coarse_candidates, len(case["target_xy"])), dtype=np.int64)
+    coarse_source_features = _subset_features(case["source_features"], source_ids)
+    coarse_target_features = _subset_features(case["target_features"], target_ids)
+    coarse_source_xy = case["source_xy"][source_ids]
+    coarse_mapped = case["mapped_queries"][source_ids]
+    coarse_angles = np.arange(-180.0, 180.0, 20.0)
+    coarse_rows: list[dict] = []
+    refine_rows: list[dict] = []
+    full_rows: list[dict] = []
+    timings = {
+        "source_image_and_weights_upload": 0.0,
+        "target_image_and_weights_upload": 0.0,
+        "coarse_source_session_setup": 0.0,
+        "coarse_source_descriptor": 0.0,
+        "coarse_target_session_setup": 0.0,
+        "refine_target_session_setup": 0.0,
+        "full_source_session_setup": 0.0,
+        "full_source_descriptor": 0.0,
+        "full_target_session_setup": 0.0,
+    }
+    source_prepare_start = time.perf_counter()
+    with matcher.prepare_dic_cnn_image(case["reference"], weights_path=weights_path) as source_image:
+        timings["source_image_and_weights_upload"] = time.perf_counter() - source_prepare_start
+        target_prepare_start = time.perf_counter()
+        with matcher.prepare_dic_cnn_image(case["target"], weights_path=weights_path) as target_image:
+            timings["target_image_and_weights_upload"] = time.perf_counter() - target_prepare_start
+            coarse_source_setup_start = time.perf_counter()
+            with source_image.prepare(coarse_source_features) as coarse_source_session:
+                timings["coarse_source_session_setup"] = time.perf_counter() - coarse_source_setup_start
+                started = time.perf_counter()
+                coarse_source_session.compute_resident()
+                timings["coarse_source_descriptor"] = time.perf_counter() - started
+                coarse_target_setup_start = time.perf_counter()
+                with target_image.prepare(coarse_target_features) as coarse_target_session:
+                    timings["coarse_target_session_setup"] = time.perf_counter() - coarse_target_setup_start
+                    for angle_deg in coarse_angles:
+                        angle = np.deg2rad(angle_deg)
+                        jacobian = np.asarray(
+                            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]],
+                            dtype=np.float32,
+                        )
+                        started = time.perf_counter()
+                        coarse_target_session.compute_resident(jacobian)
+                        matches = matcher.match_resident_dic_descriptors(
+                            coarse_source_session, coarse_target_session
+                        )
+                        consensus = fit_consensus(
+                            matcher,
+                            matches.points,
+                            coarse_source_xy,
+                            coarse_mapped,
+                            width=width,
+                            height=height,
+                        )
+                        coarse_rows.append(
+                            {
+                                "angle_deg": float(angle_deg),
+                                "reciprocal_count": len(matches.points),
+                                "consensus": consensus,
+                                "elapsed_s": time.perf_counter() - started,
+                            }
+                        )
+                coarse_seed_rows = sorted(
+                    coarse_rows, key=lambda row: _consensus_rank(row["consensus"]), reverse=True
+                )[:refine_seeds]
+                refine_angle_set: set[float] = set()
+                for row in coarse_seed_rows:
+                    for offset in (-10.0, -5.0, 0.0, 5.0, 10.0):
+                        candidate = ((row["angle_deg"] + offset + 180.0) % 360.0) - 180.0
+                        if not np.isclose(candidate % 20.0, 0.0) or offset != 0.0:
+                            refine_angle_set.add(round(candidate, 6))
+                refine_target_setup_start = time.perf_counter()
+                with target_image.prepare(coarse_target_features) as refine_target_session:
+                    timings["refine_target_session_setup"] = (
+                        time.perf_counter() - refine_target_setup_start
+                    )
+                    for angle_deg in sorted(refine_angle_set):
+                        angle = np.deg2rad(angle_deg)
+                        jacobian = np.asarray(
+                            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]],
+                            dtype=np.float32,
+                        )
+                        started = time.perf_counter()
+                        refine_target_session.compute_resident(jacobian)
+                        matches = matcher.match_resident_dic_descriptors(
+                            coarse_source_session, refine_target_session
+                        )
+                        consensus = fit_consensus(
+                            matcher,
+                            matches.points,
+                            coarse_source_xy,
+                            coarse_mapped,
+                            width=width,
+                            height=height,
+                        )
+                        refine_rows.append(
+                            {
+                                "angle_deg": float(angle_deg),
+                                "reciprocal_count": len(matches.points),
+                                "consensus": consensus,
+                                "elapsed_s": time.perf_counter() - started,
+                            }
+                        )
+            fine_seed_rows = sorted(
+                coarse_seed_rows + refine_rows,
+                key=lambda row: _consensus_rank(row["consensus"]),
+                reverse=True,
+            )[:final_hypotheses]
+            full_source_setup_start = time.perf_counter()
+            with source_image.prepare(case["source_features"]) as full_source_session:
+                timings["full_source_session_setup"] = time.perf_counter() - full_source_setup_start
+                started = time.perf_counter()
+                full_source_session.compute_resident()
+                timings["full_source_descriptor"] = time.perf_counter() - started
+                full_target_setup_start = time.perf_counter()
+                with target_image.prepare(case["target_features"]) as full_target_session:
+                    timings["full_target_session_setup"] = time.perf_counter() - full_target_setup_start
+                    for seed_row in fine_seed_rows:
+                        angle_deg = seed_row["angle_deg"]
+                        angle = np.deg2rad(angle_deg)
+                        jacobian = np.asarray(
+                            [[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]],
+                            dtype=np.float32,
+                        )
+                        started = time.perf_counter()
+                        full_target_session.compute_resident(jacobian)
+                        matches = matcher.match_resident_dic_descriptors(
+                            full_source_session, full_target_session
+                        )
+                        consensus = fit_consensus(
+                            matcher,
+                            matches.points,
+                            case["source_xy"],
+                            case["mapped_queries"],
+                            width=width,
+                            height=height,
+                        )
+                        consensus["angle_hypothesis_deg"] = float(angle_deg)
+                        consensus["reciprocal_match_count"] = len(matches.points)
+                        consensus["full_verify_s"] = time.perf_counter() - started
+                        full_rows.append(consensus)
+
+    selected_full = max(full_rows, key=_consensus_rank, default={"usable": False})
+    true_angle = float(np.rad2deg(case["pair"].metadata["angle_rad"]))
+    selected_angle = selected_full.get("angle_hypothesis_deg")
+    angular_error_deg = (
+        None
+        if selected_angle is None
+        else float((selected_angle - true_angle + 180.0) % 360.0 - 180.0)
+    )
+    stage_times = {
+        "coarse_hypotheses": sum(row["elapsed_s"] for row in coarse_rows),
+        "refine_hypotheses": sum(row["elapsed_s"] for row in refine_rows),
+        "full_verification": sum(row["full_verify_s"] for row in full_rows),
+    }
+    rotation_search_s = sum(timings.values()) + sum(stage_times.values())
+    total_s = case["detection_s"] + rotation_search_s
+    return {
+        "texture_seed": case["texture_seed"],
+        "warp_seed": case["warp_seed"],
+        "true_rotation_deg": true_angle,
+        "repeatable_queries": int(case["repeatable"].sum()),
+        "queries": len(case["source_xy"]),
+        "target_candidates": len(case["target_xy"]),
+        "coarse_query_count": len(source_ids),
+        "coarse_candidate_count": len(target_ids),
+        "coarse_angle_count": len(coarse_angles),
+        "refine_seed_count": len(coarse_seed_rows),
+        "refine_hypothesis_count": len(refine_rows),
+        "final_full_hypothesis_count": len(full_rows),
+        "selected_angle_deg": selected_angle,
+        "selected_angle_error_deg": angular_error_deg,
+        "selected_full_consensus": selected_full,
+        "rotation_search_s": rotation_search_s,
+        "coarse_stage": coarse_rows,
+        "refine_stage": refine_rows,
+        "full_verification": full_rows,
+        "timing_s": {
+            "detection_both_images": case["detection_s"],
+            **timings,
+            **stage_times,
+            "rotation_search": rotation_search_s,
+            "total_pipeline": total_s,
+        },
+    }
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("combined", "rotation", "both"), default="both")
+    parser.add_argument(
+        "--mode", choices=("combined", "rotation", "coarse", "both"), default="both"
+    )
     parser.add_argument("--cnn-weights", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--width", type=int, default=3840)
@@ -534,11 +773,15 @@ def main() -> None:
     parser.add_argument("--query-budget", type=int, default=512)
     parser.add_argument("--textures", type=int, default=3)
     parser.add_argument("--seed", type=int, default=20261110)
+    parser.add_argument("--coarse-queries", type=int, default=128)
+    parser.add_argument("--coarse-candidates", type=int, default=2048)
+    parser.add_argument("--refine-seeds", type=int, default=2)
+    parser.add_argument("--final-hypotheses", type=int, default=2)
     args = parser.parse_args()
     if not args.cnn_weights.is_file():
         parser.error("CNN descriptor weights must exist")
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    combined, rotation = [], []
+    combined, rotation, coarse = [], [], []
     with WGPUMatching(device_type="gpu") as matcher:
         print(f"WebGPU adapter: {matcher.device_name}", flush=True)
         jobs = []
@@ -546,7 +789,10 @@ def main() -> None:
             jobs.append(("affine", "combined"))
         if args.mode in ("rotation", "both"):
             jobs.append(("rigid", "rotation"))
-        for family_index, (family, experiment) in enumerate(jobs):
+        if args.mode == "coarse":
+            jobs.append(("rigid", "coarse"))
+        for family, experiment in jobs:
+            family_index = 0 if family == "affine" else 1
             for texture_index in range(args.textures):
                 texture_seed = args.seed + family_index * 100_003 + texture_index * 10_007
                 warp_seed = args.seed + 5_000_009 + family_index * 100_003 + texture_index * 10_007
@@ -560,16 +806,29 @@ def main() -> None:
                     query_count=args.query_budget,
                     candidate_budget=args.candidate_budget,
                     weights_path=args.cnn_weights,
+                    describe_source=experiment != "coarse",
                 )
-                result = (
-                    evaluate_combined_case(matcher, case, args.cnn_weights)
-                    if experiment == "combined"
-                    else evaluate_rotation_case(matcher, case, args.cnn_weights)
-                )
-                (combined if experiment == "combined" else rotation).append(result)
+                if experiment == "combined":
+                    result = evaluate_combined_case(matcher, case, args.cnn_weights)
+                    combined.append(result)
+                elif experiment == "rotation":
+                    result = evaluate_rotation_case(matcher, case, args.cnn_weights)
+                    rotation.append(result)
+                else:
+                    result = evaluate_rotation_coarse_to_fine(
+                        matcher,
+                        case,
+                        args.cnn_weights,
+                        coarse_queries=args.coarse_queries,
+                        coarse_candidates=args.coarse_candidates,
+                        refine_seeds=args.refine_seeds,
+                        final_hypotheses=args.final_hypotheses,
+                    )
+                    coarse.append(result)
                 print(
                     f"{experiment} {texture_index + 1}/{args.textures}: "
-                    f"queries={result['source_query_count']} candidates={result['target_candidate_count']}",
+                    f"queries={result.get('source_query_count', result.get('queries'))} "
+                    f"candidates={result.get('target_candidate_count', result.get('target_candidates'))}",
                     flush=True,
                 )
     payload = {
@@ -584,16 +843,25 @@ def main() -> None:
             "affine_error_parameterization": "F_hat = R(delta_theta) @ [[1+delta_x, delta_shear], [0,1+delta_y]] @ F_true",
             "combined_error_levels": {"angle_deg": [-10, 0, 10], "stretch_x_percent": [-20, 0, 20], "stretch_y_percent": [-20, 0, 20], "shear": [-0.2, 0, 0.2]},
             "rotation_bank_sizes": [18, 36, 72],
+            "coarse_to_fine": {
+                "coarse_queries": args.coarse_queries,
+                "coarse_candidates": args.coarse_candidates,
+                "coarse_angles": "18 uniformly spaced hypotheses at 20 degree spacing",
+                "refinement": "two best coarse angles, local +/-10 degrees at 5 degree spacing",
+                "refine_seeds": args.refine_seeds,
+                "full_resolution_shortlist": args.final_hypotheses,
+            },
             "rotation_bank_grid_deg": "-180 to +175 degrees in 5-degree increments; nested uniform subsets provide 18 and 36 hypotheses",
             "rotation_bank_selection": "largest usable WGSL affine-consensus inlier count, then lowest residual; no analytic truth used for selection",
             "candidate_policy": "fixed detector-selected candidate coordinates; no analytic visibility masks; the repeatability denominator remains fixed across support hypotheses",
             "consensus_thresholds": {"residual_px": 4, "correct_error_px": 5, "minimum_inliers": 6, "minimum_candidates": 8, "minimum_inlier_fraction": 0.05},
             "webgpu_adapter": matcher.device_name,
             "cnn_weights_sha256": hashlib.sha256(args.cnn_weights.read_bytes()).hexdigest(),
-            "residency_limit": "WGSL descriptor extraction reads native pixels; descriptors are read to NumPy and uploaded for the existing WGSL mutual matcher, and retrieval diagnostic ranking uses NumPy",
+            "rotation_bank_residency": "The coarse-to-fine path uploads each native image and the CNN weights once, reuses per-point convolution workspaces across support hypotheses, and keeps descriptor vectors resident through the WGSL reciprocal matcher. Only compact reciprocal indices and scores are read back before geometric consensus. The exhaustive rotation-bank diagnostic still reads descriptors for its max-bank ranking.",
         },
         "combined": combined,
         "rotation": rotation,
+        "coarse_to_fine": coarse,
     }
     args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
