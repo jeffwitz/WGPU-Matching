@@ -1,0 +1,113 @@
+{
+  "protocol": {
+    "model_input_px": [
+      192,
+      108
+    ],
+    "speckle_size_px_at_model_input": 7.0,
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      20.0,
+      20.0
+    ],
+    "candidates_per_query": 1296,
+    "families": [
+      "translation",
+      "heterogeneous"
+    ],
+    "training_weights": "results/ndf_dic_20261109/p2_native192_speckle7_256pairs/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and stride",
+    "field_projection": "raw_bilinear",
+    "local_ncc_search_radius_px": 8,
+    "local_ncc_backend": "cpu",
+    "local_ncc_implementation": "parallel",
+    "local_ncc_adapter": null,
+    "local_ncc_patch_radius_px": 5,
+    "local_consensus_radius_px": 20.0,
+    "local_consensus_threshold_px": 5.0,
+    "local_feature_search_radius_cells": 0
+  },
+  "cases": [
+    {
+      "mode": "translation",
+      "projection": "raw_bilinear",
+      "texture_seed": 251000,
+      "warp_seed": 291000,
+      "visible_windows": 1224,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 774.8612670898438,
+      "initial_gradient_rmse": 3.6009633541107178,
+      "local_consensus_usable_fraction": null,
+      "local_refinement_valid_visible_nodes": 702,
+      "local_refinement_node_median_error_native_px": 3.1111249923706055,
+      "local_refinement_node_fraction_within_2_native_px": 0.3162393271923065,
+      "local_refinement_score_median": 0.9940226078033447,
+      "local_refinement_margin_median": 0.009741663932800293,
+      "solver_accepted_visible": 559,
+      "correct_converged_lt2px": 559,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1173,
+      "coverage_correct": 0.45669934640522875,
+      "correct_windows_per_second": 460.7952465753811,
+      "inference_s_cpu": 1.1504346629371867,
+      "model_inference_s_cpu": 0.3486165499780327,
+      "local_refinement_s_wall": 0.801781464018859,
+      "field_projection_s_cpu": 0.022108956007286906,
+      "icgn_s": 0.040576533996500075,
+      "zero_icgn_s": 0.14677052199840546,
+      "oracle_icgn_s": 0.010512877022847533,
+      "mean_iterations_accepted": 15.218246459960938
+    },
+    {
+      "mode": "heterogeneous",
+      "projection": "raw_bilinear",
+      "texture_seed": 251001,
+      "warp_seed": 291001,
+      "visible_windows": 1086,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 1350.5848388671875,
+      "initial_gradient_rmse": 4.875263214111328,
+      "local_consensus_usable_fraction": null,
+      "local_refinement_valid_visible_nodes": 664,
+      "local_refinement_node_median_error_native_px": 565.278564453125,
+      "local_refinement_node_fraction_within_2_native_px": 0.0,
+      "local_refinement_score_median": 0.801112711429596,
+      "local_refinement_margin_median": 0.0067327022552490234,
+      "solver_accepted_visible": 0,
+      "correct_converged_lt2px": 0,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1034,
+      "coverage_correct": 0.0,
+      "correct_windows_per_second": 0.0,
+      "inference_s_cpu": 1.1700113801052794,
+      "model_inference_s_cpu": 0.3445598410908133,
+      "local_refinement_s_wall": 0.8254173879977316,
+      "field_projection_s_cpu": 0.021442690049298108,
+      "icgn_s": 0.048264279030263424,
+      "zero_icgn_s": 0.049471182050183415,
+      "oracle_icgn_s": 0.009383675991557539,
+      "mean_iterations_accepted": null
+    }
+  ],
+  "summary": {
+    "translation": {
+      "cases": 1,
+      "visible_windows": 1224,
+      "correct_converged_lt2px": 559,
+      "coverage_correct": 0.45669934640522875,
+      "median_correct_windows_per_second": 460.7952465753811
+    },
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 1086,
+      "correct_converged_lt2px": 0,
+      "coverage_correct": 0.0,
+      "median_correct_windows_per_second": 0.0
+    }
+  }
+}

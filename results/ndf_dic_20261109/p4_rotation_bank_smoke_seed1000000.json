@@ -1,0 +1,116 @@
+{
+  "protocol": {
+    "model_input_px": [
+      192,
+      108
+    ],
+    "speckle_size_px_at_model_input": 0.35,
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      20.0,
+      20.0
+    ],
+    "candidates_per_query": 1296,
+    "families": [
+      "translation",
+      "heterogeneous"
+    ],
+    "training_weights": "results/ndf_dic_20261109/p2_context41_scale20_physical_texture_128pairs_seed20261112/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "oracle_rotation_rectification": false,
+    "rotation_bank_steps": 12,
+    "rotation_bank_selection": "maximum local affine-consensus support from predicted hard matches",
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and stride",
+    "field_projection": "raw_bilinear",
+    "local_ncc_search_radius_px": 0,
+    "local_ncc_geometry": "translation",
+    "local_ncc_jacobian_damping": 1.0,
+    "local_ncc_backend": "wgpu",
+    "local_ncc_implementation": "parallel",
+    "coarse_estimate": "soft",
+    "contextual_features": true,
+    "local_ncc_adapter": "Vulkan (Intel(R) Graphics (LNL))",
+    "local_ncc_patch_radius_px": 4,
+    "local_consensus_radius_px": 20.0,
+    "local_consensus_threshold_px": 5.0,
+    "local_feature_search_radius_cells": 0
+  },
+  "cases": [
+    {
+      "mode": "translation",
+      "projection": "raw_bilinear",
+      "texture_seed": 1051000,
+      "warp_seed": 1091000,
+      "visible_windows": 1250,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 643.8526611328125,
+      "initial_gradient_rmse": 3.8131461143493652,
+      "local_consensus_usable_fraction": null,
+      "rotation_bank_selected_angle_rad": 0.0,
+      "rotation_bank_consensus_support": 1235,
+      "rotation_bank_mean_confidence_on_support": 0.593764066696167,
+      "solver_accepted_visible": 18,
+      "correct_converged_lt2px": 18,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1176,
+      "coverage_correct": 0.0144,
+      "correct_windows_per_second": 3.127736397302585,
+      "inference_s_cpu": 5.712589798029512,
+      "model_inference_s_cpu": 5.712401395081542,
+      "local_refinement_s_wall": 0.0001648009056225419,
+      "field_projection_s_cpu": 0.002975026029162109,
+      "icgn_s": 0.03939586109481752,
+      "zero_icgn_s": 0.09830144606530666,
+      "oracle_icgn_s": 0.0043819480342790484,
+      "mean_iterations_accepted": 18.11111068725586
+    },
+    {
+      "mode": "heterogeneous",
+      "projection": "raw_bilinear",
+      "texture_seed": 1051001,
+      "warp_seed": 1091001,
+      "visible_windows": 1061,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 747.9739379882812,
+      "initial_gradient_rmse": 3.3234357833862305,
+      "local_consensus_usable_fraction": null,
+      "rotation_bank_selected_angle_rad": -1.0471975511965979,
+      "rotation_bank_consensus_support": 1281,
+      "rotation_bank_mean_confidence_on_support": 0.48662257194519043,
+      "solver_accepted_visible": 31,
+      "correct_converged_lt2px": 31,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1004,
+      "coverage_correct": 0.029217719132893498,
+      "correct_windows_per_second": 5.220450718578916,
+      "inference_s_cpu": 5.8907293900847435,
+      "model_inference_s_cpu": 5.890444951015525,
+      "local_refinement_s_wall": 0.00025439599994570017,
+      "field_projection_s_cpu": 0.0005974459927529097,
+      "icgn_s": 0.04685775202233344,
+      "zero_icgn_s": 0.036721151089295745,
+      "oracle_icgn_s": 0.005856740986928344,
+      "mean_iterations_accepted": 18.838708877563477
+    }
+  ],
+  "summary": {
+    "translation": {
+      "cases": 1,
+      "visible_windows": 1250,
+      "correct_converged_lt2px": 18,
+      "coverage_correct": 0.0144,
+      "median_correct_windows_per_second": 3.127736397302585
+    },
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 1061,
+      "correct_converged_lt2px": 31,
+      "coverage_correct": 0.029217719132893498,
+      "median_correct_windows_per_second": 5.220450718578916
+    }
+  }
+}

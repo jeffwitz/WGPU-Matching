@@ -1,0 +1,104 @@
+{
+  "protocol": {
+    "model_input_px": [
+      192,
+      108
+    ],
+    "speckle_size_px_at_model_input": 7.0,
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      20.0,
+      20.0
+    ],
+    "candidates_per_query": 1296,
+    "families": [
+      "translation",
+      "heterogeneous"
+    ],
+    "training_weights": "results/ndf_dic_20261108/p2_native192_speckle7/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and stride",
+    "field_projection": "local_consensus",
+    "local_ncc_search_radius_px": 8,
+    "local_ncc_patch_radius_px": 5,
+    "local_consensus_radius_px": 20.0
+  },
+  "cases": [
+    {
+      "mode": "translation",
+      "projection": "local_consensus",
+      "texture_seed": 151000,
+      "warp_seed": 191000,
+      "visible_windows": 1560,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 549.6348876953125,
+      "initial_gradient_rmse": 4.074167728424072,
+      "local_consensus_usable_fraction": 0.9259259259259259,
+      "ncc_valid_visible_nodes": 920,
+      "ncc_node_median_error_native_px": 3.47347354888916,
+      "ncc_node_fraction_within_2_native_px": 0.2978260815143585,
+      "ncc_score_median": 0.9913806319236755,
+      "ncc_margin_median": 0.003927707672119141,
+      "solver_accepted_visible": 162,
+      "correct_converged_lt2px": 162,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1528,
+      "coverage_correct": 0.10384615384615385,
+      "correct_windows_per_second": 169.897019545099,
+      "inference_s_cpu": 0.8743020750116557,
+      "field_projection_s_cpu": 0.03410878498107195,
+      "icgn_s": 0.04510792705696076,
+      "zero_icgn_s": 0.105326347053051,
+      "oracle_icgn_s": 0.008208559942431748,
+      "mean_iterations_accepted": 16.530864715576172
+    },
+    {
+      "mode": "heterogeneous",
+      "projection": "local_consensus",
+      "texture_seed": 151001,
+      "warp_seed": 191001,
+      "visible_windows": 871,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 1264.176025390625,
+      "initial_gradient_rmse": 4.104571342468262,
+      "local_consensus_usable_fraction": 0.5223765432098766,
+      "ncc_valid_visible_nodes": 527,
+      "ncc_node_median_error_native_px": 88.65299987792969,
+      "ncc_node_fraction_within_2_native_px": 0.0,
+      "ncc_score_median": 0.825444757938385,
+      "ncc_margin_median": 0.006710231304168701,
+      "solver_accepted_visible": 0,
+      "correct_converged_lt2px": 0,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 812,
+      "coverage_correct": 0.0,
+      "correct_windows_per_second": 0.0,
+      "inference_s_cpu": 0.8355839389842004,
+      "field_projection_s_cpu": 0.03801578702405095,
+      "icgn_s": 0.04544435802381486,
+      "zero_icgn_s": 0.037395310937426984,
+      "oracle_icgn_s": 0.006979870027862489,
+      "mean_iterations_accepted": null
+    }
+  ],
+  "summary": {
+    "translation": {
+      "cases": 1,
+      "visible_windows": 1560,
+      "correct_converged_lt2px": 162,
+      "coverage_correct": 0.10384615384615385,
+      "median_correct_windows_per_second": 169.897019545099
+    },
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 871,
+      "correct_converged_lt2px": 0,
+      "coverage_correct": 0.0,
+      "median_correct_windows_per_second": 0.0
+    }
+  }
+}

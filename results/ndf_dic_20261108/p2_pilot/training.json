@@ -1,0 +1,56 @@
+{
+  "protocol": {
+    "seed": 20261108,
+    "train_texture_seeds": "51000..",
+    "validation_texture_seeds": "151000.. (independent from training)",
+    "image_size_px": [
+      96,
+      64
+    ],
+    "feature_stride": 4,
+    "candidate_count_per_query": 384,
+    "training_pairs": 8,
+    "validation_pairs": 4,
+    "epochs": 1,
+    "elapsed_s": 0.045830513001419604,
+    "device": "CPU",
+    "method": "shared CNN features, exhaustive global coarse correlation, soft correspondence expectation",
+    "oracle_used_for_training_only": true
+  },
+  "best_validation": {
+    "translation": {
+      "visible_coarse_samples": 696,
+      "median_flow_error_px": 24.449857711791992,
+      "p90_flow_error_px": 40.481727600097656,
+      "top1_cell_accuracy": 0.004464285714285714
+    },
+    "heterogeneous": {
+      "visible_coarse_samples": 458,
+      "median_flow_error_px": 24.002573013305664,
+      "p90_flow_error_px": 41.711774826049805,
+      "top1_cell_accuracy": 0.006666666666666667
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 6.137214183807373,
+      "validation": {
+        "translation": {
+          "visible_coarse_samples": 696,
+          "median_flow_error_px": 24.449857711791992,
+          "p90_flow_error_px": 40.481727600097656,
+          "top1_cell_accuracy": 0.004464285714285714
+        },
+        "heterogeneous": {
+          "visible_coarse_samples": 458,
+          "median_flow_error_px": 24.002573013305664,
+          "p90_flow_error_px": 41.711774826049805,
+          "top1_cell_accuracy": 0.006666666666666667
+        }
+      },
+      "temperature": 0.07975645363330841
+    }
+  ],
+  "weights": "ndf_pair_matcher.pt"
+}

@@ -339,11 +339,14 @@ def test_resident_dic_descriptor_matching_matches_host_descriptor_path(tmp_path)
             image, features, weights_path=path
         )
         host_target = matcher.describe_dic_cnn_keypoints(image, features, weights_path=path)
-        with matcher.prepare_dic_cnn_image(image, weights_path=path) as prepared:
-            with prepared.prepare(features) as reference, prepared.prepare(features) as target:
-                reference.compute_resident()
-                target.compute_resident()
-                resident = matcher.match_resident_dic_descriptors(reference, target)
+        with (
+            matcher.prepare_dic_cnn_image(image, weights_path=path) as prepared,
+            prepared.prepare(features) as reference,
+            prepared.prepare(features) as target,
+        ):
+            reference.compute_resident()
+            target.compute_resident()
+            resident = matcher.match_resident_dic_descriptors(reference, target)
         expected = mutual_nearest_cosine_wgpu(
             matcher.device, host_reference, host_target
         )

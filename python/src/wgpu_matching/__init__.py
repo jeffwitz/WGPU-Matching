@@ -28,6 +28,7 @@ from .features import (
     mutual_nearest_cosine_wgpu,
 )
 from .images import load_gray
+from .ndf import LocalNCCResult
 from .projection import PatchInitialization
 
 __all__ = [
@@ -47,6 +48,7 @@ __all__ = [
     "HORGOptions",
     "KeypointDetector",
     "LocalAffineField",
+    "LocalNCCResult",
     "Match",
     "MatchField",
     "OnnxWGPUKeypointDetector",

@@ -1,0 +1,603 @@
+{
+  "protocol": {
+    "purpose": "P0 analytic derivative/advection checks and P1 non-linear displacement representation capacity",
+    "pytorch_version": "2.15.0+cpu",
+    "device": "CPU reference; inference backend is not implemented in this phase",
+    "coordinate_convention": "pixel-centre coordinates (x,y); array index (0,0) denotes upper-left pixel centre",
+    "field_resolution": [
+      512,
+      384
+    ],
+    "fit_spacing_px": 8,
+    "evaluation_spacing_px": 3,
+    "fields": [
+      "translation_300",
+      "rotation_120",
+      "affine_large",
+      "heterogeneous_256",
+      "heterogeneous_128",
+      "localized_band_24",
+      "discontinuous"
+    ]
+  },
+  "interpolation_gradient_checks": {
+    "bilinear_autodiff_vs_finite_difference_max_abs": 3.4574121343666775e-11,
+    "bilinear_autodiff_vs_finite_difference_rmse": 9.012072252044056e-12
+  },
+  "spline_jacobian_and_physics_gradient_checks": {
+    "analytic_vs_autodiff_max_abs": 1.1102230246251565e-16,
+    "analytic_vs_autodiff_rmse": 3.59986797310523e-17,
+    "analytic_vs_finite_difference_max_abs": 6.253900175501315e-12,
+    "analytic_vs_finite_difference_rmse": 1.7027344623505916e-12,
+    "physical_loss": {
+      "intensity": 0.8781018609585712,
+      "advected_gradient": 0.6377292849420141,
+      "coefficient_gradient_norm": 0.031233966375965348,
+      "valid_fraction": 1.0
+    },
+    "known_affine_advection_control": {
+      "oracle_intensity": 0.06713169750591189,
+      "oracle_advected_gradient": 0.19166622736013098,
+      "translation_error_intensity": 0.6750601355027442,
+      "translation_error_advected_gradient": 0.7514683474862061,
+      "jacobian_error_intensity": 0.06713169750591189,
+      "jacobian_error_advected_gradient": 0.24197502497325263,
+      "valid_fraction": 0.548828125
+    }
+  },
+  "capacity": [
+    {
+      "case": "translation_300",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 3.397268961043343e-13,
+          "displacement_median_px": 3.06111178766429e-13,
+          "displacement_p95_px": 5.349400630825218e-13,
+          "displacement_max_px": 6.022452254347028e-13,
+          "jacobian_frobenius_rmse": 9.612654641644931e-16,
+          "jacobian_frobenius_p95": 9.61265464164493e-16,
+          "green_strain_frobenius_rmse": 9.582846616485065e-16,
+          "determinant_min": 1.000000000000001,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.003717330051586032,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 1.0135534598211608e-08,
+          "displacement_median_px": 1.6815856158215915e-09,
+          "displacement_p95_px": 1.322913865756616e-08,
+          "displacement_max_px": 3.4090691444859117e-07,
+          "jacobian_frobenius_rmse": 1.9984396100510835e-09,
+          "jacobian_frobenius_p95": 3.2311466141887834e-09,
+          "green_strain_frobenius_rmse": 1.706435651991447e-09,
+          "determinant_min": 0.999999971298772,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.06681383191607893,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 1.8884941042010656e-07,
+          "displacement_median_px": 8.017074729680408e-08,
+          "displacement_p95_px": 3.7580426746586133e-07,
+          "displacement_max_px": 3.3397337058625313e-06,
+          "jacobian_frobenius_rmse": 1.0511836661853154e-08,
+          "jacobian_frobenius_p95": 1.780548032331701e-08,
+          "green_strain_frobenius_rmse": 8.830585077459533e-09,
+          "determinant_min": 0.9999999086328732,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.01263730600476265,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "rotation_120",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 4.231271113543392e-13,
+          "displacement_median_px": 3.595093471822542e-13,
+          "displacement_p95_px": 6.915300366811402e-13,
+          "displacement_max_px": 7.738068114839497e-13,
+          "jacobian_frobenius_rmse": 1.4770556661825108e-15,
+          "jacobian_frobenius_p95": 1.4770556661825108e-15,
+          "green_strain_frobenius_rmse": 1.1873418712786376e-15,
+          "determinant_min": 0.9999999999999986,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.002181245945394039,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 2.8852713685265465e-08,
+          "displacement_median_px": 4.653269038346308e-09,
+          "displacement_p95_px": 3.460697215470461e-08,
+          "displacement_max_px": 1.04179636818091e-06,
+          "jacobian_frobenius_rmse": 5.699081092463225e-09,
+          "jacobian_frobenius_p95": 8.878874749979769e-09,
+          "green_strain_frobenius_rmse": 5.099676427197004e-09,
+          "determinant_min": 0.9999998800654477,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.06207596999593079,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 3.493029891563438e-07,
+          "displacement_median_px": 9.354900153640843e-08,
+          "displacement_p95_px": 6.401138858368052e-07,
+          "displacement_max_px": 6.360077268371181e-06,
+          "jacobian_frobenius_rmse": 2.06984376616766e-08,
+          "jacobian_frobenius_p95": 3.184902146864805e-08,
+          "green_strain_frobenius_rmse": 1.8287956849809244e-08,
+          "determinant_min": 0.9999997389235382,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.01160209090448916,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "affine_large",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 9.8226430546965e-14,
+          "displacement_median_px": 7.815970093361102e-14,
+          "displacement_p95_px": 1.7288250917028504e-13,
+          "displacement_max_px": 2.5421149729252077e-13,
+          "jacobian_frobenius_rmse": 4.0083750524433855e-16,
+          "jacobian_frobenius_p95": 4.0083750524433855e-16,
+          "green_strain_frobenius_rmse": 2.884444029575346e-16,
+          "determinant_min": 1.1539000000000004,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.001804037019610405,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 1.1833397957709177e-08,
+          "displacement_median_px": 1.4004465267143089e-09,
+          "displacement_p95_px": 1.5350531257232725e-08,
+          "displacement_max_px": 3.9738752605722e-07,
+          "jacobian_frobenius_rmse": 2.3158018073914055e-09,
+          "jacobian_frobenius_p95": 3.403148624870322e-09,
+          "green_strain_frobenius_rmse": 3.1291382525860103e-09,
+          "determinant_min": 1.1538999755531545,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.05342028790619224,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 1.5737442108827307e-07,
+          "displacement_median_px": 4.636889340181401e-08,
+          "displacement_p95_px": 2.916080740058261e-07,
+          "displacement_max_px": 3.075765743255384e-06,
+          "jacobian_frobenius_rmse": 9.551486991759713e-09,
+          "jacobian_frobenius_p95": 1.7124645693606897e-08,
+          "green_strain_frobenius_rmse": 1.2504184227297589e-08,
+          "determinant_min": 1.153899925807614,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.01090543798636645,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "heterogeneous_256",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 15.408105294263095,
+          "displacement_median_px": 14.743366739095668,
+          "displacement_p95_px": 23.08467508047253,
+          "displacement_max_px": 25.244678223500426,
+          "jacobian_frobenius_rmse": 0.5346371213517062,
+          "jacobian_frobenius_p95": 0.7274640295934921,
+          "green_strain_frobenius_rmse": 0.5464691303710195,
+          "determinant_min": 0.9990314817624774,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.001947136945091188,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 0.021794257302980853,
+          "displacement_median_px": 0.009240518828072707,
+          "displacement_p95_px": 0.03487167751423669,
+          "displacement_max_px": 0.21826098975347252,
+          "jacobian_frobenius_rmse": 0.004318525596880914,
+          "jacobian_frobenius_p95": 0.007513698287622611,
+          "green_strain_frobenius_rmse": 0.004075151791800892,
+          "determinant_min": 0.2159053573421823,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.06897839007433504,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 0.545409008956375,
+          "displacement_median_px": 0.372822990434656,
+          "displacement_p95_px": 1.0769730243550053,
+          "displacement_max_px": 2.7768993381765474,
+          "jacobian_frobenius_rmse": 0.12337767162986057,
+          "jacobian_frobenius_p95": 0.20755895240518718,
+          "green_strain_frobenius_rmse": 0.11097206804916149,
+          "determinant_min": 0.21955884088112895,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.010498774936422706,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "heterogeneous_128",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 7.502043209457578,
+          "displacement_median_px": 7.222121045269254,
+          "displacement_p95_px": 11.086554390135289,
+          "displacement_max_px": 12.000000000000227,
+          "jacobian_frobenius_rmse": 0.5206503443154336,
+          "jacobian_frobenius_p95": 0.7070013821992016,
+          "green_strain_frobenius_rmse": 0.5318454249869305,
+          "determinant_min": 1.0000000000000004,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.0021140689495950937,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 0.163419649698699,
+          "displacement_median_px": 0.12092059338435804,
+          "displacement_p95_px": 0.26566260823466875,
+          "displacement_max_px": 0.8852166524261453,
+          "jacobian_frobenius_rmse": 0.0287564457284089,
+          "jacobian_frobenius_p95": 0.048374127482134224,
+          "green_strain_frobenius_rmse": 0.024217950117204366,
+          "determinant_min": 0.23861709289006733,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.05334624904207885,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 1.2710874222676387,
+          "displacement_median_px": 0.9817885212478276,
+          "displacement_p95_px": 2.067333785968542,
+          "displacement_max_px": 5.8821285522870435,
+          "jacobian_frobenius_rmse": 0.24922208631007245,
+          "jacobian_frobenius_p95": 0.47258416510133544,
+          "green_strain_frobenius_rmse": 0.22493196144281988,
+          "determinant_min": 0.23710934849132098,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.010252551059238613,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "localized_band_24",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 13.007968940711846,
+          "displacement_median_px": 11.158805886324558,
+          "displacement_p95_px": 21.66339885719438,
+          "displacement_max_px": 22.69056881761233,
+          "jacobian_frobenius_rmse": 0.37795987535883,
+          "jacobian_frobenius_p95": 0.956192705760179,
+          "green_strain_frobenius_rmse": 0.35276407773522533,
+          "determinant_min": 1.0000000000000004,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.0016189789166674018,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 0.27325820599610023,
+          "displacement_median_px": 0.09823907778215357,
+          "displacement_p95_px": 0.6442395997335779,
+          "displacement_max_px": 1.1904534661766208,
+          "jacobian_frobenius_rmse": 0.031551465825805355,
+          "jacobian_frobenius_p95": 0.07174674768896327,
+          "green_strain_frobenius_rmse": 0.03525595040676941,
+          "determinant_min": 0.9096818230863863,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.061266397940926254,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 0.6500844092221891,
+          "displacement_median_px": 0.04034181504491962,
+          "displacement_p95_px": 1.7504007207947498,
+          "displacement_max_px": 2.428968982376404,
+          "jacobian_frobenius_rmse": 0.11921540846867043,
+          "jacobian_frobenius_p95": 0.3207592502688213,
+          "green_strain_frobenius_rmse": 0.12418972303905385,
+          "determinant_min": 0.9999999031814897,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.01040798204485327,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "case": "discontinuous",
+      "fit_points": 3072,
+      "evaluation_points": 21888,
+      "fit_sample_spacing_px": 8,
+      "image_size_px": [
+        512,
+        384
+      ],
+      "representations": {
+        "global_affine": {
+          "displacement_rmse_px": 9.009787672603002,
+          "displacement_median_px": 6.685714285714312,
+          "displacement_p95_px": 16.73406593406591,
+          "displacement_max_px": 18.3164835164836,
+          "jacobian_frobenius_rmse": 0.10549450549450558,
+          "jacobian_frobenius_p95": 0.10549450549450556,
+          "green_strain_frobenius_rmse": 0.11105905083927071,
+          "determinant_min": 1.1054945054945056,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.0017557790270075202,
+          "coefficients": 6
+        },
+        "cubic_bspline_128_64_32": {
+          "displacement_rmse_px": 3.42321810019313,
+          "displacement_median_px": 0.30620501446864523,
+          "displacement_p95_px": 6.552408637866914,
+          "displacement_max_px": 22.329143863104946,
+          "jacobian_frobenius_rmse": 0.26612360853374784,
+          "jacobian_frobenius_p95": 0.8019548844469349,
+          "green_strain_frobenius_rmse": 0.3679808999647243,
+          "determinant_min": 0.6525116499072965,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.0673666619695723,
+          "coefficients": 852,
+          "control_shapes_yx": [
+            [
+              6,
+              7
+            ],
+            [
+              9,
+              11
+            ],
+            [
+              15,
+              19
+            ]
+          ]
+        },
+        "direct_bilinear_128_64_32": {
+          "displacement_rmse_px": 3.758602903529743,
+          "displacement_median_px": 0.03398205711770675,
+          "displacement_p95_px": 7.63308115651931,
+          "displacement_max_px": 24.079054952685283,
+          "jacobian_frobenius_rmse": 0.2753311675497808,
+          "jacobian_frobenius_p95": 0.9603026539634776,
+          "green_strain_frobenius_rmse": 0.3890990915043146,
+          "determinant_min": 0.7612888601396459,
+          "negative_determinant_fraction": 0.0,
+          "fit_s": 0.013885514927096665,
+          "coefficients": 608,
+          "control_shapes_yx": [
+            [
+              4,
+              5
+            ],
+            [
+              7,
+              9
+            ],
+            [
+              13,
+              17
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

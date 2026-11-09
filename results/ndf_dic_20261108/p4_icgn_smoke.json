@@ -1,0 +1,74 @@
+{
+  "protocol": {
+    "model_input_px": [
+      96,
+      64
+    ],
+    "generated_native_px": [
+      768,
+      512
+    ],
+    "scale": 8,
+    "candidates_per_query": 384,
+    "families": [
+      "translation",
+      "heterogeneous"
+    ],
+    "training_weights": "results/ndf_dic_20261108/p2_native_scale8_20261108/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and stride"
+  },
+  "cases": [
+    {
+      "mode": "translation",
+      "texture_seed": 151000,
+      "warp_seed": 191000,
+      "visible_windows": 72,
+      "initialized_windows": 96,
+      "initial_translation_rmse_px": 112.78881072998047,
+      "initial_gradient_rmse": 1.40681791305542,
+      "solver_accepted_visible": 38,
+      "correct_converged_lt2px": 38,
+      "coverage_correct": 0.5277777777777778,
+      "correct_windows_per_second": 131.120550713977,
+      "inference_s_cpu": 0.17792885098606348,
+      "field_projection_s_cpu": 0.023589855059981346,
+      "icgn_s": 0.08829093701206148,
+      "mean_iterations_accepted": 20.289474487304688
+    },
+    {
+      "mode": "heterogeneous",
+      "texture_seed": 151001,
+      "warp_seed": 191001,
+      "visible_windows": 47,
+      "initialized_windows": 96,
+      "initial_translation_rmse_px": 219.8854522705078,
+      "initial_gradient_rmse": 2.280839443206787,
+      "solver_accepted_visible": 2,
+      "correct_converged_lt2px": 2,
+      "coverage_correct": 0.0425531914893617,
+      "correct_windows_per_second": 17.396030766242685,
+      "inference_s_cpu": 0.09034609503578395,
+      "field_projection_s_cpu": 0.0141845450270921,
+      "icgn_s": 0.010438114986754954,
+      "mean_iterations_accepted": 27.5
+    }
+  ],
+  "summary": {
+    "translation": {
+      "cases": 1,
+      "visible_windows": 72,
+      "correct_converged_lt2px": 38,
+      "coverage_correct": 0.5277777777777778,
+      "median_correct_windows_per_second": 131.120550713977
+    },
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 47,
+      "correct_converged_lt2px": 2,
+      "coverage_correct": 0.0425531914893617,
+      "median_correct_windows_per_second": 17.396030766242685
+    }
+  }
+}

@@ -1,7 +1,33 @@
 from __future__ import annotations
 
 import numpy as np
-from wgpu_matching.dic_synthetic import generate_speckle_pair
+from wgpu_matching.dic_synthetic import _gaussian_blur, generate_speckle_pair
+
+
+def _reference_gaussian_blur(image, sigma):
+    radius = max(1, int(np.ceil(3.0 * sigma)))
+    x = np.arange(-radius, radius + 1, dtype=np.float32)
+    kernel = np.exp(-0.5 * (x / sigma) ** 2)
+    kernel /= kernel.sum()
+    result = np.asarray(image, dtype=np.float32)
+    for axis in (1, 0):
+        padded = np.pad(
+            result,
+            ((0, 0), (radius, radius)) if axis == 1 else ((radius, radius), (0, 0)),
+            mode="reflect",
+        )
+        if axis == 1:
+            result = sum(kernel[i] * padded[:, i : i + result.shape[1]] for i in range(len(kernel)))
+        else:
+            result = sum(kernel[i] * padded[i : i + result.shape[0], :] for i in range(len(kernel)))
+    return np.asarray(result, dtype=np.float32)
+
+
+def test_large_kernel_fft_blur_matches_direct_separable_blur():
+    image = np.random.default_rng(812).random((67, 91), dtype=np.float32)
+    expected = _reference_gaussian_blur(image, sigma=11.0)
+    actual = _gaussian_blur(image, sigma=11.0)
+    np.testing.assert_allclose(actual, expected, rtol=2e-6, atol=1e-6)
 
 
 def test_synthetic_pair_is_deterministic_and_tracks_one_texture() -> None:

@@ -1,0 +1,80 @@
+{
+  "protocol": {
+    "image_shape_yx": [
+      108,
+      192
+    ],
+    "query_grid_shape_yx": [
+      27,
+      48
+    ],
+    "query_count": 1296,
+    "search_radius_px": 8,
+    "patch_radius_px": 5,
+    "warmup_count_per_backend": 1,
+    "measured_repeats": 7,
+    "images_and_flow_upload_included": true,
+    "compact_output_readback_included": true,
+    "adapter": "Vulkan (Intel(R) Graphics (LNL))",
+    "device_type": "gpu",
+    "cpu_reference": "PyTorch CPU local normalized cross-correlation"
+  },
+  "cpu": {
+    "repeats_s": [
+      0.9782588169910014,
+      1.0164601790020242,
+      1.063746202038601,
+      0.8623671330278739,
+      0.9133785760495812,
+      0.9369294790085405,
+      0.887092518969439
+    ],
+    "median_s": 0.9369294790085405,
+    "p90_s": 1.035374588216655,
+    "fraction_valid": 0.8873456716537476,
+    "median_displacement_xy_px": [
+      2.9982614517211914,
+      1.995178461074829
+    ]
+  },
+  "webgpu": {
+    "parallel": {
+      "warmup_s": 0.12356643693055958,
+      "repeats_s": [
+        0.008386060944758356,
+        0.0082913339138031,
+        0.007363609969615936,
+        0.00737889704760164,
+        0.006310309981927276,
+        0.004989719018340111,
+        0.004553364939056337
+      ],
+      "median_s": 0.007363609969615936,
+      "p90_s": 0.008329224726185202,
+      "valid_fraction": 0.8873456790123457,
+      "validity_disagreement_fraction": 0.0,
+      "median_endpoint_error_px_on_common_valid": 1.1920928955078125e-06,
+      "p99_endpoint_error_px_on_common_valid": 0.9378984570503235,
+      "fraction_within_0_1px_on_common_valid": 0.9878260869565217
+    },
+    "serial": {
+      "warmup_s": 0.021282403031364083,
+      "repeats_s": [
+        0.019243596005253494,
+        0.018947793985717,
+        0.021164120989851654,
+        0.020602389937266707,
+        0.020148620940744877,
+        0.01908970100339502,
+        0.018975117010995746
+      ],
+      "median_s": 0.019243596005253494,
+      "p90_s": 0.020827082358300684,
+      "valid_fraction": 0.8873456790123457,
+      "validity_disagreement_fraction": 0.0,
+      "median_endpoint_error_px_on_common_valid": 1.1920928955078125e-06,
+      "p99_endpoint_error_px_on_common_valid": 0.9378984570503235,
+      "fraction_within_0_1px_on_common_valid": 0.9878260869565217
+    }
+  }
+}

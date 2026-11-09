@@ -6,7 +6,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 import numpy as np
 import wgpu
@@ -186,7 +186,7 @@ class DICConvDescriptorImage:
         self.scope.close()
         self.closed = True
 
-    def __enter__(self) -> DICConvDescriptorImage:
+    def __enter__(self) -> Self:
         if self.closed:
             raise RuntimeError("Prepared DIC descriptor image is closed")
         return self
@@ -321,7 +321,7 @@ class DICConvDescriptorSession:
             if self.owns_image:
                 self.image.close()
 
-    def __enter__(self) -> DICConvDescriptorSession:
+    def __enter__(self) -> Self:
         if self.closed:
             raise RuntimeError("DIC descriptor session is closed")
         return self

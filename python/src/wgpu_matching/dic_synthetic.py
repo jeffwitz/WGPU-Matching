@@ -26,6 +26,29 @@ def _gaussian_blur(image: np.ndarray, sigma: float) -> np.ndarray:
     kernel = np.exp(-0.5 * (x / sigma) ** 2)
     kernel /= kernel.sum()
     result = np.asarray(image, dtype=np.float32)
+    if radius >= 32:
+        # For large, scale-consistent synthetic textures, the direct separable
+        # loop repeatedly streams the full UHD image once per kernel tap. Use
+        # blocked FFT convolution instead. Reflection padding and the same
+        # truncated, normalized kernel preserve the direct path's boundary
+        # convention and mathematical result while bounding temporary memory.
+        for axis in (1, 0):
+            lines = np.moveaxis(result, axis, -1)
+            filtered = np.empty(lines.shape, dtype=np.float32)
+            line_length = lines.shape[-1]
+            padded_length = line_length + 2 * radius
+            fft_length = 1 << (padded_length + len(kernel) - 2).bit_length()
+            kernel_spectrum = np.fft.rfft(kernel, n=fft_length)
+            for start in range(0, lines.shape[0], 128):
+                block = np.ascontiguousarray(lines[start : start + 128])
+                padded = np.pad(block, ((0, 0), (radius, radius)), mode="reflect")
+                spectrum = np.fft.rfft(padded, n=fft_length, axis=-1)
+                convolved = np.fft.irfft(spectrum * kernel_spectrum, n=fft_length, axis=-1)
+                filtered[start : start + len(block)] = convolved[
+                    :, 2 * radius : 2 * radius + line_length
+                ]
+            result = np.moveaxis(filtered, -1, axis)
+        return np.asarray(result, dtype=np.float32)
     for axis in (1, 0):
         padded = np.pad(
             result,
@@ -47,6 +70,7 @@ def generate_speckle(
     characteristic_size_px: float | None = None,
     coverage: float | None = None,
     blur_sigma_px: float | None = None,
+    softness: float | None = None,
     noise_std: float = 0.025,
     illumination_variation: float = 0.12,
 ) -> tuple[np.ndarray, dict[str, float]]:
@@ -65,7 +89,12 @@ def generate_speckle(
     texture_field -= np.mean(texture_field)
     texture_field /= max(float(np.std(texture_field)), 1e-6)
     threshold = float(np.quantile(texture_field, coverage))
-    softness = 0.12 if blur_sigma_px == 0 else 0.18 + 0.12 * blur_sigma_px
+    # ``softness`` controls the dimensionless logistic edge of the dot mask.
+    # Keep the historical resolution-dependent default for compatibility, but
+    # allow scale-consistent datasets to set it explicitly.
+    softness = softness if softness is not None else (0.12 if blur_sigma_px == 0 else 0.18 + 0.12 * blur_sigma_px)
+    if softness <= 0:
+        raise ValueError("softness must be positive")
     dots = 1.0 / (1.0 + np.exp(-np.clip((texture_field - threshold) / softness, -30, 30)))
     if blur_sigma_px > 0:
         dots = _gaussian_blur(dots, blur_sigma_px)
@@ -85,6 +114,7 @@ def generate_speckle(
         "characteristic_size_px": float(characteristic_size_px),
         "coverage": float(coverage),
         "blur_sigma_px": float(blur_sigma_px),
+        "softness": float(softness),
         "noise_std": float(noise_std),
         "illumination_variation": float(illumination_variation),
         "gain": float(gain),
@@ -188,9 +218,12 @@ def generate_speckle_pair(
     height: int = 256,
     *,
     motion_mode: str | None = None,
+    texture_options: dict[str, float] | None = None,
 ) -> SyntheticSpecklePair:
     """Warp one speckle texture through analytic affine, smooth, or discontinuous motion."""
-    reference, texture_metadata = generate_speckle(texture_seed, width, height)
+    reference, texture_metadata = generate_speckle(
+        texture_seed, width, height, **(texture_options or {})
+    )
     rng = np.random.default_rng(warp_seed)
     if motion_mode is not None and motion_mode not in {
         "translation",

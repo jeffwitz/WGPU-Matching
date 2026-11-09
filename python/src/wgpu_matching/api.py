@@ -25,11 +25,12 @@ from .features import (
     DescribedFeatures,
     FeatureCorrespondences,
     FeatureSet,
-    mutual_nearest_cosine_wgpu_buffers,
     mutual_nearest_cosine_wgpu,
+    mutual_nearest_cosine_wgpu_buffers,
 )
 from .horg import HORGBackend
 from .images import load_gray
+from .ndf import LocalNCCResult, NDFRefinementBackend
 from .projection import (
     CorrespondenceSet,
     ProjectionModel,
@@ -304,6 +305,7 @@ class WGPUMatching:
         self._dic_detector = DICDetectorBackend(self.device)
         self._dic_cnn_descriptor = DICConvDescriptorBackend(self.device)
         self._dic_cnn_weights: dict[str, DICConvDescriptorWeights] = {}
+        self._ndf_refinement = NDFRefinementBackend(self.device)
         self._feature_match_pipeline = None
         self._feature_match_resident_pipeline = None
 
@@ -350,6 +352,55 @@ class WGPUMatching:
             on_progress=on_progress,
         )
         return _field_from_dict(result)
+
+    def refine_ndf_local_ncc(
+        self,
+        reference: np.ndarray | str | Path,
+        target: np.ndarray | str | Path,
+        initial_displacement_xy: np.ndarray,
+        *,
+        search_radius: int = 8,
+        patch_radius: int = 5,
+        initial_jacobian: np.ndarray | None = None,
+        geometry: Literal["translation", "affine", "hybrid"] = "translation",
+        implementation: Literal["parallel", "serial"] = "parallel",
+    ) -> LocalNCCResult:
+        """Refine a coarse displacement grid with guided NCC on WebGPU.
+
+        The images may be full resolution or an explicitly selected pyramid
+        level. ``initial_displacement_xy`` contains one input-pixel displacement
+        per feature-grid cell. The returned array contains refined input-pixel
+        displacements; only those compact results are read back from WebGPU.
+        ``initial_jacobian`` optionally warps each target patch by the local
+        source-to-target Jacobian, stored as ``[..., row, column]``.
+
+        This is an NDF-DIC refinement component. It does not run the learned
+        image-pair network and is not, by itself, a complete NDF matcher.
+        """
+        self._ensure_open()
+        def as_float_gray(image: np.ndarray | str | Path) -> np.ndarray:
+            array = load_gray(image) if isinstance(image, (str, Path)) else np.asarray(image)
+            if array.ndim != 2 or not np.issubdtype(array.dtype, np.number) or not np.isfinite(array).all():
+                raise ValueError("NDF local refinement expects finite grayscale arrays")
+            result = array.astype(np.float32)
+            if np.issubdtype(array.dtype, np.floating) and result.size and result.max() <= 1.0:
+                result *= 255.0
+            return np.clip(result, 0.0, 255.0)
+
+        ref_float = as_float_gray(reference)
+        tar_float = as_float_gray(target)
+        if ref_float.shape != tar_float.shape:
+            raise ValueError("NDF local refinement expects same-sized grayscale images")
+        return self._ndf_refinement.refine_local_ncc(
+            ref_float,
+            tar_float,
+            np.asarray(initial_displacement_xy, dtype=np.float32),
+            search_radius=search_radius,
+            patch_radius=patch_radius,
+            initial_jacobian=initial_jacobian,
+            geometry=geometry,
+            implementation=implementation,
+        )
 
     def detect_horg(
         self,

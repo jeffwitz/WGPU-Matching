@@ -1,0 +1,88 @@
+{
+  "protocol": {
+    "model_input_px": [
+      96,
+      54
+    ],
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      40.0,
+      40.0
+    ],
+    "candidates_per_query": 336,
+    "families": [
+      "translation",
+      "heterogeneous"
+    ],
+    "training_weights": "results/ndf_dic_20261108/p2_photonormal_aspect169/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and stride",
+    "field_projection": "raw_bilinear"
+  },
+  "cases": [
+    {
+      "mode": "translation",
+      "projection": "raw_bilinear",
+      "texture_seed": 151000,
+      "warp_seed": 191000,
+      "visible_windows": 1560,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 344.6980895996094,
+      "initial_gradient_rmse": 1.6262400150299072,
+      "solver_accepted_visible": 12,
+      "correct_converged_lt2px": 12,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1528,
+      "coverage_correct": 0.007692307692307693,
+      "correct_windows_per_second": 265.5353795433912,
+      "inference_s_cpu": 0.004871967947110534,
+      "field_projection_s_cpu": 0.0005181439919397235,
+      "icgn_s": 0.03980160609353334,
+      "zero_icgn_s": 0.120020178030245,
+      "oracle_icgn_s": 0.007538113975897431,
+      "mean_iterations_accepted": 18.25
+    },
+    {
+      "mode": "heterogeneous",
+      "projection": "raw_bilinear",
+      "texture_seed": 151001,
+      "warp_seed": 191001,
+      "visible_windows": 871,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 1179.201904296875,
+      "initial_gradient_rmse": 2.380188226699829,
+      "solver_accepted_visible": 0,
+      "correct_converged_lt2px": 0,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 812,
+      "coverage_correct": 0.0,
+      "correct_windows_per_second": 0.0,
+      "inference_s_cpu": 0.001872488996013999,
+      "field_projection_s_cpu": 0.0004321560263633728,
+      "icgn_s": 0.04429580096621066,
+      "zero_icgn_s": 0.03907405002973974,
+      "oracle_icgn_s": 0.0067285639233887196,
+      "mean_iterations_accepted": null
+    }
+  ],
+  "summary": {
+    "translation": {
+      "cases": 1,
+      "visible_windows": 1560,
+      "correct_converged_lt2px": 12,
+      "coverage_correct": 0.007692307692307693,
+      "median_correct_windows_per_second": 265.5353795433912
+    },
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 871,
+      "correct_converged_lt2px": 0,
+      "coverage_correct": 0.0,
+      "median_correct_windows_per_second": 0.0
+    }
+  }
+}
