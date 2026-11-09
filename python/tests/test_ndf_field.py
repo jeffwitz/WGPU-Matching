@@ -60,6 +60,11 @@ def test_feature_grid_and_resize_follow_pixel_center_convention():
     native = torch.tensor([[31.5, 31.5], [95.5, 63.5]], dtype=torch.float64)
     model = resize_pixel_center_coordinates(native, (20.0, 20.0))
     torch.testing.assert_close(model, torch.tensor([[1.1, 1.1], [4.3, 2.7]], dtype=torch.float64))
+    # A model-grid feature centre maps back to the same physical native pixel.
+    native_grid_origin = (grid[0:1] + 0.5) * 20.0 - 0.5
+    torch.testing.assert_close(
+        resize_pixel_center_coordinates(native_grid_origin, (20.0, 20.0)), grid[0:1]
+    )
 
 
 def test_bilinear_and_spline_reconstruct_affine_samples_at_feature_centres():
@@ -90,6 +95,68 @@ def test_bilinear_and_spline_reconstruct_affine_samples_at_feature_centres():
         displacement, jacobian = field.evaluate(query)
         torch.testing.assert_close(displacement, expected_u, atol=1e-8, rtol=0)
         torch.testing.assert_close(jacobian, expected_f, atol=1e-8, rtol=0)
+
+
+@pytest.mark.parametrize(
+    "linear",
+    [
+        np.eye(2),
+        np.asarray([[np.cos(0.37), -np.sin(0.37)],
+                    [np.sin(0.37), np.cos(0.37)]]),
+        np.asarray([[1.21, 0.17], [-0.08, 0.86]]),
+    ],
+    ids=("translation", "rotation", "general-affine"),
+)
+def test_feature_grid_bilinear_recovers_translation_rotation_and_affine(linear):
+    image_size = (192, 108)
+    grid_shape = (27, 48)
+    points = feature_grid_points(image_size, grid_shape)
+    offset = torch.tensor([12.5, -7.25], dtype=torch.float64)
+    matrix = torch.as_tensor(linear, dtype=torch.float64)
+    displacement = points @ (matrix - torch.eye(2, dtype=torch.float64)).T + offset
+    field = feature_grid_displacement_field(
+        displacement.reshape(*grid_shape, 2), image_size
+    )
+    query = torch.tensor([[20.25, 18.75], [64.5, 50.25], [142.75, 83.5]], dtype=torch.float64)
+    actual_u, actual_f = field.evaluate(query)
+    torch.testing.assert_close(actual_u, query @ (matrix - torch.eye(2)).T + offset, atol=1e-8, rtol=0)
+    torch.testing.assert_close(actual_f, matrix.expand(len(query), -1, -1), atol=1e-8, rtol=0)
+
+
+def test_feature_grid_bilinear_recovers_non_affine_field_and_local_gradient():
+    image_size = (192, 108)
+    grid_shape = (27, 48)
+    points = feature_grid_points(image_size, grid_shape)
+    x, y = points.unbind(dim=1)
+    samples = torch.stack(
+        (
+            4.0 + 0.1 * x - 0.03 * y + 0.002 * x * y,
+            -2.0 + 0.04 * x + 0.08 * y - 0.0015 * x * y,
+        ),
+        dim=1,
+    )
+    field = feature_grid_displacement_field(
+        samples.reshape(*grid_shape, 2), image_size
+    )
+    query = torch.tensor([[22.25, 19.75], [66.5, 51.25], [146.75, 84.5]], dtype=torch.float64)
+    xq, yq = query.unbind(dim=1)
+    expected_u = torch.stack(
+        (
+            4.0 + 0.1 * xq - 0.03 * yq + 0.002 * xq * yq,
+            -2.0 + 0.04 * xq + 0.08 * yq - 0.0015 * xq * yq,
+        ),
+        dim=1,
+    )
+    expected_f = torch.stack(
+        (
+            torch.stack((1.0 + 0.1 + 0.002 * yq, -0.03 + 0.002 * xq), dim=1),
+            torch.stack((0.04 - 0.0015 * yq, 1.0 + 0.08 - 0.0015 * xq), dim=1),
+        ),
+        dim=1,
+    )
+    actual_u, actual_f = field.evaluate(query)
+    torch.testing.assert_close(actual_u, expected_u, atol=1e-8, rtol=0)
+    torch.testing.assert_close(actual_f, expected_f, atol=1e-8, rtol=0)
 
 
 def test_cubic_spline_analytic_jacobian_matches_autodiff():

@@ -87,7 +87,7 @@ The P0 implementation checks pass at double-precision numerical tolerance. The c
 
 The pair-model training and inference were run with CPU PyTorch. The repository also has a software WebGPU adapter for the existing IC-GN solver. Therefore the reported timing is a mixed CPU/WebGPU pipeline, not GPU inference.
 
-## P2: first learned pair-conditioned global search
+## Phase 2: first learned pair-conditioned global search
 
 The next prototype shares a small convolutional feature encoder between the two images, evaluates an all-pairs cosine correlation on the stride-four feature grid, and derives a coarse displacement at each reference cell. A small spatial refinement head uses the reference feature, correlation-weighted target feature, coarse displacement, and maximum matching probability. A multi-resolution cubic spline is fitted to this predicted field for the field/Jacobian diagnostic. During inference, the model receives only the image pair. The analytic displacement is used only to train the model and to score held-out pairs.
 
@@ -115,11 +115,11 @@ The model learns substantial large-motion information from the image pair. It do
 
 This stress test covers several hundred pixels of motion in a 768 x 512 synthetic domain, not a 4K image. It is still a controlled downsampled experiment, not native-resolution processing. The correlation memory is quadratic in the number of feature cells; applying this exact all-pairs implementation to 4K is infeasible. It must be replaced by a hierarchical or tiled search before any 4K inference claim.
 
-### P2 decision
+### Phase 2 decision
 
 The pair-conditioned model demonstrates coarse large-displacement matching on held-out speckles, but this early 96 x 64 model does not meet the scientific objective. Heterogeneous fields retain large tail errors, the spline Jacobian is poor, and local consensus can accept false fields. Later IC-GN and 4K tests are recorded below.
 
-## P3: first physical-loss ablation
+## Phase 3: first physical-loss ablation
 
 The matching and field-refinement network was trained twice from the same initialization and the same 48 training / 16 validation texture pairs for 24 epochs. The control used correspondence cross-entropy and displacement supervision. The second run added a weight 0.02 on a single-scale photometric residual plus the physically advected image-gradient residual defined above. The synthetic validity mask was used only inside the training loss. Validation used image pairs and analytic truth only for scoring.
 
@@ -132,7 +132,7 @@ The matching and field-refinement network was trained twice from the same initia
 
 The single-scale physical term did not improve this validation set; the small differences are slight regressions across both families. This is an informative negative result. The residual as currently weighted and sampled does not solve the coarse field errors. It should not be promoted as a benefit or expanded to a multi-scale loss until the cause is diagnosed. Candidate causes include interpolation floors, large initial warping errors, and the difference between a local physical residual and the global correspondence objective.
 
-## P4: first IC-GN integration
+## Phase 4: first IC-GN integration
 
 `python/benchmarks/qualify_ndf_pair_icgn.py` feeds the NDF field into the existing WebGPU inverse-compositional Gauss-Newton (IC-GN) solver. The model sees only an area-downsampled image pair; the predicted low-resolution displacement and its spline Jacobian are converted to the six local affine initialization parameters at the native-image subset centres. The qualification activates every requested centre without using analytic visibility. Ground truth is used only to score visibility and accuracy. Zero initialization and analytic local-affine initialization are executed as controls.
 
@@ -189,7 +189,7 @@ The original timing includes CPU model inference, CPU NCC, CPU field projection,
 5. Pair-model inference and field conversion remain CPU-side. Local NCC and IC-GN can run on WebGPU, but image/field uploads and compact output reads still cross the CPU/GPU boundary.
 6. A full 4K neural field, multi-hypothesis heterogeneous search, real-image evaluation, inference WebGPU port, and native-pixel refinement remain unimplemented.
 
-### P5: parallel WebGPU local refinement and independent 4K qualification
+### Phase 5: parallel WebGPU local refinement and independent 4K qualification
 
 The three-pass WGSL NCC implementation was compared against the CPU PyTorch reference on deterministic translation data. The test checks the selected displacement and score; all seven NDF-focused tests pass on the available software adapter. One work item per reference node prepares source patches, one per node/candidate scores offsets in parallel, and one per node selects the best and runner-up scores and fits a subpixel peak. Each call still reallocates buffers and uploads both downsampled images, the initial field, and parameters. Persistent GPU-resident model outputs and buffer reuse remain future work.
 
@@ -220,7 +220,7 @@ The pair model is still inferred on CPU. Its coarse matcher searches features on
 
 The extended 256-training / 64-validation run at native scale 1 is recorded at `results/ndf_dic_20261109/p2_native192_speckle7_256pairs/training.json`. Best validation has 98.1% hard top-one matches within 5 model pixels for translation and 77.8% for heterogeneous motion; the heterogeneous 90th-percentile flow error remains 17.5 model pixels. This validation gain has not translated into heterogeneous 4K IC-GN convergence.
 
-### P6: rasterization-aware training and feature-guided refinement
+### Phase 6: rasterization-aware training and feature-guided refinement
 
 The rasterization-aware run synthesized 256 training and 64 validation pairs at eight times the 192 x 108 model dimensions, then area-downsampled them before input. It completed 60 epochs on the CPU in about 16 minutes. The best validation heterogeneous median flow error was 19.18 pixels in the eight-times native coordinate system (about 2.40 model-input pixels); the 90th percentile was 126.65 native pixels (about 15.83 model-input pixels). The raw bilinear field root mean square error was 85.44 native pixels (10.68 model-input pixels), and its Jacobian error was 1.72. Training and validation textures do not overlap the test seeds. This tests rasterization effects, but is below the 20-fold reduction used for the 3840 x 2160 to 192 x 108 qualification.
 
@@ -228,7 +228,7 @@ The four-pair-per-family independent test at seed offset 400000 yielded 2,830/6,
 
 I also measured a learned-feature local search before the WebGPU NCC refinement, using a search radius of eight cells on the same 48 x 27 feature grid. On a paired four-pair test at seed offset 500000, adding this step changed translation convergence from 2,464/5,819 (42.3%) to 3,155/5,819 (54.2%), a gain of 691 windows (11.9 percentage points). Heterogeneous convergence remained 0/5,193 in both runs. The learned-feature step is CPU-side and adds compute; its raw feature scores are not yet reliable enough to serve as confidence. This is a useful translation ablation, but it does not address the main heterogeneous failure.
 
-### P7: robust global-affine and local-consensus controls
+### Phase 7: robust global-affine and local-consensus controls
 
 To isolate the effect of projecting the pair model's predicted field, the paired four-case-per-family test at seed offset 500000 was repeated with two geometric controls. The global-affine path uses deterministic random sample consensus (RANSAC) followed by Huber iteratively reweighted least squares. It fits one global affine map to the predicted node positions; it is therefore a global-motion control, not evidence that the non-linear Neural Deformation Field (NDF) has been recovered.
 
@@ -243,7 +243,7 @@ The global affine control recovers most translation windows, showing that the co
 
 The RANSAC result is a post-hoc geometric control, not an inference oracle: analytic truth is used only to score the returned field and IC-GN outcomes. All 5,193 visible heterogeneous windows remain in the denominator. Raw outputs are `results/ndf_dic_20261109/p4_uhd_global_affine_ransac_4pairs_seed500000.json` and `results/ndf_dic_20261109/p4_uhd_local_consensus_projection_4pairs_seed500000.json`.
 
-### P8: training at the exact 4K-to-model raster scale
+### Phase 8: training at the exact 4K-to-model raster scale
 
 The earlier rasterization-aware training generated pairs at eight times the model dimensions, while the 3840 x 2160 qualification downsamples by a factor of twenty. To test this domain mismatch, a separate model was trained on 128 texture-disjoint pairs generated at 3840 x 2160 and area-downsampled to 192 x 108, with 32 independent validation pairs and 60 epochs. Each coarse query compares 1,296 target cells. The measured training phase took 274 seconds on the central processing unit (CPU); this excludes the expensive image-pair generation performed before the timer starts.
 
@@ -264,7 +264,7 @@ On the same exact-raster checkpoint and seed set, switching from the soft corres
 
 A top-eight probability-weighted estimate, which discards low-probability global matches but keeps several candidates, reached 2,697/6,811 translation windows (39.6%) and 1/5,665 heterogeneous windows (0.02%). It also underperformed the soft estimate for translation and did not change the conclusion for heterogeneous fields.
 
-### P9: contextual feature support
+### Phase 9: contextual feature support
 
 To test whether the coarse pair matcher lacked enough local context, an optional residual feature branch increased its theoretical receptive field from about 17 to 41 model-input pixels. A model trained on 128 texture-disjoint scale-eight pairs and 32 validation pairs improved held-out heterogeneous validation median flow error to 11.03 native pixels (90th percentile 73.73 pixels; top-one target-cell accuracy 64.06%). However, the independent 4K qualification (four pairs per family, seed offset 700000) still produced 0/3,686 correctly converged heterogeneous windows. Translation reached 3,135/6,398 (49.0%). The analytic IC-GN control converged on 3,460/3,686 heterogeneous windows, indicating that the initializer remains the limiting component. The context branch alone is not a solution to the heterogeneous-field failure.
 

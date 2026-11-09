@@ -517,6 +517,15 @@ def main():
                         help="characteristic speckle size at model input resolution")
     parser.add_argument("--local-ncc-radius", type=int, default=0,
                         help="optional local NCC search radius in model-input pixels; zero disables refinement")
+    parser.add_argument(
+        "--field-residual",
+        choices=("ndf", "none"),
+        default="ndf",
+        help=(
+            "use the learned nonlinear residual after geometric preconditioning, or "
+            "zero it to measure the prefit-only baseline (local NCC remains independently selectable)"
+        ),
+    )
     parser.add_argument("--local-ncc-geometry", choices=("translation", "affine", "hybrid"), default="translation",
                         help="compare fixed patches, warp by the predicted Jacobian, or search both")
     parser.add_argument("--local-ncc-jacobian-damping", type=float, default=1.0,
@@ -699,6 +708,8 @@ def main():
         parser.error("oracle rotation and image-derived affine prefit cannot be combined")
     if args.global_affine_prefit and args.local_bspline_prefit:
         parser.error("global affine and local B-spline prefit are mutually exclusive")
+    if args.field_residual == "none" and not args.global_affine_prefit:
+        parser.error("--field-residual none requires --global-affine-prefit")
     if args.oracle_rotation_rectification and args.local_bspline_prefit:
         parser.error("oracle rotation and image-derived B-spline prefit cannot be combined")
     if args.local_bspline_prefit_min_support < 8:
@@ -760,6 +771,7 @@ def main():
             "rotation_bank_min_consensus_support": args.rotation_bank_min_consensus_support,
             "rotation_bank_min_angle_deg": args.rotation_bank_min_angle_deg,
             "global_affine_prefit": args.global_affine_prefit,
+            "nonlinear_field_residual": args.field_residual,
             "local_bspline_prefit": args.local_bspline_prefit,
             "local_bspline_prefit_min_support": args.local_bspline_prefit_min_support,
             "local_bspline_prefit_bending": args.local_bspline_prefit_bending,
@@ -1156,11 +1168,12 @@ def main():
                             target_tensor = rectify_target_with_affine(
                                 original_target_tensor, affine_prefit_coefficients
                             )
-                            prediction = model(
-                                reference_tensor,
-                                target_tensor,
-                                include_topk=args.coarse_estimate == "topk8",
-                            )
+                            if args.field_residual == "ndf":
+                                prediction = model(
+                                    reference_tensor,
+                                    target_tensor,
+                                    include_topk=args.coarse_estimate == "topk8",
+                                )
                         else:
                             affine_prefit_coefficients = None
                 elif args.local_bspline_prefit:
@@ -1185,11 +1198,39 @@ def main():
                         target_tensor = rectify_target_with_field(
                             original_target_tensor, local_bspline_prefit_field
                         )
-                        prediction = model(
-                            reference_tensor,
-                            target_tensor,
-                            include_topk=args.coarse_estimate == "topk8",
+                        if args.field_residual == "ndf":
+                            prediction = model(
+                                reference_tensor,
+                                target_tensor,
+                                include_topk=args.coarse_estimate == "topk8",
+                            )
+                if args.field_residual == "none":
+                    # Keep the coarse network output only for the image-derived
+                    # prefit above. The field passed to NCC/projection is zero in
+                    # the rectified target frame, isolating prefit and NCC effects.
+                    feature_height, feature_width = prediction.confidence.shape[-2:]
+                    yy, xx = torch.meshgrid(
+                        torch.arange(feature_height, dtype=prediction.confidence.dtype),
+                        torch.arange(feature_width, dtype=prediction.confidence.dtype),
+                        indexing="ij",
+                    )
+                    grid_xy = torch.stack(
+                        ((xx + 0.5) * (small_width / feature_width) - 0.5,
+                         (yy + 0.5) * (small_height / feature_height) - 0.5),
+                        dim=-1,
+                    )[None]
+                    zero_flow = torch.zeros_like(prediction.displacement_xy)
+                    prediction.displacement_xy = zero_flow
+                    prediction.hard_displacement_xy = torch.zeros_like(
+                        prediction.hard_displacement_xy
+                    )
+                    prediction.target_xy = grid_xy.to(prediction.target_xy.dtype)
+                    prediction.hard_target_xy = grid_xy.to(prediction.hard_target_xy.dtype)
+                    if prediction.topk_displacement_xy is not None:
+                        prediction.topk_displacement_xy = torch.zeros_like(
+                            prediction.topk_displacement_xy
                         )
+                        prediction.topk_target_xy = grid_xy.to(prediction.topk_target_xy.dtype)
                 model_inference_s = time.perf_counter() - model_inference_start
                 if args.coarse_estimate == "hard":
                     prediction.displacement_xy = prediction.hard_displacement_xy
@@ -1542,6 +1583,7 @@ def main():
                         float(pair.metadata["angle_rad"]) if args.rotation_bank_steps else None
                     ),
                     "global_affine_prefit_used": affine_prefit_coefficients is not None,
+                    "nonlinear_field_residual": args.field_residual,
                     "global_affine_prefit_coefficients": (
                         affine_prefit_coefficients.tolist()
                         if affine_prefit_coefficients is not None else None
