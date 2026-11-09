@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from qualify_ndf_pair_icgn import rotation_bank_angles, rotation_refinement_candidates
+from ndf_rotation_search import rotation_bank_angles, rotation_refinement_candidates
 
 
 @pytest.mark.parametrize("steps, expected_count", [(6, 6), (9, 10), (18, 18)])

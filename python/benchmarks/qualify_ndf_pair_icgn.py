@@ -12,12 +12,14 @@ from types import SimpleNamespace
 import numpy as np
 import torch
 from ndf_field import (
-    DenseBilinearDisplacement,
+    feature_grid_displacement_field,
+    feature_grid_points,
     fit_bspline_field,
     recommended_control_shape,
-    uniform_points,
+    resize_pixel_center_coordinates,
 )
 from ndf_pair_model import NDFPairMatcher, PairPrediction, refine_local_features, refine_local_ncc
+from ndf_rotation_search import rotation_bank_angles, rotation_refinement_candidates
 from train_ndf_pair_matcher import local_affine_consensus
 from wgpu_matching.api import WGPUMatching
 from wgpu_matching.dic_synthetic import generate_speckle_pair
@@ -150,45 +152,6 @@ def fit_global_affine_ransac(
     if int(best.sum()) < min_inliers:
         return None, best, None
     return coefficients, best, float(np.median(residual[best]))
-
-
-def rotation_refinement_candidates(
-    candidate_scores: list[dict[str, float | int]],
-    *,
-    coarse_steps: int,
-    top_k: int,
-) -> list[float]:
-    """Return half-step angles around the best coarse hypotheses.
-
-    Scores must already be computed from image-derived matching. The returned
-    angles are wrapped to [-pi, pi) and exclude angles already evaluated.
-    """
-    if coarse_steps < 1 or top_k < 1:
-        return []
-    step = 2.0 * np.pi / coarse_steps
-    ranked = sorted(
-        candidate_scores,
-        key=lambda item: (float(item["ranking_score"]), int(item["consensus_support"])),
-        reverse=True,
-    )[:top_k]
-    existing = [float(item["angle_rad"]) for item in candidate_scores]
-    refined: list[float] = []
-    for item in ranked:
-        center = float(item["angle_rad"])
-        for offset in (-0.5 * step, 0.5 * step):
-            angle = (center + offset + np.pi) % (2.0 * np.pi) - np.pi
-            if any(abs((angle - old + np.pi) % (2.0 * np.pi) - np.pi) < 1e-8
-                   for old in (*existing, *refined)):
-                continue
-            refined.append(float(angle))
-    return refined
-
-
-def rotation_bank_angles(steps: int) -> np.ndarray:
-    """Build the uniform angular grid and guarantee that identity is tested."""
-    if steps < 1:
-        raise ValueError("rotation-bank steps must be positive")
-    return np.unique(np.r_[np.linspace(-np.pi, np.pi, steps, endpoint=False), 0.0])
 
 
 def rectify_target_with_affine(
@@ -1382,15 +1345,18 @@ def main():
                 local_refinement_s = time.perf_counter() - refinement_start
             inference_s = time.perf_counter() - inference_start
 
-            points_coarse = uniform_points((small_width, small_height), 4).to(torch.float64)
+            grid_height, grid_width = prediction.displacement_xy.shape[1:3]
+            points_coarse = feature_grid_points(
+                (small_width, small_height), (grid_height, grid_width)
+            )
             flow_coarse = prediction.displacement_xy[0].reshape(-1, 2).to(torch.float64)
             fit_start = time.perf_counter()
             native_centres = centres(width, height)
-            coarse_centres = torch.from_numpy(
-                native_centres / np.asarray([scale_x, scale_y], dtype=np.float32)
+            coarse_centres = resize_pixel_center_coordinates(
+                torch.from_numpy(native_centres).to(torch.float64), (scale_x, scale_y)
             ).to(torch.float64)
             if args.projection == "raw_bilinear":
-                field = DenseBilinearDisplacement(
+                field = feature_grid_displacement_field(
                     prediction.displacement_xy[0].to(torch.float64),
                     (small_width, small_height),
                 )

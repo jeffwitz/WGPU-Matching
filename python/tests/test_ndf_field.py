@@ -7,7 +7,15 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
-from ndf_field import BSplineDisplacement, sample_image
+from ndf_field import (
+    BSplineDisplacement,
+    feature_grid_displacement_field,
+    feature_grid_points,
+    fit_bspline_field,
+    recommended_control_shape,
+    resize_pixel_center_coordinates,
+    sample_image,
+)
 from ndf_pair_model import (
     NDFPairMatcher,
     pair_matching_loss,
@@ -42,6 +50,46 @@ def test_bilinear_sampling_coordinate_gradient_matches_finite_difference():
         dim=1,
     )
     torch.testing.assert_close(derivative, finite, rtol=1e-8, atol=1e-7)
+
+
+def test_feature_grid_and_resize_follow_pixel_center_convention():
+    grid = feature_grid_points((192, 108), (27, 48))
+    assert grid[0].tolist() == pytest.approx([1.5, 1.5])
+    assert grid[47].tolist() == pytest.approx([189.5, 1.5])
+    assert grid[-1].tolist() == pytest.approx([189.5, 105.5])
+    native = torch.tensor([[31.5, 31.5], [95.5, 63.5]], dtype=torch.float64)
+    model = resize_pixel_center_coordinates(native, (20.0, 20.0))
+    torch.testing.assert_close(model, torch.tensor([[1.1, 1.1], [4.3, 2.7]], dtype=torch.float64))
+
+
+def test_bilinear_and_spline_reconstruct_affine_samples_at_feature_centres():
+    image_size = (192, 108)
+    grid_shape = (27, 48)
+    points = feature_grid_points(image_size, grid_shape)
+    x, y = points.unbind(dim=1)
+    samples = torch.stack((7.0 + 0.12 * x - 0.04 * y, -3.0 + 0.06 * x + 0.08 * y), dim=1)
+    bilinear = feature_grid_displacement_field(samples.reshape(*grid_shape, 2), image_size)
+    spline = fit_bspline_field(
+        points,
+        samples,
+        image_size,
+        (recommended_control_shape(image_size, 8.0),),
+        bending=0.0,
+        ridge=1e-12,
+    )
+    query = torch.tensor(
+        [[20.25, 18.75], [64.5, 50.25], [142.75, 83.5]], dtype=torch.float64
+    )
+    expected_u = torch.stack(
+        (7.0 + 0.12 * query[:, 0] - 0.04 * query[:, 1],
+         -3.0 + 0.06 * query[:, 0] + 0.08 * query[:, 1]),
+        dim=1,
+    )
+    expected_f = torch.tensor([[1.12, -0.04], [0.06, 1.08]], dtype=torch.float64).expand(3, 2, 2)
+    for field in (bilinear, spline):
+        displacement, jacobian = field.evaluate(query)
+        torch.testing.assert_close(displacement, expected_u, atol=1e-8, rtol=0)
+        torch.testing.assert_close(jacobian, expected_f, atol=1e-8, rtol=0)
 
 
 def test_cubic_spline_analytic_jacobian_matches_autodiff():

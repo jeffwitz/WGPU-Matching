@@ -259,12 +259,25 @@ class DenseBilinearDisplacement:
 
     coefficients: torch.Tensor
     image_size: tuple[int, int]
+    grid_origin_xy: tuple[float, float] | None = None
+    grid_spacing_xy: tuple[float, float] | None = None
 
     def evaluate(self, points_xy: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         width, height = self.image_size
         grid_height, grid_width = self.coefficients.shape[:2]
-        x = points_xy[:, 0] * (grid_width - 1) / (width - 1)
-        y = points_xy[:, 1] * (grid_height - 1) / (height - 1)
+        if self.grid_origin_xy is None:
+            origin_x, origin_y = 0.0, 0.0
+        else:
+            origin_x, origin_y = self.grid_origin_xy
+        if self.grid_spacing_xy is None:
+            spacing_x = (width - 1) / (grid_width - 1)
+            spacing_y = (height - 1) / (grid_height - 1)
+        else:
+            spacing_x, spacing_y = self.grid_spacing_xy
+        if spacing_x <= 0 or spacing_y <= 0:
+            raise ValueError("Displacement-grid spacing must be positive")
+        x = (points_xy[:, 0] - origin_x) / spacing_x
+        y = (points_xy[:, 1] - origin_y) / spacing_y
         x0, y0 = torch.floor(x).long(), torch.floor(y).long()
         tx, ty = x - x0, y - y0
         x1, y1 = (x0 + 1).clamp(max=grid_width - 1), (y0 + 1).clamp(max=grid_height - 1)
@@ -279,12 +292,30 @@ class DenseBilinearDisplacement:
             + c01 * ((1 - tx) * ty)[:, None]
             + c11 * (tx * ty)[:, None]
         )
-        sx, sy = (grid_width - 1) / (width - 1), (grid_height - 1) / (height - 1)
+        sx, sy = 1.0 / spacing_x, 1.0 / spacing_y
         dx = ((c10 - c00) * (1 - ty)[:, None] + (c11 - c01) * ty[:, None]) * sx
         dy = ((c01 - c00) * (1 - tx)[:, None] + (c11 - c10) * tx[:, None]) * sy
         gradient = torch.stack((dx, dy), dim=-1)
         identity = torch.eye(2, dtype=points_xy.dtype, device=points_xy.device)
         return displacement, gradient + identity
+
+
+def feature_grid_displacement_field(
+    coefficients: torch.Tensor, image_size: tuple[int, int]
+) -> DenseBilinearDisplacement:
+    """Wrap a network output lattice using its pixel-centred feature geometry."""
+    if coefficients.ndim != 3 or coefficients.shape[-1] != 2:
+        raise ValueError("Feature displacement grid must have shape (height, width, 2)")
+    width, height = image_size
+    grid_height, grid_width = coefficients.shape[:2]
+    spacing_xy = (width / grid_width, height / grid_height)
+    origin_xy = (spacing_xy[0] / 2 - 0.5, spacing_xy[1] / 2 - 0.5)
+    return DenseBilinearDisplacement(
+        coefficients,
+        image_size,
+        grid_origin_xy=origin_xy,
+        grid_spacing_xy=spacing_xy,
+    )
 
 
 def sample_image(image: torch.Tensor, points_xy: torch.Tensor) -> torch.Tensor:
@@ -405,6 +436,32 @@ def uniform_points(
     y = torch.arange(0, height, spacing, dtype=torch.float64, device=device)
     yy, xx = torch.meshgrid(y, x, indexing="ij")
     return torch.stack((xx.reshape(-1), yy.reshape(-1)), dim=1)
+
+
+def feature_grid_points(
+    image_size: tuple[int, int], grid_shape: tuple[int, int], *,
+    device: torch.device | str = "cpu", dtype: torch.dtype = torch.float64,
+) -> torch.Tensor:
+    """Return pixel-centre coordinates for an ``align_corners=False`` feature grid."""
+    width, height = image_size
+    grid_height, grid_width = grid_shape
+    if min(width, height, grid_width, grid_height) < 1:
+        raise ValueError("Image and feature-grid dimensions must be positive")
+    stride_x, stride_y = width / grid_width, height / grid_height
+    x = (torch.arange(grid_width, dtype=dtype, device=device) + 0.5) * stride_x - 0.5
+    y = (torch.arange(grid_height, dtype=dtype, device=device) + 0.5) * stride_y - 0.5
+    yy, xx = torch.meshgrid(y, x, indexing="ij")
+    return torch.stack((xx.reshape(-1), yy.reshape(-1)), dim=1)
+
+
+def resize_pixel_center_coordinates(
+    points_xy: torch.Tensor, scale_xy: tuple[float, float]
+) -> torch.Tensor:
+    """Map pixel-centre coordinates through an ``align_corners=False`` resize."""
+    scale = points_xy.new_tensor(scale_xy)
+    if torch.any(scale <= 0):
+        raise ValueError("Resize scale factors must be positive")
+    return (points_xy + 0.5) / scale - 0.5
 
 
 def recommended_control_shape(image_size: tuple[int, int], spacing: float) -> tuple[int, int]:

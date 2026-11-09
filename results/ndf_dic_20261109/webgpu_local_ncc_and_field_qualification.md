@@ -433,6 +433,8 @@ The inference path remains CPU PyTorch for the coarse feature encoder, angle sco
 
 ### Field projection ablation on a fourth seed group
 
+**Historical counts below were superseded after correcting the mapping between feature-cell centers, native pixel centers, and the NDF field grid.** The corrected, same-seed rerun and analytic affine validation are documented in [`coordinate_audit_and_corrected_projection_20261109.md`](coordinate_audit_and_corrected_projection_20261109.md). Use that report's `coordfix_*.json` outputs for current projection comparisons; the pre-correction outputs remain in the repository as historical records. The same coordinate correction affected IC-GN outcomes in the later rotation-search section; corrected paired runs and the updated per-window map are included in that report.
+
 I also tested whether smoothing the predicted displacement lattice before sampling the DIC windows improves the difficult cases. The 0.02 checkpoint, local correlation, and IC-GN settings were held fixed; only the field conversion changed. This fourth seed group was used for this projection ablation, so it is an exploratory comparison rather than a final test after selecting the projection.
 
 | Projection on 10 translation + 10 heterogeneous pairs | Translation correct / visible | Heterogeneous correct / visible | Correct per second, translation | Correct per second, heterogeneous |

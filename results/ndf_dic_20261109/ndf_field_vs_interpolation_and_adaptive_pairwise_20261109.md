@@ -2,6 +2,8 @@
 
 Date: 2026-11-09. This note uses the committed NDF qualification outputs plus a focused rerun of the one heterogeneous pair that regressed in the adaptive rotation ablation. Analytic synthetic motion is used only for scoring after inference.
 
+> **Coordinate correction:** the bilinear-versus-spline counts, adaptive-rotation convergence comparison, and focused projection-pair diagnostics in this report were produced before the feature-grid coordinate audit. They are superseded by [`coordinate_audit_and_corrected_projection_20261109.md`](coordinate_audit_and_corrected_projection_20261109.md), which contains the corrected same-pair reruns and current IC-GN maps. The previous adaptive angle selections and coarse correspondence diagnostics remain valid; their old projected-field outcomes do not.
+
 ## Findings
 
 1. The available evidence does **not** show that the current NDF output field is better than classical interpolation of the same predicted displacement samples. In the controlled projection ablation, the checkpoint, image pair, predicted coarse displacement samples, local correlation, and IC-GN settings are held fixed; only evaluation of that same lattice changes. Direct bilinear evaluation gives 80/11,141 correct heterogeneous windows, compared with 35/11,141 for one- and three-level cubic B-spline fits, and 68/11,141 for local affine consensus followed by spline fitting. The network is presently a learned coarse correspondence/flow predictor followed by conventional field evaluation. This is not yet evidence for a learned nonlinear spatial decoder outperforming interpolation.

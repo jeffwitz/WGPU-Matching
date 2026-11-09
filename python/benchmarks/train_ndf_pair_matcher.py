@@ -14,7 +14,11 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from ndf_field import DenseBilinearDisplacement, fit_bspline_field, recommended_control_shape
+from ndf_field import (
+    feature_grid_displacement_field,
+    fit_bspline_field,
+    recommended_control_shape,
+)
 from ndf_pair_model import NDFPairMatcher, pair_matching_loss
 from numpy.random import default_rng
 from wgpu_matching.dic_synthetic import generate_speckle_pair
@@ -220,7 +224,7 @@ def evaluate(model, examples, native_scale: int, *, project_field: bool = False)
         single_f_error = torch.linalg.matrix_norm(single_f - true_f, ord="fro", dim=(1, 2))
         single_spline_errors[mode].extend((single_error[mask[0]] * native_scale).tolist())
         single_spline_jacobian_errors[mode].extend(single_f_error[mask[0].reshape(-1)].tolist())
-        raw_grid = DenseBilinearDisplacement(
+        raw_grid = feature_grid_displacement_field(
             prediction.displacement_xy[0].to(torch.float64), image_size
         )
         raw_u, raw_f = raw_grid.evaluate(source_points)
