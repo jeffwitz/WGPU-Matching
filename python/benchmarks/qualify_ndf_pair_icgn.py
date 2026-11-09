@@ -682,6 +682,27 @@ def main():
     parser.add_argument("--local-feature-radius-cells", type=int, default=0,
                         help="optional local CNN-feature search radius; zero disables refinement")
     parser.add_argument("--cases-per-family", type=int, default=8)
+    parser.add_argument(
+        "--families",
+        nargs="+",
+        choices=("translation", "heterogeneous"),
+        default=("translation", "heterogeneous"),
+        help="motion families to run (useful for focused paired diagnostics)",
+    )
+    parser.add_argument(
+        "--case-start-index",
+        type=int,
+        default=0,
+        help="starting deterministic sample index within each selected family",
+    )
+    parser.add_argument(
+        "--window-diagnostics-dir",
+        type=Path,
+        help=(
+            "optional directory for per-window NPZ diagnostics (coordinates, "
+            "initial/truth fields, IC-GN status and result)"
+        ),
+    )
     parser.add_argument("--seed-offset", type=int, default=100000)
     parser.add_argument(
         "--projection",
@@ -754,7 +775,7 @@ def main():
             "generated_native_px": [width, height],
             "scale_xy": [scale_x, scale_y],
             "candidates_per_query": ((small_width + 3) // 4) * ((small_height + 3) // 4),
-            "families": ["translation", "heterogeneous"],
+            "families": list(args.families),
             "training_weights": str(args.weights),
             "analytic_truth_used_by_inference": bool(args.oracle_rotation_rectification),
             "oracle_rotation_rectification": bool(args.oracle_rotation_rectification),
@@ -799,8 +820,10 @@ def main():
         },
         "cases": [],
     }
-    for mode_index, mode in enumerate(("translation", "heterogeneous")):
-        for sample in range(args.cases_per_family):
+    family_indices = {"translation": 0, "heterogeneous": 1}
+    for mode in args.families:
+        mode_index = family_indices[mode]
+        for sample in range(args.case_start_index, args.case_start_index + args.cases_per_family):
             texture_seed = 51000 + args.seed_offset + mode_index + 2 * sample
             warp_seed = 91000 + args.seed_offset + mode_index + 2 * sample
             pair = generate_speckle_pair(
@@ -1508,12 +1531,32 @@ def main():
             oracle_parameters = np.asarray(oracle_result.parameters).reshape(-1, 6)
             oracle_status = np.asarray(oracle_result.status).reshape(-1) > 0.5
             oracle_error = np.linalg.norm(oracle_parameters[:, [0, 3]] - truth[:, [0, 3]], axis=1)
+            diagnostics_path = None
+            if args.window_diagnostics_dir is not None:
+                args.window_diagnostics_dir.mkdir(parents=True, exist_ok=True)
+                diagnostics_path = args.window_diagnostics_dir / (
+                    f"{mode}_texture{texture_seed}_warp{warp_seed}.npz"
+                )
+                np.savez_compressed(
+                    diagnostics_path,
+                    centres_xy_native=native_centres.astype(np.float32),
+                    visible=visible.astype(np.uint8),
+                    initial_parameters=initial_parameters.astype(np.float32),
+                    truth_parameters=truth.astype(np.float32),
+                    icgn_parameters=returned.astype(np.float32),
+                    icgn_status=status.astype(np.uint8),
+                    icgn_displacement_error_px=displacement_error.astype(np.float32),
+                    icgn_correct_lt2px=correct.astype(np.uint8),
+                    zero_icgn_correct_lt2px=(zero_status & visible & (zero_error < 2.0)).astype(np.uint8),
+                    oracle_icgn_correct_lt2px=(oracle_status & visible & (oracle_error < 2.0)).astype(np.uint8),
+                )
             report["cases"].append(
                 {
                     "mode": mode,
                     "projection": args.projection,
                     "texture_seed": texture_seed,
                     "warp_seed": warp_seed,
+                    "window_diagnostics": str(diagnostics_path) if diagnostics_path else None,
                     "visible_windows": int(visible.sum()),
                     "initialized_windows": len(native_centres),
                     "initial_translation_rmse_px": float(np.sqrt(np.mean(init_translation**2))),
@@ -1563,7 +1606,7 @@ def main():
                 }
             )
             print(json.dumps(report["cases"][-1]), flush=True)
-    for mode in ("translation", "heterogeneous"):
+    for mode in args.families:
         cases = [case for case in report["cases"] if case["mode"] == mode]
         report.setdefault("summary", {})[mode] = {
             "cases": len(cases),
