@@ -30,7 +30,9 @@ extensions = [
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+# Historical development notes are retained verbatim as an internal archive;
+# they are not maintained as part of the public documentation.
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "development-log.md"]
 root_doc = "index"
 nitpicky = True
 nitpick_ignore = [("py:class", "wgpu_matching.features._TorchKeypointDetector")]

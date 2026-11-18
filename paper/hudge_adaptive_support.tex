@@ -1,0 +1,180 @@
+\documentclass[11pt,a4paper,landscape]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage[french]{babel}
+\usepackage{lmodern,amsmath,amssymb,graphicx,booktabs,xcolor,hyperref,fancyhdr}
+\usepackage[margin=16mm]{geometry}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,pdftitle={Plaque trouée : supports fins, modèle quadratique et continuation}}
+\graphicspath{{../results/hudge_adaptive_support_20261115/figures/}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{WGPU-Matching — Supports fins et courbure locale}
+\fancyhead[R]{15 novembre 2026}\fancyfoot[R]{\thepage}\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\newcommand{\fig}[2]{\begin{center}\includegraphics[width=\linewidth,height=#2,keepaspectratio]{#1}\end{center}}
+\begin{document}
+{\LARGE\bfseries Plaque trouée : faut-il réduire les fenêtres\par
+ou ajouter une courbure à la transformation ?\par}
+\vspace{4mm}
+\textbf{Résultat : les deux pistes ont un intérêt distinct.} Le modèle quadratique
+réduit nettement le résidu photométrique sur les mêmes supports de 32 pixels. La grille
+affine fine apporte beaucoup plus de points réellement calculés. Mais une part des
+échecs précédents était également due à la limite de 30 itérations, pas à une impossibilité
+de représenter le déplacement par une affine locale.
+
+Les 191 cibles sont comparées séparément à la référence. Le point de départ commun
+est la reprise par fonctions de base radiale (RBF), contrainte par les gradients,
+au seuil de cohérence 0,50 : 6\,549 centres retenus et \textbf{327 centres restants} sur 6\,876.
+Les essais portent exclusivement sur les supports de ces centres restants.
+
+\begin{center}\begin{tabular}{lrrr}
+\toprule
+Modèle & Centres récupérés, un appel & Centres récupérés, continuation & Points retenus, continuation\\\midrule
+Affine $32\times32$, pas 32 &295/327&327/327&327/327\\
+Quadratique $32\times32$, courbure initiale nulle &181/327&327/327&327/327\\
+Quadratique $32\times32$, courbure initiale RBF &161/327&327/327&327/327\\
+Affine $16\times16$, pas 8 &294/327&327/327&2\,843/2\,943\\\bottomrule
+\end{tabular}\end{center}
+
+Un appel comporte au maximum 30 itérations. La continuation relance uniquement les
+sorties au statut non convergé, avec leurs propres derniers paramètres, jusqu'à quatre
+appels \emph{par proposition}. Jusqu'à trois tours d'ajustement du champ peuvent proposer
+de nouvelles initialisations. Ce n'est pas une modification du solveur en un appel de 120 itérations.
+
+Le veto sur l'écart de gradient est supprimé pour ces essais. Une sortie retenue doit
+avoir le statut convergé, une corrélation finale d'au moins 0,65, rester dans l'image
+et conserver un déterminant de jacobienne positif sur tous les pixels échantillonnés
+du support. \textbf{Ce sont des candidats convergés ; leur exactitude mécanique n'est pas
+certifiée faute de vérité de déplacement associée.}
+
+\newpage
+\section*{1. Même région matérielle, supports et inconnues différents}
+Pour un centre $\mathbf x$, la transformation locale est écrite
+\[
+ \boldsymbol\varphi(\mathbf x+\boldsymbol\xi)=\mathbf x+\mathbf d
+ +(I+G)\boldsymbol\xi+
+ \frac12\begin{pmatrix}
+ H_{u,xx}\xi_x^2+2H_{u,xy}\xi_x\xi_y+H_{u,yy}\xi_y^2\\
+ H_{v,xx}\xi_x^2+2H_{v,xy}\xi_x\xi_y+H_{v,yy}\xi_y^2
+ \end{pmatrix}.
+\]
+L'affine possède six paramètres : deux déplacements et quatre dérivées premières.
+Le quadratique ajoute six dérivées secondes. Il permet au gradient de varier dans
+la fenêtre. Deux initialisations de la courbure sont comparées : zéro, ou dérivées
+secondes analytiques du même champ RBF qui fournit le déplacement et le gradient.
+
+\textbf{Subdivision réellement dense.} Chaque ancienne fenêtre non retenue de
+$32\times32$ reçoit neuf centres fins aux décalages $\{-8,0,8\}^2$ pixels, avec un
+support de $16\times16$. Les supports fins restent entièrement dans le support initial.
+L'ancien centre est conservé exactement. Les quatre supports aux décalages $(\pm8,\pm8)$
+pavent l'ancienne fenêtre ; les cinq autres ajoutent du recouvrement.
+
+Il y a ainsi $327\times9=2\,943$ propositions fines, mais toujours seulement 327 anciens
+centres à récupérer. Parmi les 2\,843 points fins retenus après continuation, 327
+coïncident avec ces anciens centres et \textbf{2\,516 sont des centres supplémentaires}.
+La superficie couverte est mesurée comme l'union des supports retenus, pas comme leur
+somme avec recouvrements.
+
+\textbf{Implémentation.} Les trois modèles s'exécutent avec le solveur Gauss--Newton
+à composition inverse (IC-GN) existant, sur WebGPU. Le modèle quadratique à douze
+paramètres était déjà disponible dans Live-DIC ; aucun code du solveur externe n'a
+été modifié. Son API refuse le masque de région d'intérêt pour le quadratique :
+le programme active donc explicitement les mêmes fenêtres à support plein que le
+modèle affine. Il ne demande jamais de support partiel au solveur quadratique.
+
+La sélection des nouvelles sorties n'applique plus le contrôle de gradient voisin,
+ni la confirmation topologique de l'ancienne chaîne. L'écart avec les archives ne doit
+donc pas être attribué au seul changement de support ou d'ordre polynomial.
+
+\newpage
+\section*{2. Le nombre de fenêtres et le budget de résolution ne disent pas la même chose}
+\fig{comparison.pdf}{87mm}
+Avec un appel par proposition, l'affine fine couvre 93,60\,\% de la superficie auparavant
+en échec, contre 90,21\,\% pour l'affine 32. Elle ne récupère pourtant pas davantage
+d'anciens centres : 294 contre 295. Les deux ensembles sont complémentaires.
+
+La sélection déterministe « affine 32 si retenue, sinon affine 16 au même centre »
+fournit \textbf{327/327 centres} : 295 avec support 32 et 32 avec support 16. Cet assemblage
+utilise uniquement les décisions enregistrées, sans vérité analytique ni interpolation
+des centres manquants. Il est exporté dans \texttt{mixed\_centres/}, avec la taille de
+support et l'origine de chaque état. Il n'a pas subi une nouvelle résolution après assemblage.
+
+La continuation retrouve aussi 327/327 centres en affine 32 seule, et en quadratique.
+La grille fine atteint alors 98,38\,\% de couverture en superficie des régions traitées,
+avec 100 propositions fines encore non retenues. Retrouver tous les anciens centres
+ne signifie donc pas que toute la grille dense converge.
+
+\newpage
+\section*{3. Où les points supplémentaires sont-ils réellement calculés ?}
+\fig{regions_191.pdf}{110mm}
+Au niveau 191, cinq anciennes fenêtres restaient non retenues. Les rectangles orange
+délimitent exactement ces cinq régions. Après continuation, les modèles affine et
+quadratique 32 retrouvent leurs cinq centres ; la grille fine retient 41 points sur 45,
+dont les cinq centres originaux.
+
+Les points rouges sont conservés comme échecs. Ils ne sont pas remplacés par des
+valeurs prédites présentées comme des observations. Les régions déjà retenues avant
+cette expérience restent inchangées. Les figures ne montrent donc pas une nouvelle
+grille dense sur toute la plaque : il s'agit d'une densification localisée aux échecs.
+
+\newpage
+\section*{4. Le quadratique améliore le recalage photométrique}
+\fig{patch_65.pdf}{105mm}
+La fenêtre 65 illustre la différence de modèle à support identique. L'affine 32 finit
+par converger après continuation, mais le quadratique réduit davantage le résidu.
+Le panneau affine 16 représente uniquement le carré central de 16 pixels : le gris
+uniforme autour n'est ni une image corrigée ni une zone recalée.
+
+Sur les 327 supports de 32 pixels, la corrélation médiane passe de \textbf{0,8463 en
+affine à 0,9307 en quadratique}. Les minima sont respectivement 0,7607 et 0,8670.
+Les deux initialisations du quadratique aboutissent à des valeurs presque identiques
+après continuation. Le gain photométrique ne prouve pas, à lui seul, une meilleure
+estimation de tous les paramètres mécaniques.
+
+\newpage
+\section*{5. Une fenêtre précédemment très mal initialisée}
+\fig{patch_164.pdf}{105mm}
+La fenêtre 164, qui conservait un mauvais résidu dans l'expérience précédente,
+converge dans cette nouvelle chaîne : le champ est ajusté à mesure que de nouveaux
+points sont résolus, le veto de gradient est absent, et la continuation laisse au
+solveur davantage d'itérations. Le quadratique améliore encore la similitude du mouchetis.
+
+Sur les 327 centres, les déplacements finaux affine et quadratique diffèrent de
+0,703 pixel en médiane, et de 2,583 pixels au maximum. \textbf{Sans déplacements vrais,
+ces écarts ne peuvent pas être interprétés comme des erreurs de l'un ou de l'autre.}
+Ils justifient de conserver les modèles et supports dans la provenance de chaque graine.
+
+\newpage
+\section*{6. Stratégie retenue pour l'initialisation}
+\textbf{1. Ne plus confondre incohérence avec le voisin et erreur de recalage.}
+Dans cette expérience, le changement de gradient n'est plus un veto. Les statuts,
+résidus photométriques, sorties hors image et inversions locales de la transformation
+restent contrôlés. Les seuils de production n'ont pas été changés.
+
+\textbf{2. Distinguer budget et représentation.} Une sortie non convergée après
+30 itérations mérite une continuation bornée depuis son dernier état lorsqu'il est
+fini. Cela a suffi à retrouver tous les anciens centres dans les 191 paires testées,
+même en affine. Le modèle quadratique ne doit pas être jugé seulement au même nombre
+d'itérations que l'affine ; ici, il converge plus difficilement dans la limite initiale.
+
+\textbf{3. Densifier localement pour obtenir davantage de graines.} Les supports fins
+avec pas réduit apportent de nouvelles observations. Leur association aux supports
+32 récupère tous les anciens centres dès la campagne sans continuation. Il faut conserver
+le support 16 dans les exports : une graine résolue sur 16 pixels n'est pas une mesure
+validée sur une fenêtre de 32 pixels.
+
+\textbf{4. Garder le quadratique pour les zones où l'affine laisse un résidu structuré.}
+Sur des supports identiques, son amélioration photométrique est nette. Pour notre
+objectif d'initialisation, il constitue une option complémentaire, pas une obligation
+pour chaque fenêtre. La comparaison ne mesure pas encore la précision mécanique ni
+le rendement d'une politique automatique de choix du modèle.
+
+\textbf{Validation et limites.} Les 28 configurations pilotes relancées dans les campagnes
+complètes reproduisent exactement leurs masques et paramètres. Treize tests ciblés
+passent, notamment les dérivées secondes RBF par différences finies, l'ordre des douze
+paramètres, le remappage quadratique et les positions des centres fins. Les deux campagnes
+comptent chacune 764 configurations. Les résultats proviennent d'une seule plaque,
+sans déplacements vrais associés. Aucune qualification de faux positifs n'est revendiquée.
+
+Les scripts, états par fenêtre et par reprise, images, exports mixtes et empreintes
+sont conservés dans \texttt{results/hudge\_adaptive\_support\_20261115/}.
+Les essais infructueux de préparation sont aussi documentés : masque refusé par
+l'API quadratique et demande de 100 itérations refusée par la limite de 30. La
+continuation utilise l'API existante, sans modifier cette limite ni le solveur.
+\end{document}

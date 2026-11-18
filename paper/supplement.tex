@@ -1,0 +1,71 @@
+\documentclass[11pt,a4paper]{article}
+% Strain permits Free Format initial submissions. See SUBMISSION.md.
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,amsmath,amssymb,graphicx,booktabs,array}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=blue!45!black]{hyperref}
+\usepackage{fancyhdr,caption}
+\captionsetup{font=small,labelfont=bf}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{Solver-confirmed initialization for large-deformation correlation}\fancyhead[R]{Draft}\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\newcommand{\uu}{\mathbf u}\newcommand{\xx}{\mathbf x}\newcommand{\FF}{\mathbf F}
+\title{Supplementary methods, alternatives and evidence audit}
+\author{Author names and affiliations to be confirmed}
+\date{Research manuscript draft --- 14 November 2026}
+\begin{document}\maketitle
+This supplement distinguishes mathematical background from executed campaign components. Its equations are not additional inference steps. Digital image correlation (DIC), inverse-compositional Gauss--Newton (IC-GN), zero-mean normalized cross-correlation (ZNCC), neural deformation field (NDF), convolutional neural network (CNN), histogram of oriented gradients (HOG), and coarse-to-fine PatchMatch (CPM) are abbreviated below. The principal manuscript specifies the retained proposal and confirmation chain; the machine-readable audit identifies inspected sources and archived settings.
+\section{Method roles and prior art}
+\begin{table}[ht]\small\centering
+\caption{Roles in this study. Citation does not imply inclusion in the principal pipeline.}
+\begin{tabular}{p{.25\linewidth}p{.28\linewidth}p{.35\linewidth}}\toprule
+Method & Function & Evidenced status\\\midrule
+Project NDFPairMatcher & Learned shared description, global coarse matching; separate residual head & Main proposal generator; residual is an ablation factor\\
+Local ZNCC and IC-GN & Photometric proposal; native local solve & Retained chain\\
+DeepMatching / EfficientLoFTR & Complete correspondence generators & Earlier tested alternatives; not the generator in causal table\\
+DaD / DeDoDe v2 & Point detection & Earlier detector comparisons, with a separate common descriptor\\
+DeDoDe-B / compact CNN & Description of selected supports & Earlier tests and analytical-compensation diagnostic\\
+CPM-HOG & Structured descriptor search & Optional alternative; not the retained main pipeline\\
+DAISY / AffNet & Dense descriptor / learned support normalization & Literature context here; no new evaluated arm implied\\
+Radial basis functions / splines & Field reconstruction from observations & Exploratory projections, not mandatory propagation steps\\
+Analytical local-affine initialization & Diagnostic solver reference & Truth allowed only in this control\\\bottomrule
+\end{tabular}\end{table}
+
+\begin{table}[ht]\small\centering
+\caption{Anticipation of the general strategy. ``Not established'' records the limits of the consulted source, not absence from the earlier method.}
+\begin{tabular}{p{.18\linewidth}p{.35\linewidth}p{.35\linewidth}}\toprule
+Work and access & Mechanism established & Not established by consulted source\\\midrule
+Pan (2009), publisher abstract & Correlation begins from a seed; highest-ZNCC computed point in a queue supplies the next neighbours & Exact transported parameters, neighbour stencil, mask bridges and platform details\\
+Zhou et al. (2012), publisher abstract & Feature matching; affine fit near seed; refined parameters transferred to neighbours; synthetic and foam experiments & Exact ordering, complete checks, region rules and implementation platform\\
+DAISY (2010), full author manuscript & Smoothed positive directional responses, concentric sampling; dense reuse & Not a DIC propagation or complete matcher in this study\\
+Present confirmatory implementation, source inspected & Sparse hypothesis competition; neighbour confirmation; two-source snapshot frontier with consistency; conditional reseeding & Fracture-safe graph links and universally resident complete pipeline are not established\\\bottomrule
+\end{tabular}\end{table}
+
+The descriptions above acknowledge the direct DIC antecedents \citep{pan,zhou}. Their publisher pages were accessible but marked their full articles unavailable during this revision. Detailed priority-queue, topology or novelty comparisons beyond those abstracts remain open. The broader 2019 DIC search work \citep{li} motivates structured matching without implying that DAISY was used in the retained chain. XFeat is cited to its own publication \citep{xfeat}, not to LightGlue.
+
+\input{sections/background.tex}
+\input{sections/alternatives.tex}
+\section{Additional diagnostic and implementation results}
+\input{sections/diagnostics.tex}
+\section{Parameters and source provenance}
+The exact recorded protocol dictionaries are provided under \texttt{configurations/}, separated into causal ablation, confirmation inputs, confirmation execution, support transfer, severe shear, experimental data and implementation checks. Missing fields remain absent. No inferred solver build is inserted into those records. The source-to-claim matrix and French audit document explain the level of verification for each statement.
+
+The coarse checkpoint is
+\begin{quote}\small\ttfamily
+results/ndf\_dic\_20261109/\\
+p3\_multiscale\_physics\_weight002\_levels3\_128pairs\_seed20261114/\\
+ndf\_pair\_matcher.pt
+\end{quote}
+Inspection in the project's experimental environment confirms the 32-component encoder and contextual layers. The source snapshot, training manifest and present checkpoint hash are recorded in \path{audit/source_manifest.json}. The weights remain external to the paper sources. This identifies the present file without inventing an experiment-time hash.
+
+Current native solver-source inspection finds an incremental corner-change convergence test followed by the correlation threshold; reference preparation also checks support and Hessian validity. Target or reference norm below $10^{-9}$ rejects a solve, and an incremental affine determinant magnitude below $10^{-8}$ rejects inversion. These are observations of the inspected external source, not proof that every historical binary used precisely those branches. The archived wrapper supplies 30 iterations, $10^{-3}$ tolerance, minimum ZNCC 0.65, affine motion and linear interpolation. It reads status greater than 0.5. The confirmatory policy additionally checks finite parameters and the 8-pixel/0.25 consistency limits. No claim of full independent post-update residual reevaluation is inferred from a convergence status.
+
+The shader computes local ZNCC from sums of intensity, squared intensity and products, with variance floor $10^{-12}$ and invalid candidate sentinel $-2$. Returned scores and margins do not become a threshold in the qualifier. Bilinear local-field derivatives and native conversions are independently checked by the small documentation validation script, without training or changing the algorithm.
+
+\section{Interpreting the evidence package}
+The per-window recount independently recomputes the four causal totals from saved states and truth and checks the saved correctness masks. It reproduces the single initial false acceptance at index 1587 of pair 16051009/16091009. It verifies confirmation and support-study totals from their saved arrays. Re-reading archives is a consistency audit, not new statistical replication. Historical intermediate score volumes are not stored everywhere; the complete-stage figure uses archived initial states rather than fabricating missing correlation peaks.
+
+Sources inspected today establish current implementations. Historical protocol dictionaries establish requested settings. Without experiment-time source snapshots and external solver revisions, their exact identity cannot be proved. The audit deliberately retains this distinction. Hardware latency and mask-interface guarantees must not be extrapolated from the numerical parity records.
+\input{references.tex}
+\end{document}

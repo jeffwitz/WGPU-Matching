@@ -1,0 +1,27 @@
+\section{Evaluation protocol}
+The experiments answer distinct questions, summarized in Table~\ref{tab:campaigns}. The principal comparison is not a uniform tournament of every explored matcher. Calibration uses analytical labels on development data to freeze selection/consistency settings. Test inference receives images and, when supplied, a real material mask; analytical visibility and deformation enter only subsequent scoring. Existing historical cases are regression diagnostics, not newly independent tests.
+
+\begin{table}[tb]\centering\small
+\caption{Campaign identities and populations. All synthetic native rasters are $3840\times2160$. The complete protocol dictionaries, identifiers and fingerprints are supplied separately.}\label{tab:campaigns}
+\begin{tabular}{p{.22\linewidth}p{.24\linewidth}p{.42\linewidth}}\toprule
+Campaign & Population & Question / key distinction\\\midrule
+Causal ablation & 20 heterogeneous pairs; groups 16000000, 17000000 & Four residual/correlation variants; status-only median propagation; 22,416 visible centres\\
+Confirmation & 20 heterogeneous and 20 translation pairs; groups 23000000, 24000000 & Frozen sparse confirmation and consistency-gated propagation; near-identity affine retention enabled\\
+Support transfer & Five pairs in each of five families; group 62000000 & 64 to 32 pixels, identical centres; derivative/coverage tradeoff\\
+Severe shear & Three textures at each peak gradient 0.33, 0.67, 2.0; group 59000000 & Exact-centre analytical scoring; fixed 64-pixel support failure\\
+Experimental & Adrien frames 000000/000075; supplied mask & $7920\times6004$ images; acceptance and remapping only\\
+Implementation & Four-pair GPU parity and isolated cached-script comparison & Numerical preservation and scoped timing, not new accuracy cohorts\\\bottomrule
+\end{tabular}\end{table}
+
+Let $V_i$ indicate analytical centre visibility, $S_i$ policy acceptance, and $e_i=\|\mathbf d_i-\mathbf u_{\rm true}(\mathbf x_i)\|$. Correct recovery uses the \emph{strict} threshold $e_i<2$ native pixels:
+\begin{equation}
+C=\frac{\sum_i V_iS_i\mathbf1[e_i<2]}{\sum_i V_i},\quad
+N_{\rm false}=\sum_i V_iS_i\mathbf1[e_i\geq2],\quad
+Q=\frac{\sum_i V_iS_i\mathbf1[e_i<2]}{T_{\rm complete}}.
+\label{eq:metrics}
+\end{equation}
+Non-finite accepted states, rejected states and accepted invisible centres are separately audited. $T_{\rm complete}$ must include input preparation, hypotheses, failed trials, propagation and result recovery. Where that time is absent, $Q$ is not reported as end-to-end throughput. Descriptor diagnostics at five pixels are not pooled with these DIC outcomes. An analytical local-affine solve is a diagnostic reference, not an absolute mathematical upper bound.
+
+Reanalysis for this revision reads saved arrays, recomputes errors from states and truth where both exist, and checks the reported counts. It is not a new independent experiment. All four causal denominators remain 22,416. Confirmation has 24,641 visible heterogeneous and 29,459 visible translation centres. Pair-level mean gains and pair-bootstrap intervals are distinct from ratios of pooled counts. The support study has only five pairs per family and can reuse texture identities between families, so its cross-family samples are not independent. Its gradient errors are compared on centres correct at both support sizes; newly recovered centres are counted separately.
+
+Synthetic families preserve material texture under the generator's deformation. Exact-centre analytical truth is used in the corrected severe-shear and support studies; historical arrays are not silently regenerated with today's generator. The discontinuous-opening support examples are grid aligned and cannot establish arbitrary crack robustness. Real-image observations have no independent displacement truth. The experimental acceptance denominator is the supplied mask, not a synthetic visibility mask.

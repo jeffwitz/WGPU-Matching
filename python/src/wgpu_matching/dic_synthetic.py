@@ -20,6 +20,65 @@ class SyntheticSpecklePair:
     target_visible: np.ndarray | None = None
 
 
+def analytic_truth_at_points(metadata: dict[str, Any], points: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Evaluate the generator's forward displacement and gradient at float centers.
+
+    Validity follows the generator's center-visibility convention, including
+    the discontinuity exclusion margin. It does not certify a full subset.
+    """
+    xy = np.asarray(points, dtype=np.float64).reshape(-1, 2)
+    width, height = int(metadata["width"]), int(metadata["height"])
+    matrix = np.asarray(metadata["affine_matrix"], dtype=np.float64).reshape(2, 2)
+    translation = np.asarray(metadata["translation_px"], dtype=np.float64)
+    amplitude = np.asarray(metadata["heterogeneity_amplitude_px"], dtype=np.float64)
+    center = np.array([width / 2, height / 2], dtype=np.float64)
+    x, y = xy[:, 0], xy[:, 1]
+    px, py = 2 * np.pi * x / width, 2 * np.pi * y / height
+    hx = amplitude[0] * np.sin(py) * np.cos(px)
+    hy = amplitude[1] * np.sin(px) * np.cos(py)
+    displacement = (xy - center) @ (matrix - np.eye(2)).T + translation
+    displacement += np.column_stack((hx, hy))
+    gradient = np.broadcast_to(matrix - np.eye(2), (len(xy), 2, 2)).copy()
+    gradient[:, 0, 0] -= amplitude[0] * (2 * np.pi / width) * np.sin(py) * np.sin(px)
+    gradient[:, 0, 1] += amplitude[0] * (2 * np.pi / height) * np.cos(py) * np.cos(px)
+    gradient[:, 1, 0] += amplitude[1] * (2 * np.pi / width) * np.cos(px) * np.cos(py)
+    gradient[:, 1, 1] -= amplitude[1] * (2 * np.pi / height) * np.sin(px) * np.sin(py)
+    if metadata["motion_mode"] == "shear_band":
+        band_width = float(metadata["shear_band_width_px"])
+        z = (y - float(metadata["shear_band_center_y_px"])) / band_width
+        peak = float(metadata["shear_band_peak_gradient"])
+        displacement[:, 0] += peak * band_width * np.tanh(z)
+        gradient[:, 0, 1] += peak * (1 - np.tanh(z) ** 2)
+    if metadata["motion_mode"] == "discontinuous":
+        boundary = float(metadata["discontinuity_boundary_px"])
+        displacement[:, 0] += float(metadata["discontinuity_gap_px"]) * (x >= boundary)
+    target = xy + displacement
+    visible = ((target[:, 0] >= 0) & (target[:, 0] <= width - 1)
+               & (target[:, 1] >= 0) & (target[:, 1] <= height - 1))
+    if metadata["motion_mode"] == "discontinuous":
+        margin = max(8., 2 * float(metadata["characteristic_size_px"]))
+        visible &= np.abs(x - float(metadata["discontinuity_boundary_px"])) > margin
+    states = np.column_stack((displacement[:, 0], gradient[:, 0, 0], gradient[:, 0, 1],
+                              displacement[:, 1], gradient[:, 1, 0], gradient[:, 1, 1]))
+    return states, visible
+
+
+def perturb_target(image, warp_seed, *, gain=1., offset=0., blur_sigma=0., noise_std=0.):
+    """Apply deterministic target-only camera perturbations in a fixed order."""
+    if gain <= 0 or blur_sigma < 0 or noise_std < 0:
+        raise ValueError("invalid target perturbation")
+    result = np.asarray(image, dtype=np.float32)
+    if blur_sigma:
+        result = _gaussian_blur(result, blur_sigma)
+    if gain != 1.0 or offset != 0.0:
+        result = np.clip(result * gain + offset, 0, 1).astype(np.float32)
+    if noise_std:
+        noise = np.random.default_rng(warp_seed + 700000001).normal(
+            0, noise_std, result.shape).astype(np.float32)
+        result = np.clip(result + noise, 0, 1).astype(np.float32)
+    return result
+
+
 def _gaussian_blur(image: np.ndarray, sigma: float) -> np.ndarray:
     radius = max(1, int(np.ceil(3.0 * sigma)))
     x = np.arange(-radius, radius + 1, dtype=np.float32)
@@ -73,6 +132,8 @@ def generate_speckle(
     softness: float | None = None,
     noise_std: float = 0.025,
     illumination_variation: float = 0.12,
+    periodic_strength: float = 0.0,
+    periodic_period_px: float = 128.0,
 ) -> tuple[np.ndarray, dict[str, float]]:
     """Create a repeatable multi-scale random-dot texture in float32 [0, 1]."""
     if min(width, height) < 32:
@@ -81,7 +142,8 @@ def generate_speckle(
     characteristic_size_px = characteristic_size_px or float(rng.uniform(2.0, 7.0))
     coverage = coverage if coverage is not None else float(rng.uniform(0.18, 0.48))
     blur_sigma_px = blur_sigma_px if blur_sigma_px is not None else float(rng.uniform(0.0, 1.2))
-    if characteristic_size_px <= 0 or not 0 < coverage < 1 or blur_sigma_px < 0:
+    if (characteristic_size_px <= 0 or not 0 < coverage < 1 or blur_sigma_px < 0
+            or not 0 <= periodic_strength <= 1 or periodic_period_px <= 0):
         raise ValueError("Invalid speckle size, coverage, or blur")
 
     impulse = rng.standard_normal((height, width), dtype=np.float32)
@@ -109,6 +171,10 @@ def generate_speckle(
     gain = rng.uniform(0.72, 1.28)
     image = np.clip(illumination + gain * (dots - 0.5) * 0.78, 0.0, 1.0)
     image += rng.normal(0.0, noise_std, size=(height, width)).astype(np.float32)
+    if periodic_strength:
+        pattern = .5 + .25 * (np.cos(2 * np.pi * xx / periodic_period_px)
+                              + np.cos(2 * np.pi * yy / periodic_period_px))
+        image = (1 - periodic_strength) * image + periodic_strength * pattern
     image = np.clip(image, 0.0, 1.0).astype(np.float32)
     return image, {
         "characteristic_size_px": float(characteristic_size_px),
@@ -118,11 +184,18 @@ def generate_speckle(
         "noise_std": float(noise_std),
         "illumination_variation": float(illumination_variation),
         "gain": float(gain),
+        "periodic_strength": float(periodic_strength),
+        "periodic_period_px": float(periodic_period_px),
     }
 
 
 def _motion_parameters(
-    rng: np.random.Generator, width: int, height: int, mode: str | None = None
+    rng: np.random.Generator,
+    width: int,
+    height: int,
+    mode: str | None = None,
+    shear_band_peak_gradient: float | None = None,
+    discontinuity_boundary_fraction: float = 0.5,
 ) -> dict[str, Any]:
     mode = mode or str(
         rng.choice(("translation", "rigid", "affine", "heterogeneous", "discontinuous"))
@@ -131,7 +204,7 @@ def _motion_parameters(
     stretch_x = float(rng.uniform(0.72, 1.65))
     stretch_y = float(rng.uniform(0.72, 1.35))
     shear = float(rng.uniform(-0.35, 0.35))
-    if mode == "translation":
+    if mode in {"translation", "shear_band"}:
         stretch_x = stretch_y = 1.0
         shear = angle = 0.0
     if mode == "rigid":
@@ -151,6 +224,8 @@ def _motion_parameters(
         if mode == "heterogeneous"
         else np.zeros(2)
     )
+    if mode == "shear_band":
+        heterogeneity = np.zeros(2, dtype=np.float64)
     discontinuity_gap = float(rng.uniform(0.02, 0.06) * width) if mode == "discontinuous" else 0.0
     return {
         "mode": mode,
@@ -161,8 +236,13 @@ def _motion_parameters(
         "stretch_x": stretch_x,
         "stretch_y": stretch_y,
         "shear": shear,
-        "discontinuity_boundary_px": width / 2.0,
+        "discontinuity_boundary_px": width * discontinuity_boundary_fraction,
         "discontinuity_gap_px": discontinuity_gap,
+        "shear_band_peak_gradient": (
+            float(shear_band_peak_gradient) if shear_band_peak_gradient is not None else 0.0
+        ),
+        "shear_band_center_y_px": 0.5 * height,
+        "shear_band_width_px": max(8.0, 0.04 * height),
     }
 
 
@@ -174,6 +254,12 @@ def _heterogeneous_displacement(
     phase_y = 2.0 * np.pi * y / max(height, 1)
     dx = amplitude[0] * np.sin(phase_y) * np.cos(phase_x)
     dy = amplitude[1] * np.sin(phase_x) * np.cos(phase_y)
+    if motion["mode"] == "shear_band":
+        band_width = motion["shear_band_width_px"]
+        normalized = (y - motion["shear_band_center_y_px"]) / band_width
+        dx = dx + (
+            motion["shear_band_peak_gradient"] * band_width * np.tanh(normalized)
+        )
     return dx, dy
 
 
@@ -218,6 +304,8 @@ def generate_speckle_pair(
     height: int = 256,
     *,
     motion_mode: str | None = None,
+    shear_band_peak_gradient: float | None = None,
+    discontinuity_boundary_fraction: float = 0.5,
     texture_options: dict[str, float] | None = None,
 ) -> SyntheticSpecklePair:
     """Warp one speckle texture through analytic affine, smooth, or discontinuous motion."""
@@ -231,9 +319,16 @@ def generate_speckle_pair(
         "affine",
         "heterogeneous",
         "discontinuous",
+        "shear_band",
     }:
         raise ValueError("Unknown synthetic motion mode")
-    motion = _motion_parameters(rng, width, height, motion_mode)
+    if shear_band_peak_gradient is not None and motion_mode != "shear_band":
+        raise ValueError("shear_band_peak_gradient requires motion_mode='shear_band'")
+    if not 0.0 < discontinuity_boundary_fraction < 1.0:
+        raise ValueError("discontinuity boundary fraction must be between zero and one")
+    motion = _motion_parameters(
+        rng, width, height, motion_mode, shear_band_peak_gradient, discontinuity_boundary_fraction
+    )
 
     yy, xx = np.mgrid[0:height, 0:width].astype(np.float64)
     target_valid = None
@@ -301,6 +396,9 @@ def generate_speckle_pair(
         "shear": float(motion["shear"]),
         "discontinuity_boundary_px": float(motion["discontinuity_boundary_px"]),
         "discontinuity_gap_px": float(motion["discontinuity_gap_px"]),
+        "shear_band_peak_gradient": float(motion["shear_band_peak_gradient"]),
+        "shear_band_center_y_px": float(motion["shear_band_center_y_px"]),
+        "shear_band_width_px": float(motion["shear_band_width_px"]),
         "heterogeneity_amplitude_px": motion["heterogeneity"].tolist(),
         "target_visible_fraction": float(np.mean(target_visible)),
         **texture_metadata,

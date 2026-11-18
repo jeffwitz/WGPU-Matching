@@ -22,4 +22,6 @@ support and scientific metrics. Continue to a method page, then to
    horg
    cpm
    field-projection
+   hole-moment-initialization
+   plate191-edge-failure
    quality-and-confidence

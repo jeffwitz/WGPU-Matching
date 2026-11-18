@@ -1,0 +1,20 @@
+\section{Pixel centres and composition}\label{sec:coordinates}
+For native-to-reduced scale $S=\operatorname{diag}(s_x,s_y)$, the common-image coordinate map is $\mathbf z=S^{-1}(\mathbf x+\tfrac12\mathbf1)-\tfrac12\mathbf1$. It is not $\mathbf x/S$. A feature grid with $N_x\times N_y$ nodes in a $W\times H$ raster uses
+\begin{equation}
+z_{ij,x}=(i+\tfrac12)W/N_x-\tfrac12,\qquad
+z_{ij,y}=(j+\tfrac12)H/N_y-\tfrac12.
+\end{equation}
+Thus $192/48=4$ places horizontal nodes at $4i+1.5$. Bilinear evaluation and spline fitting must use these same physical nodes. For equal source/target scale,
+\begin{equation}
+\mathbf u_n=S\mathbf u_r,\qquad F_n=SF_rS^{-1},\qquad G_n=F_n-I.
+\end{equation}
+The diagonal gradients are unchanged, while cross derivatives scale by $s_x/s_y$ and $s_y/s_x$. The isotropic factor 20 leaves the entire gradient invariant. The implemented bilinear evaluator clamps indices outside the nodal extent; exact affine reproduction is therefore asserted only inside that extent, not for extrapolated boundary derivatives.
+
+More generally let $\mathbf z_0=B_0\mathbf x+\mathbf b_0$ and $\mathbf z_1=B_1\mathbf y+\mathbf b_1$ encode resizing, cropping or padding. If the reduced map is $\phi_r$, then
+\begin{equation}
+\phi_n(\mathbf x)=B_1^{-1}[\phi_r(B_0\mathbf x+\mathbf b_0)-\mathbf b_1],\qquad
+F_n=B_1^{-1}F_r B_0.
+\end{equation}
+These formulas state the required conversion; they are not a claim that the tested matcher accepts differently sized frames. The present pair model requires equal shapes, with area resizing and no learned-input crop/padding in the cited synthetic configuration. Rotation and affine pullbacks are separate bilinear resamplings with explicit fill. The experimental dimensions and model raster are recorded separately in its campaign configuration.
+
+For affine preconditioning $H(\mathbf z)=A\mathbf z+\mathbf t$ and residual map $R(\mathbf z)=\mathbf z+\mathbf r(\mathbf z)$, the forward composition is $H\circ R$ and its derivative is $A(I+\nabla\mathbf r)$. Inverse composition inside IC-GN instead uses the inverse incremental local warp; these operations must not be conflated. Analytical conversion checks in the revision package cover anisotropic factors, offsets and composition, without changing archived solver outputs.

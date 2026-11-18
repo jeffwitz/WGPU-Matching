@@ -1,0 +1,183 @@
+\documentclass[11pt,a4paper]{article}
+% Strain permits Free Format initial submissions. See SUBMISSION.md.
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,amsmath,amssymb,graphicx,booktabs,array}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=blue!45!black]{hyperref}
+\usepackage{fancyhdr,caption}
+\captionsetup{font=small,labelfont=bf}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{Solver-validated initialization for large-deformation correlation}\fancyhead[R]{Draft}\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\newcommand{\uu}{\mathbf u}\newcommand{\xx}{\mathbf x}\newcommand{\FF}{\mathbf F}
+\title{Solver-validated correspondence and affine propagation for large-deformation digital image correlation on portable graphics hardware}
+\author{Author names and affiliations to be confirmed}
+\date{Research manuscript draft --- 14 November 2026}
+\begin{document}\maketitle
+\begin{abstract}
+Large displacements and changes in the local shape of a speckle pattern can prevent digital image correlation from converging even when its local deformation model remains adequate. We investigate initialization as a separate computational problem: identifying image-derived seeds that allow an existing inverse-compositional Gauss--Newton solver to recover the displacement field. A sequence of experiments compares independent feature descriptors, geometry-conditioned matching, learned residual fields and solver-validated propagation. The resulting strategy combines affine preconditioning, local normalized cross-correlation, confirmation of sparse seeds by the correlation solver, and first-order transport of accepted local states to neighbouring windows. Its purpose is to enlarge the practical capture range of correlation, while retaining the photometric solver as the measurement stage. In a held-out synthetic heterogeneous-field campaign, the strategy recovers 23,570 of 24,641 visible windows, with no accepted visible displacement errors of at least two pixels. The mean paired coverage gain is 23.65 percentage points, with a pair-bootstrap 95\% interval of 14.78--35.19 points. Independent experiments with smaller subsets recover additional centres but increase gradient error, showing that convergence coverage and metrological resolution are distinct objectives. Severe localized shear remains a failure regime. Canonical WebGPU shaders support portable execution of matching and solver-related kernels, including on an integrated graphics processor; complete residence on the graphics processor and subsecond end-to-end processing are not established by the available measurements. A controlled twenty-pair ablation separates local correlation from propagation: correct coverage increases from 72.56\% to 92.13\% when the latter is added. The method initializes, rather than replaces, digital image correlation.
+\end{abstract}
+\noindent\textbf{Keywords:} digital image correlation; large deformation; initialization; affine propagation; WebGPU.
+
+\section{Introduction}
+Digital image correlation (DIC) estimates material displacement by registering intensity patterns recorded before and after deformation. Its usefulness in experimental mechanics depends on both accurate local optimization and a sufficiently good initial estimate. An accurate local solver can fail when the starting correspondence lies outside its basin of attraction. Increasing the number of iterations does not generally solve this problem: a locally similar intensity configuration may offer a different stationary point, while an entirely unrelated patch provides no useful local descent direction.
+
+The distinction between finding a correspondence and measuring its subpixel deformation is particularly important for two widely separated images. A temporal predictor may be unavailable, and a translation of several hundred pixels can coexist with strongly variable local strain. Conversely, a large uniform translation is not itself a large strain. The first challenge calls for global or hierarchical discovery; the second calls for a comparison that remains meaningful when corresponding material neighbourhoods have different shapes.
+
+Reliability-guided DIC and feature-assisted large-deformation initialization have already addressed parts of this problem \citep{zhou,pan,li}. We do not claim to introduce propagation, affine shape functions or image features to DIC. Our contribution is their combination in a solver-validated initialization policy, together with a portable implementation and an experimental account of why several plausible alternatives did not improve final convergence. The central question is which strategy produces reliable seeds in the relevant material regions, rather than which descriptor obtains the highest isolated match count.
+
+The following experiments do not form a uniform tournament across every historical model. Their denominators, resolutions and timing scopes differ. The principal quantitative comparison uses held-out heterogeneous and translation pairs. A separate multifamily study examines transfer from 64-pixel to 32-pixel subsets at identical centres. Experimental images currently provide acceptance maps and integration evidence, not independent displacement truth. This distinction prevents visual alignment or a high accepted fraction from being interpreted as metrological validation.
+
+\section{Related strategies and the geometry of descriptor failure}
+\subsection{Direct, feature-based and pair-conditioned matching}
+Direct correlation compares intensities over candidate supports. Zero-mean normalized cross-correlation (ZNCC) removes a constant intensity offset and positive multiplicative gain within a support. It is not invariant to arbitrary spatial deformation. Fourier-domain translation estimates can discover large shifts efficiently, but a global translation cannot represent distinct local motions. Coarse-to-fine pyramids reduce apparent displacement at low resolution, while also suppressing fine speckle information and potentially merging neighbouring deformation regions.
+
+Feature methods compare vectors computed around image points. The scale-invariant feature transform (SIFT) normalizes scale and orientation and describes local gradients \citep{lowe}. Histogram of oriented gradients (HOG) representations pool gradient directions over spatial cells. Pooling tolerates small perturbations but sacrifices spatial detail. Dense descriptions avoid a detector-repeatability bottleneck, at the expense of memory and search. Sparse descriptions save computation but leave some visible material locations without a detected target candidate.
+
+PatchMatch propagates promising correspondences and introduces random proposals. Coarse-to-fine PatchMatch (CPM) combines that mechanism with a hierarchy \citep{hu}. DIC-specific work using dense DAISY descriptors \citep{daisy} and a PatchMatch variant demonstrates the relevance of structured search to point-wise initialization \citep{li}. DAISY is the published descriptor name, rather than an acronym expanded here. DeepMatching uses a hierarchical deformable matching construction \citep{deepmatching}. Efficient Local Feature Transformer (EfficientLoFTR) contextualizes features using both images and performs semi-dense coarse and fine matching \citep{eloftr}. These approaches differ in how much geometric compatibility is imposed during correspondence discovery.
+
+Geometry can also be normalized before description. AffNet learns affine support shapes through discriminability \citep{affnet}. Improving the descriptor loss and improving the material region presented to the descriptor are different interventions. A descriptor can remain informative yet fail when its two inputs represent different material neighbourhoods.
+
+\subsection{Why usual invariances are insufficient}
+Let the material transformation be $\boldsymbol\varphi(\xx)=\xx+\uu(\xx)$ and its gradient $\FF=\mathbf I+\nabla\uu$. Locally,
+\begin{equation}
+\boldsymbol\varphi(\xx+\boldsymbol\xi)=\boldsymbol\varphi(\xx)+\FF(\xx)\boldsymbol\xi+O(\|\boldsymbol\xi\|^2).
+\end{equation}
+A reference square and an equally sized target square centred at corresponding points do not generally contain the same material. At 60\% horizontal extension, a 64-pixel material support occupies approximately 102 pixels horizontally in the target. Rotation and isotropic scale normalization cannot compensate arbitrary anisotropic stretch and shear. Large deformation violates assumptions behind approximate descriptor invariance; it does not disprove a universal mathematical invariant.
+
+Under ideal brightness conservation, $I_0(\xx)=I_1(\boldsymbol\varphi(\xx))$. Differentiation gives
+\begin{equation}\nabla I_0(\xx)=\FF(\xx)^T\nabla I_1(\boldsymbol\varphi(\xx)).\end{equation}
+Gradient orientation changes through the transpose of the transformation gradient. A simple rotation of histogram bins or intensity normalization cannot represent a general $\FF$. Discrete filtering and interpolation introduce further deviations. Enlarging the support improves discrimination only until deformation varies significantly within that support.
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/support_geometry.pdf}\caption{Analytical schematic of material-support mismatch. Blue grids show a reference square, its affine image, and a fixed target square. The dashed contour is the material image of the reference support. This is an explanatory construction, not an experimental displacement measurement.}\label{fig:support}\end{figure}
+
+For a candidate target centre $\mathbf y$, a geometry-conditioned comparison uses
+\begin{equation}
+P_0(\boldsymbol\xi)=I_0(\xx+\boldsymbol\xi),\qquad P_1^{\FF}(\boldsymbol\xi)=I_1(\mathbf y+\FF\boldsymbol\xi).
+\end{equation}
+This operation needs a shape hypothesis but not the true translation. Searching over $\mathbf y$ is still necessary. Supplying $\FF$ analytically tests a representation; it is not a usable initializer. Moreover, local affine compensation cannot exactly remove curvature or a jump inside the support. Thus even perfect geometric hypotheses do not guarantee a valid local photometric measurement.
+
+\input{mathematical_methods.tex}
+
+\section{Experimental development and rejected alternatives}
+The project evaluated classical and learned matching pipelines, including DeepMatching, a project-specific gradient-histogram representation, CPM-HOG and modern learned feature matchers, including XFeat (Accelerated Features) and LightGlue \citep{lightglue}. These comparisons showed that network recency or extraction speed alone did not predict DIC coverage. Global affine projection performed well on globally affine tensile tests, but a few informative matches can reconstruct such a field. Those results did not establish direct matching at each requested centre or convergence of the downstream solver.
+
+A second line separated detection from description. DaD (Distilled Reinforcement Learning for Diverse Keypoint Detection) and DeDoDe version 2 \citep{dad,dedode}, together with a lightweight speckle detector, were combined with a common DeDoDe-B description model. DeDoDe is the published model name. This controlled the descriptor while examining point selection. Fast native-resolution detection did not imply a fast complete pipeline: description could dominate pair time. A compact convolutional neural network (CNN) descriptor and learned transformations of a 64-component gradient descriptor were therefore implemented. They established functional training and portable inference, but the compact CNN lost most correspondences in independent rotation, affine and heterogeneous tests. Faster description alone was insufficient.
+
+Affine-compensation experiments subsequently restored many correspondences without additional training. This supported a geometric explanation of failure and motivated explicit orientation hypotheses. Exhaustive orientation banks enabled non-oracle search, but repeated extraction and allocation were costly. The later initialization pipeline retained ten orientations as its coverage reference. An adaptive six-orientation search with two refinements reduced some costs but produced substantial losses on individual difficult pairs and was not adopted as the default. A small average coverage loss is not harmless when concentrated in a region with no remaining seed.
+
+A neural deformation field (NDF) was also evaluated as a residual after affine preconditioning. Its displacement grid was projected to correlation centres through different interpolators. Coordinate conventions required correction before comparisons became interpretable. The corrected experiments still showed that smoothing a wrong displacement grid could not recover the material correspondence. An ablation with and without local normalized cross-correlation (NCC) showed that the residual checkpoint did not improve the best tested chain. That checkpoint had not been trained specifically on post-rectification residuals. The negative result concerns this checkpoint in this role, rather than all learned residual predictors.
+
+The operational conclusion was to retain image-derived geometry and local correlation, confirm seeds with the solver, and propagate accepted local states. This conclusion is based on solved-window coverage. It does not require that the chosen proposal generator be intrinsically superior on every descriptor benchmark. A learned coarse matcher can remain part of hypothesis discovery while a learned residual field is omitted; these are distinct components.
+
+\subsection{CPM-HOG and departures from published CPM}
+CPM-HOG is a proposal generator, not a reproduction of the complete published CPM optical-flow pipeline. It uses compact HOG features, sparse-grid matching in both directions, reciprocal checks and local affine projection to requested DIC centres. Published CPM uses dense SIFT Flow features and, in its optical-flow application, an additional dense interpolation stage. Our replacement reduces descriptor storage and permits shared WebGPU kernels. Sparse outputs avoid constructing a dense optical-flow field that the downstream solver does not require.
+
+Parallel propagation changes execution order relative to an in-place sequential scan: an improved state may not influence every later location in the same dispatch. Identical iteration counts need not imply equivalent propagation distances. Local affine projection also changes the output interpretation: a state predicted at a requested centre is supported by measured grid matches, but is not a directly measured correspondence there. The implementation records that distinction.
+
+These modifications trade representational richness and scheduling behaviour for a portable computational path. Historical strong-strain failures prohibit presenting CPM-HOG as the best high-deformation method in the repository. It remains an optional initializer requiring solver validation. More random proposals cannot reliably repair a matching cost that assigns poor similarity to the true deformed support. The propagation policy below therefore remains independent of this particular proposal source.
+
+\section{Solver-validated initialization and propagation}
+\subsection{Hypotheses and photometric confirmation}
+Inputs are two monochrome images, requested centres, correlation supports and solver settings, and any experimentally available material mask. No temporal predictor or analytical displacement is required. Global image-derived hypotheses provide rotation and affine preconditioning. Local NCC supplies proposals near preconditioned locations. Competing hypotheses are evaluated on a fixed sparse set of centres by accepted solver counts and geometric consistency. Ground truth is excluded from this selection.
+
+At centre $\xx_i$, write the local affine displacement as
+\begin{equation}\uu_i(\xx_i+\boldsymbol\xi)=\mathbf d_i+\mathbf G_i\boldsymbol\xi,\qquad \mathbf G_i=\nabla\uu(\xx_i).\end{equation}
+The solver parameter order is $[u,u_x,u_y,v,v_x,v_y]$. An initializer returning target coordinates and $\FF$ must be converted by subtracting the source centre and the identity matrix. Under a common isotropic pyramid reduction $s$, translation is divided by $s$ while the dimensionless gradient is unchanged. For half-pixel-aligned resizing, the coordinate mapping is $(x+1/2)/s-1/2$. The convention of the specific solver must be preserved instead of mixing cell-centred and endpoint-aligned grids.
+
+The inverse-compositional Gauss--Newton (IC-GN) solver minimizes a normalized photometric residual over the support. The initializer supplies a candidate, not a displacement measurement or uncertainty estimate. A solver-accepted state can be propagated, but acceptance alone does not prove physical correctness. Qualification therefore counts false acceptances explicitly. The difference between acceptance, convergence to the correct displacement and accurate local gradient estimation is maintained throughout.
+
+\subsection{First-order frontier transport}
+For an accepted neighbour $j$, predict the state at $i$ by
+\begin{equation}
+\widehat{\mathbf d}_{i\leftarrow j}=\mathbf d_j+\mathbf G_j(\xx_i-\xx_j),\qquad \widehat{\mathbf G}_{i\leftarrow j}=\mathbf G_j.
+\end{equation}
+The baseline takes a componentwise median of predicted affine states from accepted eight-connected neighbours. Only the active frontier is solved; a window receives at most three attempts. Processing stops when no eligible frontier remains. Every successful new state results from a new photometric solve. A propagated guess is never labelled a converged result merely because it was interpolated.
+
+A weighted mean of validated neighbouring predictions is another candidate generator, but cannot validate a missing measurement. A median is likewise unsafe if most neighbouring states belong to another material region. Available mask connectivity must restrict transport. Without a separation mask, an unobserved crack remains a limitation of both neighbourhood construction and finite support. Outputs preserve acceptance status, attempt count, parent provenance and actual subset size.
+
+Smaller-support retries are optional. A validated 64-pixel state can initialize a 32-pixel or 16-pixel solve at the same centre. A smaller support can accommodate stronger spatial variation, but changes measurement support and uncertainty. It does not create a dense fine grid, nor may a 16-pixel solution be labelled as a 64-pixel measurement. A rejected window remains unresolved unless an actual subsequent solve accepts it.
+
+\section{Portable implementation and computational scope}
+WebGPU is a portable graphics and compute interface, and WebGPU Shading Language (WGSL) defines its kernels \citep{webgpu,wgsl}. Canonical shader sources are shared between Python and browser-facing components. This reduces divergence between numerical kernels and provides a route across supported graphics backends. Integrated Intel graphics is a useful target because execution does not require a dedicated accelerator.
+
+Portability concerns supported adapters, drivers and runtime limits, not identical speed or guaranteed execution on every modern computer. Open Neural Network Exchange (ONNX) Runtime can use a different device context from Python's WebGPU runtime. Selecting a WebGPU execution provider does not establish that every operator or tensor remains on the graphics processing unit (GPU). CPU denotes the central processing unit. CPU fallbacks and transfers must be profiled, not inferred from provider selection.
+
+Repeated image uploads, per-hypothesis allocations and host-side selection were progressively replaced by persistent resources and shader-based operations. Matching, affine selection, anchor confirmation and frontier processing provide useful shared compute stages. Compact readback remains useful for reporting. Both numerical parity and transfer profiling are needed before describing a whole pipeline as GPU-resident. These engineering contributions are relevant to accessibility even before every component is resident.
+
+Native-resolution global all-pairs matching is avoided. A $3840\times2160$ image reduced by eight has 129,600 locations. Its square correlation array contains approximately $1.68\times10^{10}$ entries, or 67.2 decimal gigabytes at four bytes per entry before other allocations. Coarse discovery followed by native-pixel local solving offers bounded memory. However, low-resolution discovery can suppress small speckles. Network resolution and native measurement resolution must be reported separately.
+
+\section{Qualification protocol}
+A correctly converged window is solver-accepted and has final centre displacement error strictly below two pixels. This is a capture-range endpoint, not a metrological strain-accuracy specification. The four gradient components are evaluated separately. With $N_v$ visible requested centres, $N_c$ correct accepted centres and full pair time $T$, report
+\begin{equation}C=N_c/N_v,\qquad Q=N_c/T.\end{equation}
+Both coverage and throughput are necessary: speed on a small easy subset does not establish useful field recovery. Accepted invisible centres and accepted visible errors are distinct outcomes. An analytically initialized affine solve is a diagnostic reference, not an absolute mathematical ceiling.
+
+Calibration and confirmatory groups use independent texture identities. The confirmatory heterogeneous and translation groups have identifiers 23000000 and 24000000. The smaller-support study uses group 62000000, with five pairs per family. The discontinuous-opening family is aligned with the 64-pixel grid, so this experiment cannot establish behaviour at shifted cracks or unknown interfaces. Different families can reuse texture identifiers; they are not statistically independent across families. Confidence intervals resample whole image pairs instead of treating spatially dependent windows as independent observations.
+
+Frozen calibration selected an eight-pixel displacement-consistency tolerance, a 0.25 gradient-consistency tolerance, sparse-grid stride two and at least three anchors. Development truth was used during calibration only. Evaluation truth is never used to rank hypotheses, accept seeds or propagate states. Source reports and fingerprints accompany this draft. A release containing all experiment configurations remains necessary for independent reproduction.
+
+\begin{table}[tb]\centering\caption{Processing parameters and reporting scope. Missing campaign settings must be consolidated before submission, not inferred from another run.}\small
+\begin{tabular}{p{.35\linewidth}p{.57\linewidth}}\toprule Item & Setting or scope\\\midrule
+Native synthetic images & $3840\times2160$ pixels in multifamily tests\\
+Measured quantities & In-plane displacement and affine displacement gradient\\
+Local optimizer & Inverse-compositional Gauss--Newton\\
+Coarse / transferred support & 64 / 32 pixels; coarse stride 64; same centres; transfer radius 96 pixels\\
+Propagation & Eight neighbours; first-order transport; three attempts maximum\\
+Success criterion & Accepted solve and centre error $<2$ pixels\\
+Gradient error & Frobenius norm of the four-component error\\
+Anchor consistency & 8 pixels displacement; 0.25 gradient; three anchors minimum\\
+Masks & Experimentally available masks in inference; analytical visibility for scoring\\
+Fine-support interpolation and solver & Linear interpolation; 30 iterations; tolerance 0.001; minimum ZNCC 0.65\\
+Calibration & Synthetic pixel units; no physical accuracy inferred for real images\\\bottomrule
+\end{tabular}\end{table}
+
+\section{Results}
+\input{causal_results.tex}
+\subsection{Held-out heterogeneous and translation fields}
+The confirmatory heterogeneous campaign recovered 23,570 of 24,641 visible windows (95.65\%), with no false accepted visible windows. The paired mean gain over the archived baseline was 23.65 percentage points, with a 95\% pair-bootstrap interval of 14.78--35.19 points. Against a matched re-solve control, the mean gain was 23.40 points (14.69--34.61). Figure~\ref{fig:paired} shows why the pooled count is insufficient: difficult pairs account for substantial recovery, and a small aggregate difference can conceal a local failure.
+
+The translation campaign recovered 28,641 of 29,459 visible windows, compared with 25,173 for the corrected baseline, with no pair regression and no visible false acceptance. An earlier comparison had rejected near-identity affine prefits and was not used as the confirmatory baseline. Retaining that correction is essential because pure translation is a basic control for the geometric preprocessing itself.
+
+\begin{figure}[tb]\centering\includegraphics[width=.92\linewidth]{figures/paired_coverage.pdf}\caption{Paired heterogeneous-field coverage reconstructed from the archived confirmatory report. Lines connect the baseline and propagated result on each image pair, sorted by gain. Both methods use that pair's visible requested centres as denominator. These are final correlation outcomes, not direct feature-match counts.}\label{fig:paired}\end{figure}
+
+\subsection{Independent same-centre transfer}
+The five-family experiment changes support size while preserving centres. Table~\ref{tab:multi} and Figure~\ref{fig:multi} show increased coverage in every pooled family, with no loss of previously correct centres and no visible false acceptance in these draws. Nevertheless, gradient error increased on the common correct population in every family. In heterogeneous fields, displacement root-mean-square error decreased from 0.0589 to 0.0191 pixels, while gradient root-mean-square error increased from 0.0009 to 0.0025. Smaller support can reduce non-affine mismatch while containing less information for derivative estimation.
+
+\begin{table}[tb]\centering\caption{Independent transfer at identical centres, five pairs per family. Correct means an accepted solve with displacement error below two pixels.}\label{tab:multi}
+\begin{tabular}{lrrr}\toprule Family & Visible & 64-pixel correct & 32-pixel correct\\\midrule
+Translation&6467&6322&6395\\Rigid rotation&6278&6008&6144\\Affine&5845&5616&5718\\Heterogeneous&6061&5804&5920\\Discontinuous&6556&6414&6443\\\bottomrule\end{tabular}\end{table}
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/multifamily.pdf}\caption{Coverage after smaller-support transfer at the same requested centres. Bars start at zero to preserve the scale of improvement. No visible false acceptance occurs in these draws; this does not establish universal safety. The severe-shear qualification remains failed.}\label{fig:multi}\end{figure}
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/spatial_transfer.pdf}\caption{Spatial audit for heterogeneous pair 62051005/62091005, selected as an illustrative archived case, not as an additional independent test. Left: analytical displacement magnitude at visible centres. Right: solved-window provenance after same-centre transfer. A recovered centre is a new correct 32-pixel solve, not an interpolated measurement. Coordinates are native image pixels.}\label{fig:spatial}\end{figure}
+\subsection{Failure envelope and experimental images}
+At peak shear gradient 2.0, the frozen severe-shear analysis recorded 57 incorrect visible acceptances among 4,080 accepted windows (1.40\%). All 57 were also incorrect with analytical local-affine initialization. Thus the local model, support or solver limits performance as well as the initializer. Better seed positions alone cannot be assumed to remove this failure. Numerical acceptance is not a guarantee of physical correctness.
+
+A separately frozen image-residual suspicion rule detected 119 of 120 false accepted coarse states on an additional heterogeneous and extreme-shear sample, but also flagged 221 of 6,979 correct states. Guarded smaller-support retries recovered 7,070 correct and one false result among 8,075 visible shear centres, leaving 199 previously correct flagged centres unresolved. This is a tradeoff, not a universal error detector. An unknown discontinuity is especially difficult because a nominal neighbourhood can combine two material motions.
+
+The Adrien experimental pair provides masked-image integration evidence. Without independent truth, accepted counts and visual remapping cannot establish displacement accuracy. We therefore do not combine those counts with synthetic correct-coverage statistics. Definitive experimental qualification requires acquisition calibration, documented speckle statistics, and independent displacement or strain evidence.
+
+\subsection{Performance evidence}
+Component time and complete scripted time are different quantities. On one synthetic native-resolution pair, an isolated paired comparison reduced median script wall time from 16.451 to 11.541 seconds by caching solver pixels. Three measured repetitions followed one warm-up and alternated arm order. Both arms obtained 1,060 correct of 1,121 visible windows, with identical states, status and provenance. These times include image generation, process startup, diagnostics and writing results; they are not kernel latency or camera throughput. The GPU was not exclusively reserved, although no competing benchmark was observed at the recorded checks.
+
+A four-pair independent check of shared prefit and deferred rotation generation preserved 5,011 correct of 5,242 visible windows, identical acceptance masks and zero visible false acceptances. No additional rotation hypotheses were requested on these pairs. This establishes parity for that sample, not the cost of rotational fallback. Current measurements do not support a subsecond end-to-end claim. Future timing must include transfers, failed hypotheses and required result recovery, with the same images and window budgets.
+
+\section{Discussion}
+The evidence shifts the objective from ubiquitous independent matching towards reliable regional seeding. One correct seed can unlock many local solves through first-order transport. Conversely, a high average matching score with no seed in one material region leaves that region inaccessible. Raw match counts and one-pass convergence can therefore misrank initializers relative to propagated outcomes.
+
+The novelty is in orchestration, portability and controlled qualification. Reliability-guided propagation is established prior art. Here a solver-confirmed multi-hypothesis initialization route is combined with explicit provenance, paired ablations and support-transfer tests. We do not claim a new universally affine-invariant descriptor or a new DIC optimizer. Negative residual-field results prevent attributing a classical geometric gain to an unvalidated neural predictor. They also motivate evaluating the learned coarse matcher separately from the learned residual.
+
+Synthetic cohorts do not span every speckle spectrum, optical blur, illumination variation or fracture geometry. Five pairs per family provide limited precision for generalization. Zero observed false acceptances does not imply zero population risk. The two-pixel criterion is useful for capture-range qualification but looser than calibrated displacement metrology. Gradient errors, subset size, spatial resolution and uncertainty must accompany coverage in an experimental mechanics publication \citep{guide}.
+
+Portability provides access rather than uniform performance. Shared shaders reduce numerical maintenance divergence, but host orchestration, buffer ownership and layouts still require parity tests. GPU-resident components must not be advertised as a resident complete pipeline when coarse matching or result assembly crosses a host boundary. Independent device measurements and a packaged benchmark are required for claims across modern personal computers.
+
+\section{Conclusions}
+Large deformation changes the material support and gradient structure seen by a descriptor. Geometric compensation can restore discriminability without further training, but exhaustive hypotheses and local non-affinity limit this route. In the evaluated implementation, affine preconditioning and local correlation followed by solver-confirmed propagation form the strongest supported baseline. Held-out heterogeneous recovery reaches 95.65\% of visible centres, while severe shear remains an explicit failure regime. Smaller-support transfer recovers centres while changing gradient accuracy and measurement support. The method initializes DIC: its value is enabling the existing solver to converge where baseline initialization fails. Portable WebGPU kernels support integrated graphics, while complete latency and experimental metrological qualification remain open.
+
+\section*{Data and code availability}
+Code is hosted at \url{https://github.com/jeffwitz/WGPU-Matching}. This draft uses reports from a working tree based on commit \texttt{4dce5d0}, including subsequent uncommitted files. Source-report hashes and figure-generation code accompany the manuscript. A permanent source-and-data archive is required before submission; the public commit alone does not contain all evidence used here.
+\section*{Declarations}
+Author identities, affiliations, corresponding author, contribution roles, funding and competing interests require author confirmation. No declaration of absence is inferred. Acquisition provenance and permission to publish experimental images must also be confirmed. Artificial-intelligence-assisted drafting and coding should be disclosed according to publisher policy; the authors retain responsibility for verifying the final manuscript and results.
+
+\input{references.tex}
+\end{document}

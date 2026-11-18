@@ -1,0 +1,84 @@
+\section{Mathematical formulation of the initialization problem}
+\subsection{Photometric objective, identifiability and capture range}
+Consider a reference subset $\Omega_i=\{\xx_i+\boldsymbol\xi_k\}_{k=1}^m$. Its six-parameter affine warp is
+\begin{equation}
+W_i(\boldsymbol\xi;\mathbf p)=\xx_i+
+\begin{bmatrix}p_1\\p_4\end{bmatrix}+
+\begin{bmatrix}1+p_2&p_3\\p_5&1+p_6\end{bmatrix}\boldsymbol\xi.
+\label{eq:warp}
+\end{equation}
+Let $\mathbf f$ contain reference intensities and $\mathbf g(\mathbf p)$ contain target intensities sampled at the warped locations. Set $P=I_m-\mathbf1\mathbf1^T/m$, and define $\widehat{\mathbf f}=P\mathbf f/\|P\mathbf f\|$ and $\widehat{\mathbf g}=P\mathbf g/\|P\mathbf g\|$. Nonzero centred norms are required. The zero-mean normalized sum of squared differences (ZNSSD) objective is
+\begin{equation}
+E(\mathbf p)=\|\widehat{\mathbf f}-\widehat{\mathbf g}(\mathbf p)\|^2
+=2\{1-\widehat{\mathbf f}^T\widehat{\mathbf g}(\mathbf p)\}.
+\label{eq:znssd}
+\end{equation}
+Thus minimizing ZNSSD and maximizing ZNCC are equivalent for the same valid samples and normalization. Neither operation removes geometric distortion. The normalization is undefined on constant subsets and becomes poorly conditioned at low contrast.
+
+For ordinary unnormalized intensity alignment, the reference steepest-descent row is
+\begin{equation}
+J_k=[f_x,\;\xi_x f_x,\;\xi_y f_x,\;f_y,\;\xi_x f_y,\;\xi_y f_y]_k.
+\end{equation}
+For a centred, normalized reference vector, the corresponding differential is
+\begin{equation}
+\widetilde J=\frac{(I_m-\widehat{\mathbf f}\widehat{\mathbf f}^T)P J}{\|P\mathbf f\|}.
+\end{equation}
+With residual $\mathbf r=\widehat{\mathbf g}(\mathbf p)-\widehat{\mathbf f}$, a reference-side linearization gives $(\widetilde J^T\widetilde J)\Delta\mathbf p=\widetilde J^T\mathbf r$. In inverse composition the current warp is composed with the inverse incremental warp, rather than adding parameters directly \citep{baker,panfast}. This derivation explains the six coupled parameters and normalization; the precise frozen solver implementation, interpolation and stopping rules remain part of the reproducibility record.
+
+Two different failures follow. An ill-conditioned normal matrix means that the local texture cannot reliably constrain all parameters. A well-conditioned matrix at the correct correspondence does not imply a large attraction basin: an unrelated target patch may have a different local minimum. We define the empirical capture basin $\mathcal B_i$ as initial states that the fixed solver maps to an accepted result with displacement error below the evaluation threshold. Initialization seeks $\mathbf p_i^0\in\mathcal B_i$; it does not seek to replace the minimizer. The basin is assessed with truth only during evaluation.
+
+\subsection{Independent descriptors and structured search}
+For normalized descriptors $\mathbf d_i$ and $\mathbf e_j$, a basic matching score is $s_{ij}=\mathbf d_i^T\mathbf e_j$. A reciprocal match obeys
+\begin{equation}
+j=\arg\max_k s_{ik},\qquad i=\arg\max_l s_{lj}.
+\end{equation}
+Reciprocity removes some ambiguity but does not establish physical correctness: a false pair can be mutually preferred. A margin between the first and second candidate scores measures separation within the supplied pool, not absolute reliability. If no candidate represents the corresponding material location, no ranking rule can recover it.
+
+For a gradient-histogram cell $c$ and orientation bin $b$, a generic descriptor component is
+\begin{equation}
+h_{cb}(\xx)=\sum_{\boldsymbol\xi\in\Omega_c}w_c(\boldsymbol\xi)
+\|\nabla I(\xx+\boldsymbol\xi)\|\,\kappa_b(\arg\nabla I(\xx+\boldsymbol\xi)),
+\end{equation}
+followed by normalization. The spatial weights $w_c$ and angular interpolation $\kappa_b$ explain both tolerance and information loss. Dense DAISY descriptions instead organize smoothed directional responses around spatial sampling rings \citep{daisy}. A deformation changes the material mapped into each cell or ring, even when contrast normalization is exact.
+
+PatchMatch replaces exhaustive scoring by propagation and random search \citep{barnes,hu}. At pyramid level $\ell$, let $D_{a,\ell}$ be descriptor maps. A representative patch cost is
+\begin{equation}
+C_\ell(\xx,\mathbf d)=\sum_{\boldsymbol\xi\in\Omega_\ell}
+\|D_{0,\ell}(\xx+\boldsymbol\xi)-D_{1,\ell}(\xx+\mathbf d+\boldsymbol\xi)\|_1.
+\end{equation}
+Neighbour proposals and random offsets $\mathbf d+R_0\alpha^k\boldsymbol\eta_k$, with $0<\alpha<1$ and $\boldsymbol\eta_k$ uniform in a square, compete under this cost. This equation describes the search family, not a claim that every experimental implementation uses identical feature maps or random schedules. A coarse result is scaled and refined at the next level. A wrong minimum caused by support mismatch cannot be removed simply by searching more thoroughly.
+
+Learned descriptor losses address discrimination. For example, a symmetric contrastive objective can compare a positive pair against negatives through
+\begin{equation}
+\mathcal L_i=-\log\frac{\exp(s_{ii}/\tau)}{\sum_{j\in\mathcal N_i\cup\{i\}}\exp(s_{ij}/\tau)}.
+\end{equation}
+Hard-negative learning emphasizes nearby descriptor competitors \citep{hardnet}. It does not make distinct material supports identical. Pair-conditioned matchers, by contrast, update a descriptor using information from both images before selecting correspondences. Their increased contextual capacity has a computational cost and does not remove the need to verify usefulness for the subsequent DIC solve.
+
+\subsection{Robust affine hypotheses and their limitations}
+For observed pairs $(\xx_j,\mathbf y_j)$ near a requested centre $\xx_i$, write
+\begin{equation}
+\mathbf y_j=\mathbf b_i+A_i(\xx_j-\xx_i)+\boldsymbol\epsilon_j.
+\end{equation}
+The displacement seed is $\mathbf b_i-\xx_i$ and its gradient seed is $A_i-I_2$. This recentering matters: global affine intercepts cannot be used directly as centre displacements. A random sample consensus (RANSAC) estimator searches for a model with many residuals below a specified geometric tolerance \citep{ransac}. For three non-collinear pairs, the affine model is minimally determined. Under independent draws with inlier fraction $w$, $K$ trials have success probability $1-(1-w^3)^K$. Spatially clustered or nearly collinear samples invalidate the useful conditioning implicit in that calculation.
+
+After selecting a geometrically supported population, a robust refit minimizes $\sum_j\rho(\|\mathbf y_j-\mathbf b_i-A_i(\xx_j-\xx_i)\|/\sigma)$. Iteratively reweighted least squares (IRLS) solves weighted linear systems with weights proportional to $\rho'(r)/r$. It downweights residuals relative to its current model; a coherent false cluster can still attract the fit. Consequently robust regression alone is not interchangeable with correspondence verification. Its fitted values at requested centres are reconstructed states, not direct matches.
+
+Global affine projection has six unknowns. A smooth radial basis function (RBF) displacement model adds spatial flexibility,
+\begin{equation}
+\uu(\xx)=B[1,x,y]^T+\sum_k\mathbf c_k\phi(\|\xx-\mathbf z_k\|/\ell),
+\end{equation}
+with analytic derivatives obtained by differentiating $\phi$. A cubic spline representation similarly evaluates known basis functions and their derivatives. Such models regularize interpolation of the supplied observations. They cannot identify a missing material correspondence by smoothness alone, and a globally continuous basis cannot represent an exact displacement jump. This is why the projection ablation asks a different question from the matching ablation.
+
+\subsection{Why first-order propagation is effective, and where it fails}
+For a smooth true field and centre separation $\boldsymbol\delta$, Taylor expansion gives
+\begin{equation}
+\uu(\xx_j+\boldsymbol\delta)-[\mathbf d_j+\mathbf G_j\boldsymbol\delta]
+=\mathbf e_j+E_j\boldsymbol\delta+O(\|\nabla^2\uu\|\|\boldsymbol\delta\|^2),
+\end{equation}
+where $\mathbf e_j=\uu(\xx_j)-\mathbf d_j$ and $E_j=\nabla\uu(\xx_j)-\mathbf G_j$. Compared with copying translation alone, transporting the gradient removes the leading variation $\nabla\uu\,\boldsymbol\delta$. Large absolute displacement is therefore compatible with a small prediction error when local curvature and seed error are modest. Every re-solve resets the approximation using the images. Across a crack the Taylor argument no longer applies.
+
+Let $\mathcal A_t$ be accepted centres after pass $t$, and let $\mathcal N(i)$ contain permitted neighbours. The active set is
+\begin{equation}
+\mathcal F_t=\{i\notin\mathcal A_t:\mathcal N(i)\cap\mathcal A_t\ne\varnothing,\ a_i<3\},
+\end{equation}
+where $a_i$ counts attempts. Predicted states are aggregated, solved, and added to $\mathcal A_{t+1}$ only on acceptance. This is a discrete, bounded process; it is not convergence of a globally regularized field. It fails when no region is seeded, when the available prediction lies outside a local basin, or when a numerically accepted wrong state enters the frontier. These mechanisms require separate diagnostics.

@@ -1,0 +1,34 @@
+\section{Kinematics, photometry and the initialization problem}
+Let $I_0$ and $I_1$ be monochrome reference and deformed images. The material image transformation is $\boldsymbol\varphi(\mathbf x)=\mathbf x+\mathbf u(\mathbf x)$, with gradient $\mathbf F=I+\nabla\mathbf u$. At requested centre $\mathbf x_i$, the local affine approximation is
+\begin{equation}
+\boldsymbol\varphi_i(\boldsymbol\xi)=\mathbf x_i+\mathbf d_i+(I+\mathbf G_i)\boldsymbol\xi,
+\qquad \mathbf p_i=[u,u_x,u_y,v,v_x,v_y]^T,
+\label{eq:warp}
+\end{equation}
+where $\boldsymbol\xi$ is position relative to the reference centre, $\mathbf d_i=(u,v)^T$ is its displacement and $\mathbf G_i=\left[\begin{smallmatrix}u_x&u_y\\v_x&v_y\end{smallmatrix}\right]$ its displacement gradient. Image coordinates and displacements are in pixels; the gradients are dimensionless when both images use the same pixel unit. These are image-plane kinematics. Their mechanical interpretation requires appropriate calibration and imaging assumptions. In particular, $\mathbf G$ is not itself a finite-strain tensor under large rotations.
+
+For a smooth transformation, $\boldsymbol\varphi(\mathbf x_i+\boldsymbol\xi)=\boldsymbol\varphi_i(\boldsymbol\xi)+O(\|\boldsymbol\xi\|^2)$. A reference square and a target square at the correct centre need not contain the same material. Under 60\% horizontal extension, a 64-pixel material support occupies about 102 pixels horizontally in the target. Scale and orientation normalization do not generally compensate anisotropic stretching and shear. Geometrically adapted descriptors exist; the difficulty concerns comparison without the appropriate support compensation, not an absolute inability of descriptors to handle deformation.
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/material_support.pdf}
+\caption{Pedagogical support geometry, not experimental data. A reference square maps to a parallelogram under the prescribed affine transformation. A fixed target square at the correct centre samples different material. Sampling the target on the transformed support and expressing it in reference coordinates restores comparable material supports. The centre alone does not determine this correction.}\label{fig:support}\end{figure}
+
+Under ideal conserved brightness and differentiability,
+\begin{equation}
+I_0(\mathbf x)=I_1(\boldsymbol\varphi(\mathbf x)),\qquad
+\nabla I_0(\mathbf x)=\mathbf F(\mathbf x)^T\nabla I_1(\boldsymbol\varphi(\mathbf x)).
+\label{eq:advection}
+\end{equation}
+Filtering, interpolation and illumination changes make this relation approximate in real images. Its purpose here is to explain support and gradient mismatch, not to introduce a new loss into the retained method.
+
+For sampled reference intensities $\mathbf f$ and warped target intensities $\mathbf g(\mathbf p)$, subtract the respective means and normalize each centred vector to unit norm. With non-zero norms, denoting these vectors by hats gives the zero-mean normalized sum of squared differences (ZNSSD):
+\begin{equation}
+E_i(\mathbf p)=\|\widehat{\mathbf f}-\widehat{\mathbf g}(\mathbf p)\|^2
+=2\{1-\widehat{\mathbf f}^T\widehat{\mathbf g}(\mathbf p)\},\qquad
+c_i=\widehat{\mathbf f}^T\widehat{\mathbf g}(\mathbf p).
+\label{eq:znssd}
+\end{equation}
+Thus minimizing ZNSSD and maximizing zero-mean normalized cross-correlation (ZNCC) are equivalent only for identical valid samples and normalizations. A constant subset does not define this ideal normalization.
+
+The inverse-compositional Gauss--Newton (IC-GN) method linearizes the reference-side incremental warp and composes its inverse with the current warp \citep{baker,panfast}. The six unknowns in equation~\eqref{eq:warp} are coupled through the texture gradients. A well-conditioned local problem can still have a narrow convergence basin: an unrelated target patch may lead to another stationary point. Initialization is the search for a starting state in the useful basin of the fixed solver. It does not replace that solver. The supplementary derivation explains the normalized differential; the actual frozen solver settings are reported separately.
+
+We distinguish three outcomes throughout: numerical acceptance by the solver/policy, displacement correctness relative to independent analytical truth, and metrological accuracy of displacement and gradient. The two-pixel scoring threshold used below is a qualification convention for recovery, not a measurement uncertainty.

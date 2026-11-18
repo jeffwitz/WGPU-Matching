@@ -1,0 +1,337 @@
+\section{Silhouette initialization: formulation and algorithm}
+\label{sec:silhouette}
+\subsection{Purpose and information available to the estimator}
+The comparator supplies a large-displacement starting transformation from the
+\emph{observable extent of the specimen}. It does not match contour landmarks,
+describe the speckle, or estimate a nonlinear interior displacement from the
+boundary. Its four unknowns are two axis-aligned scale factors and two
+translations. This deliberately restricted hypothesis tests whether the local
+solver can recover useful states once the order of magnitude of the motion is
+provided by the images.
+
+Only the reference image $I_0$ and the current target $I_1$ enter this
+initialization. Neither the target index, a prescribed strain, the displacement
+files, nor a preceding target solution is used. The complete reference
+preparation may be cached, but the target states are reset for every pair.
+The final field is a set of independently resolved local affine states, not
+the global diagonal map imposed as a final measurement.
+
+\paragraph{Notation and reading guide.}
+$I_j$ denotes image $j$, with $j=0$ for the reference and $j=1$ for the target;
+$\Omega_j$ is its pixel domain. Vectors $x$ and $q$ are positions in the reference
+and target, respectively. $I$ without an image subscript denotes the $2\times2$
+identity matrix. $d$ is a displacement in pixels; $G=\nabla d$ is its dimensionless
+$2\times2$ gradient. The mask, box, support and propagation figures below follow
+these quantities through the executed algorithm.
+
+\subsection{Image-derived material masks}
+Pixel centres have integer coordinates $(x,y)$, with $x$ increasing to the right
+and $y$ downwards. In each image separately, the background value is read from
+the bottom-right pixel, $b_j=I_j(W_j-1,H_j-1)$. Let
+$E_j=\{(x,y):I_j(x,y)=b_j\}$. We label its four-connected components
+$C_{jk}$ and define
+\begin{equation}
+ M_j=\Omega_j\setminus\bigcup_{k:\,|C_{jk}|\ge128}C_{jk}.
+ \label{eq:silhouette-mask}
+\end{equation}
+Thus large constant-background regions, including sufficiently large internal
+holes, are excluded. Small islands with the same quantized intensity are kept:
+otherwise individual speckle pixels would perforate the mask and remove many
+usable supports. The threshold is a component area in native pixels, not an
+intensity tolerance. There is no morphological closing, learned segmentation,
+subpixel contour fit or analytical material mask in this operation.
+
+The reference mask $M_0$ defines the region of interest (ROI), meaning the
+domain eligible for correlation. A window is eligible only when its full
+reference support is contained in that mask. The target mask $M_1$ supplies
+its bounding box; it is not passed as a target-material validity constraint
+to the solver. Target-image bounds are checked by the solver, but material
+occlusion is not independently certified. Exact equality to a single background
+intensity is suitable for these rendered images, not a general segmentation
+rule for noisy experimental backgrounds.
+
+Figure~\ref{fig:mask-steps} separates the observed image, the binary material
+mask and the eligible supports. If $\Xi_i$ is the set of pixel offsets in window
+$i$, full-support eligibility is the Boolean product
+\begin{equation}
+ V_i=\prod_{\xi\in\Xi_i}{\bf1}_{M_0}(x_i+\xi).
+ \label{eq:full-support}
+\end{equation}
+Here ${\bf1}_{M_0}$ is one inside the reference material mask and zero outside.
+This is a support test, not an estimate of target visibility or matching accuracy.
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{silhouette_mask_steps.pdf}
+\caption{From reference pixels to admissible windows on the tested perforated
+plate. White in the mask denotes retained material; green outlines show the
+36 admissible 32-pixel supports. Holes are excluded from supports, not paired
+as corresponding landmarks. All panels use native reference coordinates.}
+\label{fig:mask-steps}\end{figure}
+
+\subsection{Pixel-edge boxes and the four-parameter proposal}
+For a nonempty mask, define the lower and upper edges of its bounding box:
+\begin{align}
+ \ell_j&=(\min_{M_j}x-\tfrac12,\ \min_{M_j}y-\tfrac12)^\top,\\
+ h_j&=(\max_{M_j}x+\tfrac12,\ \max_{M_j}y+\tfrac12)^\top,
+ \qquad L_j=h_j-\ell_j.
+\end{align}
+A run of $n$ pixels therefore has extent $n$, not $n-1$. This half-pixel
+convention is important when the scale is large. Matching the two pairs of
+axis-aligned box edges gives
+\begin{equation}
+ S=\begin{bmatrix}L_{1x}/L_{0x}&0\\0&L_{1y}/L_{0y}\end{bmatrix},
+ \qquad t=\ell_1-S\ell_0,\qquad \varphi_0(x)=Sx+t.
+ \label{eq:silhouette-map}
+\end{equation}
+Indeed $\varphi_0(\ell_0)=\ell_1$ and $\varphi_0(h_0)=h_1$.
+These conditions identify a map between boxes; they do not establish material
+correspondence between their extremal pixels. The initial displacement and
+its gradient are
+\begin{equation}
+ u_0(x)=(S-I)x+t,\qquad G_0=\nabla u_0=S-I.
+\end{equation}
+No rotation or shear is estimated at this stage. Internal holes affect window
+eligibility but their relative positions are not fitted as landmarks.
+
+For example, the strip reference has vertical edges $[-0.5,511.5]$ and target
+500 has edges $[-0.5,5631.5]$. Consequently $s_y=11$, $t_y=5$ pixels and
+$v_0(y)=10y+5$. Using $v_0=10y$ would introduce a five-pixel offset despite
+matching an apparently fixed top edge. For plate target 191, the edges change
+from $[3.5,214.5]$ to $[3.5,1018.5]$, yielding
+$s_y=1015/211\simeq4.81043$ and $t_y\simeq-13.33649$ pixels.
+Both examples have $s_x=1$ and $t_x=0$. These are observed envelope ratios,
+not known local stretches.
+
+The geometry is particularly clear when written relative to the lower edge:
+\begin{equation}
+ \boxed{\varphi_0(x)=\ell_1+S(x-\ell_0).}
+ \label{eq:relative-box}
+\end{equation}
+Subtracting $\ell_0$ changes origin, multiplying by $S$ changes the two extents,
+and adding $\ell_1$ places the result in the target image. For either coordinate
+$\alpha\in\{x,y\}$, this is exactly the solution of the two edge constraints
+\begin{equation}
+ \begin{bmatrix}\ell_{0\alpha}&1\\h_{0\alpha}&1\end{bmatrix}
+ \begin{bmatrix}s_\alpha\\t_\alpha\end{bmatrix}
+ =\begin{bmatrix}\ell_{1\alpha}\\h_{1\alpha}\end{bmatrix}.
+\end{equation}
+There is no interior photometric minimization in this step.
+\begin{figure}[H]\centering
+\includegraphics[width=.92\linewidth]{silhouette_box_geometry.pdf}
+\caption{Construction of the vertical map for plate target 191. The values are
+measured pixel-edge coordinates from the saved pair. Each panel has its own
+vertical scale for readability; the annotated lengths, not the drawn heights,
+define the ratio. The lower edge is fixed here at 3.5 pixels, which still gives
+a nonzero translation coefficient when the map is expressed about the image origin.}
+\label{fig:box-geometry}\end{figure}
+
+\subsection{Conversion to the six local solver parameters}
+For a window centred at $x_i=(x_i,y_i)^\top$, the inverse-compositional
+Gauss--Newton (IC-GN) solver uses
+\begin{equation}
+ p_i=(u_i,u_{x,i},u_{y,i},v_i,v_{x,i},v_{y,i})^\top.
+\end{equation}
+Its local forward warp, for a reference offset $\xi$, is
+$q=x_i+(u_i,v_i)^\top+(I+G_i)\xi$, where
+$G_i=\left[\begin{smallmatrix}u_{x,i}&u_{y,i}\\v_{x,i}&v_{y,i}\end{smallmatrix}\right]$.
+The box proposal supplies
+\begin{equation}
+ p_i^0=\big((s_x-1)x_i+t_x,\ s_x-1,\ 0,\
+                  (s_y-1)y_i+t_y,\ 0,\ s_y-1\big)^\top.
+ \label{eq:silhouette-six}
+\end{equation}
+All six components are passed to the solver, including the nonzero diagonal
+gradients. The native target pixels are sampled by the local warp: the full
+image is not first rescaled and then treated as an undeformed translation
+problem. During the solve, all six parameters may change, including the two
+cross derivatives initialized to zero. This is the mechanism by which local
+heterogeneity can be recovered from a simple global proposal.
+
+Figure~\ref{fig:local-support} illustrates the distinction between an initial
+support and a solved support. At initialization the following identity holds:
+\begin{equation}
+ \underbrace{x_i+d_i^0+(I+G_i^0)\xi}_{\text{local affine sampling}}
+ =\underbrace{S(x_i+\xi)+t}_{\text{global box proposal}},
+ \qquad d_i^0=(S-I)x_i+t,\quad G_i^0=S-I.
+ \label{eq:local-global-identity}
+\end{equation}
+After a local solve there is no requirement that $G_i=G_i^0$ or that all windows
+share the same $G_i$. The pulled-back target patch is
+\begin{equation}
+ P_{1,i}(\xi;p_i)=I_1\big(x_i+d_i+(I+G_i)\xi\big),\qquad
+ P_{0,i}(\xi)=I_0(x_i+\xi).
+ \label{eq:patch-pullback}
+\end{equation}
+For nonconstant sampled patches, their zero-mean normalized cross-correlation is
+\begin{equation}
+ \rho_i(p_i)=
+ \frac{\sum_{\xi\in\Xi_i}(P_{0,i}-\overline P_{0,i})(P_{1,i}-\overline P_{1,i})}
+ {\sqrt{\sum_{\xi\in\Xi_i}(P_{0,i}-\overline P_{0,i})^2}
+  \sqrt{\sum_{\xi\in\Xi_i}(P_{1,i}-\overline P_{1,i})^2}}.
+ \label{eq:patch-correlation}
+\end{equation}
+Bars denote means over the support. This equation defines the photometric
+correlation diagnostic and its 0.65 threshold; correlation alone is not the
+complete numerical acceptance rule, nor a ground-truth correctness criterion.
+A translation-only initialization would replace $(I+G_i^0)\xi$ by $\xi$ and
+sample the wrong material support under strong stretching.
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{silhouette_local_support.pdf}
+\caption{One saved accepted window from plate target 191. Blue marks its reference
+support. Orange is its image under the box proposal; green is its image under
+the final solved local affine state. Centres and outlines come from the archived
+parameters, not an analytical deformation. The selected window is the accepted
+centre nearest the centroid of eligible centres, using a deterministic geometric rule.}
+\label{fig:local-support}\end{figure}
+
+\subsection{Status-based selection and confirmation of seeds}
+Two hypotheses are tested in the fixed order: zero displacement/gradient,
+then the silhouette proposal. On the regular eligible-window grid, every
+second row and every second column are sampled. The identical sparse subset
+is solved under each hypothesis. Finite solver-accepted states are counted;
+the hypothesis with the larger count wins. A tie selects the first, zero
+hypothesis. No displacement truth, correlation-error ground truth or target
+index enters this ranking. The accepted counts in this selection are not
+yet the final propagated counts.
+
+Writing $\mathcal S$ for the common sparse set and $a_i(h)$ for the Boolean
+finite, solver-accepted status after solving hypothesis $h$, the selection is
+\begin{equation}
+ h^*=\operatorname*{arg\,max}_{h\in\{\mathrm{zero},\mathrm{box}\}}
+       \sum_{i\in\mathcal S} a_i(h),
+ \label{eq:hypothesis-selection}
+\end{equation}
+with ties resolved by the displayed order. The status is measured after solving,
+not by comparing the uncorrected initial patches alone.
+
+Let $d_i=(u_i,v_i)^\top$ and let $j$ be an eight-neighbour of $i$. The first-order
+prediction transported from $i$ to $j$ is
+\begin{equation}
+ \widehat d_{j\mid i}=d_i+G_i(x_j-x_i),\qquad
+ \widehat G_{j\mid i}=G_i.
+ \label{eq:silhouette-transport}
+\end{equation}
+Neighbour agreement uses the Euclidean displacement norm and the Frobenius
+gradient norm:
+\begin{equation}
+ \|d_j-\widehat d_{j\mid i}\|_2\le8\ \mathrm{px},\qquad
+ \|G_j-G_i\|_F\le0.25.
+ \label{eq:silhouette-consistency}
+\end{equation}
+The implementation has two confirmation routes. A candidate anchor and an
+already verified adjacent state are confirmed if they satisfy these tests.
+Otherwise eligible, not-yet-verified neighbours are solved from transported
+states; at least two successful and consistent neighbour solves confirm the
+parent and those neighbours. Solver status and finite parameters are also
+required. Batched confirmation is enabled and used when more than eight
+candidate anchors exist; results are replayed in the original confirmation
+order.
+
+The argument \texttt{minimum\_anchors=3} only produces a diagnostic indicating
+whether each eligible grid component contains three confirmed anchors. In
+this comparator it does \emph{not} reject a pair or disable propagation.
+It must not be described as an enforced three-anchor acceptance gate.
+
+\subsection{Frontier propagation and its precise stopping rule}
+Each propagation pass starts from an immutable snapshot of accepted windows.
+For an unresolved eligible window, the first two available accepted neighbours
+are considered in the fixed order up, left, right, down, then the four
+diagonals. The transported proposal is solved on the images. A finite,
+solver-accepted result is retained only if it also satisfies
+Equation~\eqref{eq:silhouette-consistency} relative to that parent prediction.
+The second parent is attempted only when the first has not produced an
+accepted result. New states become parents on the next pass; accepted states
+remain unchanged. Propagation stops if no frontier exists or a complete pass
+adds no accepted window.
+
+This is the existing confirmed-propagation policy: it is not a median over
+all neighbours, not inverse-distance averaging, and not the historical
+three-attempt frontier policy. There is no fixed three-attempt lifetime cap
+here. Neighbourhoods use the eligible-window grid, not an explicit
+pixel-level material-connectivity test along every link. The reference
+support mask prevents solving windows over holes but does not prove that
+every diagonal link avoids a narrow fissure. Discontinuity preservation is
+therefore not established by this experiment.
+
+Let $A^{(k)}$ be the accepted set at the start of pass $k$, and $N(i)$ the
+ordered eight-neighbour set. The frontier is
+\begin{equation}
+ \mathcal F^{(k)}=\{i:V_i=1,\ i\notin A^{(k)},\ N(i)\cap A^{(k)}\ne\emptyset\}.
+\end{equation}
+After a parent proposal has been solved, denote its numerical status by $s_i$
+and its returned state by $(d_i,G_i)$. The propagation acceptance predicate is
+\begin{equation}
+ b_{i|j}=s_i\ \land\ \operatorname{finite}(p_i)\ \land\
+ \big(\|d_i-\widehat d_{i|j}\|_2\le8\big)\ \land\
+ \big(\|G_i-G_j\|_F\le0.25\big).
+\end{equation}
+A window is added if one of its attempted parents passes this predicate.
+The actual archived generations and parent links are shown in
+Figure~\ref{fig:propagation-steps}. They are not displacement vectors.
+\begin{figure}[H]\centering
+\includegraphics[width=\linewidth]{silhouette_propagation_steps.pdf}
+\caption{Measured progression on plate target 191 with 32-pixel supports.
+Confirmed seeds are generation zero. The middle panel retains states accepted
+by generation two; the final panel shows recorded parent links and acceptance
+generations. Orange crosses denote final rejected windows in all three panels.
+Blank centres in an early panel can still be recovered later. No unrecorded
+sparse-trial locations or synthetic displacement truth are reconstructed.}
+\label{fig:propagation-steps}\end{figure}
+
+\subsection{Frozen settings and observed stages}
+The solver operates on native grayscale pixels with affine motion, bilinear
+interpolation, at most 30 iterations, tolerance $10^{-3}$, and minimum
+zero-mean normalized cross-correlation (ZNCC) 0.65. Its separate outlier policy
+is disabled; the above neighbour consistency checks remain active. The
+64-pixel experiment uses support and stride 64; the separate 32-pixel
+experiment uses both 32. No angular bank, learned residual, separate local
+correlation search, regional retry, or coarse-to-fine support transfer is
+used by this comparator.
+
+\begin{center}\small
+\begin{tabular}{lrrrr}\toprule
+Pair and support & Zero trial & Box trial & Confirmed seeds & Final accepted\\
+\midrule
+Plate 191, 32 pixels & 0 & 4 & 7 & 18/36\\
+Strip 500, 64 pixels & 0 & 8 & 35 & 109/128\\
+\bottomrule\end{tabular}
+\end{center}
+Both examples require six propagation passes, including the stopping pass
+when applicable. Confirmed seeds can outnumber sparse trial acceptances
+because neighbour confirmation performs additional solves. These counts
+come directly from the saved per-pair records. They show that the final
+coverage is not simply the fraction accepted under an uncorrected box map.
+They do not establish the correctness of the accepted displacement fields.
+
+\subsection{Interpretation, failure modes and computational scope}
+The useful role of the silhouette is to turn a difficult global texture
+search into a plausible starting scale and translation. If several windows
+fall inside the solver's convergence domain, their solved gradients can
+transport initializations locally, without forcing the entire specimen to
+follow the diagonal box map. Conversely, a correct envelope does not guarantee
+any correct interior seed. Different non-affine fields can share the same
+bounding box, including fields with severe interior localization.
+
+Cropping, occlusion, detached components, rotation, shear, an incorrectly
+identified corner background, or a few remote segmentation outliers can bias
+the extrema. The method has no built-in uncertainty estimate for these
+effects. For one coordinate $s=L_1/L_0$, first-order perturbation gives
+$\delta s\simeq\delta L_1/L_0-L_1\delta L_0/L_0^2$;
+$\delta t=\delta\ell_1-s\delta\ell_0-\ell_0\delta s$.
+Short reference extents and large scale ratios amplify boundary uncertainty.
+These limitations preclude presenting the method as a general replacement
+for feature matching or as a deformation measurement from contours.
+
+Mask labelling and box extraction are host-side array operations. Hypothesis
+selection, confirmation and propagation are orchestrated in Python; the
+local solves use the WebGPU graphics interface and WebGPU Shading Language
+(WGSL) kernels. Parameter/status arrays cross the host--device boundary
+between calls. This experiment is therefore not a wholly graphics-resident
+pipeline, and it does not establish real-time performance. Its reproducible
+role is a non-learned, image-only control within the same local solver.
+
+The new evidence motivates adding this proposal as an optional candidate
+when complete specimen silhouettes are available. It does not establish
+novelty or general superiority. Independent displacement truth, segmentation
+perturbation tests, and paired ablations of proposal-only, confirmation and
+propagation are still required before attributing a quantified accuracy gain
+to the silhouette itself.

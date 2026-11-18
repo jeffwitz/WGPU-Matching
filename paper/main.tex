@@ -1,0 +1,63 @@
+\documentclass[11pt,a4paper]{article}
+% Strain permits Free Format initial submissions. See SUBMISSION.md.
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,amsmath,amssymb,graphicx,booktabs,array}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks=true,allcolors=blue!45!black]{hyperref}
+\usepackage{fancyhdr,caption}
+\captionsetup{font=small,labelfont=bf}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{Solver-confirmed initialization for large-deformation correlation}\fancyhead[R]{Draft}\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\newcommand{\uu}{\mathbf u}\newcommand{\xx}{\mathbf x}\newcommand{\FF}{\mathbf F}
+\title{Solver-confirmed initialization and affine propagation for large-deformation digital image correlation on portable graphics hardware}
+\author{Author names and affiliations to be confirmed}
+\date{Research manuscript draft --- 14 November 2026}
+\begin{document}\maketitle
+\begin{abstract}
+Digital image correlation may fail to converge when two speckle images differ by large displacements and heterogeneous deformation. We investigate initialization separately from measurement: image matching proposes starting states, local photometric solves estimate affine states, and accepted states initialize neighbouring solves. The evaluated chain combines a learned coarse correspondence generator, image-derived orientation and affine hypotheses, local zero-mean normalized cross-correlation, and first-order affine transport. Reliability-guided correlation and feature-assisted affine propagation are established prior art; the contribution examined here is a specified selection/confirmation policy, controlled component ablations and portable implementation evidence. On twenty heterogeneous pairs with 22,416 visible centres, adding propagation to affine plus local-correlation initialization increases correct recovery from 72.56\% to 92.13\%. A separate confirmatory workflow, with neighbour confirmation and consistency checks, recovers 23,570 of 24,641 visible heterogeneous centres without an observed accepted visible displacement error of at least two pixels. These two propagation policies are not interchangeable. Smaller supports recover further centres but worsen gradient error on common correct centres. Severe localized shear remains a failure regime. Real experimental images provide acceptance and remapping evidence without independent accuracy validation. Shared WebGPU kernels support portable matching and solver-related computation, but neither full-pipeline device residency nor subsecond processing is established. The method initializes an existing correlation solver; it does not replace digital image correlation or certify mechanical accuracy from numerical acceptance.
+\end{abstract}
+\noindent\textbf{Keywords:} digital image correlation; initialization; large deformation; affine propagation; WebGPU.
+
+\section{Introduction}
+Digital image correlation (DIC) measures image-plane motion by solving local or global photometric alignment problems. A local solver can be precise near the correct solution and nevertheless fail when its initial state points to unrelated material. This is particularly important for two widely separated frames without temporal information. Large uniform translation demands correspondence discovery; strong variation of the displacement gradient also challenges the validity of a local affine model. These are different obstacles.
+
+The practical question is therefore not whether a matcher independently measures every requested point. It is whether it supplies enough useful starting states for the correlation solver to recover the material regions of interest. Our organizing principle is: find proposals, solve a few windows, then transport their affine states to initialize further photometric solves. A proposal or interpolated state is not a DIC measurement. A numerically accepted solve is not automatically physically correct.
+
+This principle has substantial DIC precedent. Pan's reliability-guided method prioritizes propagation through computed points with high zero-mean normalized cross-correlation \citep{pan}. Zhou, Pan and Chen combine feature correspondences, affine seed initialization and transfer of refined parameters to adjacent points \citep{zhou}. Their publisher abstracts establish these mechanisms; the present comparison does not infer unreported implementation details from those abstracts. Dense DAISY description with structured search has also been investigated for point-wise DIC initialization \citep{li}. We do not claim novelty for the succession matching--affine initialization--propagation.
+
+The contribution assessed here is narrower: an explicit image-derived multi-hypothesis selection and neighbour-confirmation policy, its separation from a simpler historical propagation baseline, a controlled ablation of local correlation and a learned residual field, and numerical preservation in portable graphics implementations. The article first specifies the retained chain, then evaluates recovery and failure regimes. Explored descriptors and interpolation alternatives are separated in the supplement, rather than presented as consecutive modules. Strong-strain support mismatch explains several negative alternatives, but does not establish universal superiority of one matcher.
+
+The principal evidence is synthetic, with an independent confirmatory cohort and unchanged evaluation thresholds. The experimental pair is shown to make the procedure tangible, not to substitute visual agreement for displacement truth. All numerical claims retain their campaign denominator and implementation scope.
+
+\input{sections/geometry.tex}
+\input{sections/method.tex}
+\input{sections/implementation.tex}
+\input{sections/protocol.tex}
+\section{Results}
+\input{sections/causal.tex}
+\input{sections/results.tex}
+
+\section{Discussion}
+Propagation changes what is required of an initializer. One useful regional seed can enable many local solves, while a high mean matching score with an unseeded region remains insufficient. The causal ablation shows why one-pass counts alone can overstate the advantage of a costly proposal stage: the remaining affine-plus-correlation gain over affine alone is 736 centres after propagation. The confirmatory workflow adds a distinct consistency policy; its results cannot be attributed to the median/three-attempt policy used for that ablation.
+
+The inspected model is still learned in the no-residual baseline. Its independent encoder supplies global correspondences before affine fitting, while the tested post-rectification residual checkpoint is omitted. The negative residual ablation concerns that checkpoint in a role for which it was not specifically trained. It neither rejects all learned fields nor demonstrates that a neural field is necessary. The main demonstrated benefit is the interaction of image-derived initialization and subsequent native-pixel solves.
+
+The comparison with prior art supports a reproducible implementation and qualification contribution, not a claim to have invented affine propagation. The literature comparison in the supplement separates full-text evidence from abstracts and leaves undocumented scheduling or mask rules unspecified. Further novelty claims require full-text comparison and matched competing implementations, not a list of recent descriptors.
+
+The method does not solve all failure modes. Extreme shear can invalidate a finite affine support even with analytical centre parameters. Smaller support changes spatial resolution and gradient uncertainty. Endpoint-mask adjacency is not a guarantee against crossing unknown interfaces. A large accepted fraction and low absolute intensity residual do not establish metrological accuracy; the International Digital Image Correlation Society guides provide the appropriate experimental reporting context \citep{guide,guide2}. The second edition's availability has been checked; no new compliance claim is inferred from that fact.
+
+WebGPU portability concerns access to a common compute interface, not identical performance on every computer. Shared kernels reduce maintenance divergence, but host orchestration, memory ownership and solver versions still matter. The available parity checks establish preservation on specified configurations. They do not demonstrate an entirely resident pipeline or real-time operation.
+
+\section{Conclusions}
+The retained approach uses matching to propose, the photometric solver to estimate, and independent truth to evaluate. On the controlled heterogeneous ablation, status-seeded propagation raises affine-plus-correlation recovery from 16,266 to 20,651 of 22,416 visible centres. A separate frozen confirmation-and-consistency workflow recovers 23,570 of 24,641 heterogeneous centres. The policies and populations remain explicitly distinct. Severe shear, interface connectivity and gradient uncertainty bound these results. Experimental remapping illustrates operation without establishing accuracy. The work supplies an initialization route for an existing DIC solver, with portable kernel implementations and auditable limitations, rather than a replacement measurement method.
+
+\appendix
+\input{sections/coordinates.tex}
+\section*{Data and code availability}
+The project is hosted at \url{https://github.com/jeffwitz/WGPU-Matching}. The inspected working tree is based on commit \texttt{4dce5d0} and contains subsequent uncommitted changes. The revision package includes source snapshots, Secure Hash Algorithm 256-bit (SHA-256) fingerprints, exact recorded campaign configurations, per-window recount scripts and reproducible figures. Missing historical solver fingerprints, external image access and a persistent release remain documented in the revision audit. The public commit alone is insufficient to reproduce all evidence.
+\section*{Declarations}
+Authors, affiliations, correspondence details, contribution roles, funding and competing interests require author confirmation. Acquisition provenance and permission to publish the experimental images must be confirmed. Assisted drafting and coding require author review and disclosure under publisher policy. No declaration of absence or permission is inferred.
+\input{references.tex}
+\end{document}

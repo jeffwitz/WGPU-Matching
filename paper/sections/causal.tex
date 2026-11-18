@@ -1,0 +1,21 @@
+\subsection{Which component produces the improvement?}
+The most informative comparison holds the coarse matcher, orientation bank, affine prefit, twenty heterogeneous pairs and native IC-GN settings fixed. Only the nonlinear residual and local correlation are changed. The historical status-only propagation policy of Section~\ref{sec:policies} is used here. Table~\ref{tab:causal} reports the original one-pass results and a subsequent propagation experiment using those accepted states. All rows share 22,416 visible requested windows. The coarse matcher, prefit and NCC operate on a $192\times108$ raster; the correlation solver uses native $3840\times2160$ pixels. Thus ``affine only'' does not mean ``without a learned matcher''.
+
+\begin{table}[tb]\centering\small
+\caption{Controlled component ablation before and after status-seeded propagation. All rows share the same image pairs and visible denominator. Analytical local-affine initialization yields 21,367 correct windows. A seeded pair contains at least one solver-accepted initial state; it need not contain a seed in every disconnected material region.}\label{tab:causal}
+\begin{tabular}{lrrrr}\toprule
+Initialization & One pass & Propagated & Seeded pairs & False accepted\\\midrule
+Affine & 2,070 & 19,915 &18/20&1\\
+Affine + NCC &16,266&20,651&19/20&0\\
+Affine + NDF &1,748&19,070&17/20&0\\
+Affine + NDF + NCC &13,172&19,917&18/20&0\\\bottomrule
+\end{tabular}\end{table}
+
+Adding NCC to affine initialization recovers a net 14,196 correct windows in one pass: pooled coverage rises from 9.23\% to 72.56\%. After propagation, however, the corresponding gap is only 736 windows, or 3.28 percentage points (88.84\% versus 92.13\%). This difference changes the interpretation of the component. NCC is valuable not only for immediate coverage, but also for providing an additional seeded pair and reducing propagation effort: median propagation rings fall from 13 to 3 in this implementation. The baseline must therefore include propagation before claiming that a more expensive initializer is necessary.
+
+Propagation adds 4,385 correct windows to affine + NCC, a 19.56-point pooled gain, without a new visible false acceptance. Affine alone gains 17,845 windows, but retains one false initial acceptance. That state has a 9.466-pixel error on pair 16051009/16091009 and is already present in the initial pass. Its presence is reported rather than removed using truth. No accepted invisible windows occur in these four propagation comparisons.
+
+Adding the tested NDF residual when NCC is present loses 3,094 one-pass successes. Windowwise accounting identifies 245 successes unique to the residual and 3,339 successes lost to it. The mean paired coverage change is $-13.15$ points, with a 95\% pair-bootstrap interval of $[-16.43,-9.69]$. After propagation the residual still yields 734 fewer correct windows and one fewer seeded pair. The operational baseline therefore omits this residual. This conclusion does not reject an untested network explicitly trained for residual prediction after rectification.
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/causal_components.pdf}\caption{Matched component ablation: one-pass and propagated correct coverage on the same 22,416 visible windows. The dashed line is analytical local-affine initialization, a diagnostic reference. Neural deformation field (NDF) denotes the tested residual checkpoint. The large effect of propagation is distinct from the smaller remaining difference between initializers.}\label{fig:causal}\end{figure}
+

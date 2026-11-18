@@ -1,7 +1,67 @@
 from __future__ import annotations
 
 import numpy as np
-from wgpu_matching.dic_synthetic import _gaussian_blur, generate_speckle_pair
+import pytest
+from wgpu_matching.dic_synthetic import (
+    _forward_map,
+    _gaussian_blur,
+    _motion_parameters,
+    analytic_truth_at_points,
+    generate_speckle_pair,
+    perturb_target,
+)
+
+
+@pytest.mark.parametrize("mode", ["translation", "rigid", "affine", "heterogeneous", "discontinuous", "shear_band"])
+def test_analytic_truth_at_half_pixel_centers_matches_forward_map(mode):
+    peak = .67 if mode == "shear_band" else None
+    pair = generate_speckle_pair(21, 22, 96, 64, motion_mode=mode, shear_band_peak_gradient=peak)
+    motion = _motion_parameters(np.random.default_rng(22), 96, 64, mode, peak, .5)
+    points = np.array([[20.5, 17.5], [65.5, 40.5], [5.5, 60.5]])
+    truth, visible = analytic_truth_at_points(pair.metadata, points)
+    x, y = _forward_map(points[:, 0], points[:, 1], motion, 96, 64)
+    np.testing.assert_allclose(truth[:, [0, 3]], np.column_stack((x, y)) - points, atol=1e-10)
+    eps = 1e-4
+    for axis, columns in ((0, [1, 4]), (1, [2, 5])):
+        plus, minus = points.copy(), points.copy()
+        plus[:, axis] += eps
+        minus[:, axis] -= eps
+        xp, yp = _forward_map(plus[:, 0], plus[:, 1], motion, 96, 64)
+        xm, ym = _forward_map(minus[:, 0], minus[:, 1], motion, 96, 64)
+        expected = np.column_stack(((xp - xm) / (2 * eps), (yp - ym) / (2 * eps)))
+        expected[:, axis] -= 1
+        np.testing.assert_allclose(truth[:, columns], expected, atol=1e-8)
+    expected_visible = (x >= 0) & (x <= 95) & (y >= 0) & (y <= 63)
+    if mode == "discontinuous":
+        expected_visible &= np.abs(points[:, 0] - 48) > max(8, 2 * pair.metadata["characteristic_size_px"])
+    np.testing.assert_array_equal(visible, expected_visible)
+
+
+def test_discontinuity_boundary_can_be_shifted_without_changing_default():
+    default = generate_speckle_pair(10, 11, 96, 64, motion_mode="discontinuous")
+    shifted = generate_speckle_pair(10, 11, 96, 64, motion_mode="discontinuous",
+                                    discontinuity_boundary_fraction=.55)
+    assert default.metadata["discontinuity_boundary_px"] == 48
+    np.testing.assert_allclose(shifted.metadata["discontinuity_boundary_px"], 52.8)
+    assert shifted.metadata["discontinuity_gap_px"] == default.metadata["discontinuity_gap_px"]
+
+
+def test_target_camera_perturbation_is_reproducible_and_does_not_mutate_input():
+    image = np.full((16, 16), .5, dtype=np.float32)
+    first = perturb_target(image, 42, gain=1.2, offset=-.05, blur_sigma=1.2, noise_std=.05)
+    second = perturb_target(image, 42, gain=1.2, offset=-.05, blur_sigma=1.2, noise_std=.05)
+    np.testing.assert_array_equal(first, second)
+    np.testing.assert_array_equal(image, .5)
+    assert not np.array_equal(first, image)
+
+
+def test_periodic_texture_is_warped_from_same_reference():
+    pair = generate_speckle_pair(12, 13, 128, 96, motion_mode="translation",
+                                 texture_options={"periodic_strength": .9, "periodic_period_px": 32.})
+    assert pair.metadata["periodic_strength"] == .9
+    assert pair.metadata["periodic_period_px"] == 32.
+    assert np.any(pair.visible)
+    assert np.isfinite(pair.target).all()
 
 
 def _reference_gaussian_blur(image, sigma):
@@ -80,3 +140,17 @@ def test_synthetic_discontinuous_pair_has_an_unmatched_gap_and_visible_sides() -
     right_flow = first.flow_xy[:, boundary + margin :, 0][first.visible[:, boundary + margin :]]
     assert left_flow.size and right_flow.size
     assert np.isclose(np.median(right_flow) - np.median(left_flow), gap, atol=1e-4)
+
+
+def test_synthetic_shear_band_has_requested_peak_displacement_gradient() -> None:
+    requested = 0.67
+    pair = generate_speckle_pair(
+        18051003, 18091003, width=384, height=256,
+        motion_mode="shear_band", shear_band_peak_gradient=requested,
+    )
+    du_dy = np.gradient(pair.flow_xy[..., 0], axis=0)
+
+    assert pair.metadata["motion_mode"] == "shear_band"
+    assert pair.metadata["shear_band_peak_gradient"] == requested
+    assert np.isclose(np.max(np.abs(du_dy)), requested, rtol=0.03)
+    assert pair.visible.any()

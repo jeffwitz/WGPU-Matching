@@ -17,6 +17,13 @@ VARIANTS = {
     "affine_ndf_ncc": {"field": "ndf", "ncc": 8},
 }
 
+PROPAGATION_REFERENCE = {
+    "affine_only": 19915,
+    "affine_ncc": 20651,
+    "affine_ndf": 19070,
+    "affine_ndf_ncc": 19917,
+}
+
 
 def _load_window_files(directory: Path) -> dict[str, dict[str, np.ndarray]]:
     loaded = {}
@@ -45,7 +52,7 @@ def _window_and_region_metrics(windows: dict[str, np.ndarray], width: int, heigh
                 "visible": int(region.sum()),
                 "correct": int((correct & region).sum()),
             }
-    return {
+    metrics = {
         "visible": int(visible.sum()),
         "correct": int(correct.sum()),
         "coverage": float(correct.sum() / max(visible.sum(), 1)),
@@ -61,6 +68,35 @@ def _window_and_region_metrics(windows: dict[str, np.ndarray], width: int, heigh
         "visible_mask": visible,
         "centres_xy_native": centres,
     }
+    if "propagated_status" in windows:
+        propagated_status = windows["propagated_status"].astype(bool)
+        propagated_correct = windows["propagated_correct_lt2px"].astype(bool) & visible
+        seed_mask = windows["propagated_seed_mask"].astype(bool)
+        ring_ids = windows["propagated_ring"].astype(int)
+        propagated_error = windows["propagated_displacement_error_px"].astype(float)
+        metrics["propagation"] = {
+            "seeds": int(seed_mask.sum()),
+            "one_shot_correct": int(correct.sum()),
+            "propagated_correct": int(propagated_correct.sum()),
+            "oracle": int(windows["oracle_icgn_correct_lt2px"].astype(bool).sum()),
+            "accepted_error_ge_2px": int((propagated_status & visible & (propagated_error >= 2.0)).sum()),
+            "accepted_invisible": int((propagated_status & ~visible).sum()),
+            "rings": int(ring_ids.max(initial=0)),
+            "extra_windows": int((propagated_status & ~seed_mask).sum()),
+            "bad_acceptances": [
+                {
+                    "window_index": int(index),
+                    "centre_xy": [float(value) for value in centres[index]],
+                    "error_px": float(propagated_error[index]),
+                    "visible": bool(visible[index]),
+                    "propagation_ring": int(ring_ids[index]),
+                    "was_seed": bool(seed_mask[index]),
+                }
+                for index in np.flatnonzero(propagated_status & visible & (propagated_error >= 2.0))
+            ],
+            "ring_map": ring_ids,
+        }
+    return metrics
 
 
 def _paired_recovery(candidate: dict, reference: dict, width: int, height: int):
@@ -201,6 +237,36 @@ def _make_report(output_dir: Path, variant_runs: dict, windows_by_variant: dict)
         }
         for region in summary[variant]["spatial_regions_3x3"].values():
             region["coverage"] = region["correct"] / max(region["visible"], 1)
+        propagation_rows = [row["windows"].get("propagation") for row in cases]
+        if all(item is not None for item in propagation_rows):
+            seeded_rows = [item for item in propagation_rows if item["seeds"] > 0]
+            summary[variant]["propagation"] = {
+                "seeded_pairs": len(seeded_rows),
+                "pairs": len(propagation_rows),
+                "seeds": sum(item["seeds"] for item in propagation_rows),
+                "one_shot_correct": sum(item["one_shot_correct"] for item in propagation_rows),
+                "propagated_correct": sum(item["propagated_correct"] for item in propagation_rows),
+                "oracle": sum(item["oracle"] for item in propagation_rows),
+                "accepted_error_ge_2px": sum(item["accepted_error_ge_2px"] for item in propagation_rows),
+                "accepted_invisible": sum(item["accepted_invisible"] for item in propagation_rows),
+                "accepted_total": sum(item["seeds"] + item["extra_windows"] for item in propagation_rows),
+                "median_rings": float(np.median([item["rings"] for item in propagation_rows])),
+                "median_extra_windows": float(np.median([item["extra_windows"] for item in propagation_rows])),
+                "fraction_of_oracle_when_seeded": float(
+                    sum(item["propagated_correct"] for item in seeded_rows)
+                    / max(sum(item["oracle"] for item in seeded_rows), 1)
+                ),
+            }
+            propagation = summary[variant]["propagation"]
+            propagation["accepted_error_fraction"] = propagation["accepted_error_ge_2px"] / max(
+                propagation["accepted_total"], 1
+            )
+            propagation["gate_g2_pass"] = propagation["accepted_error_fraction"] <= 0.001
+            expected_correct = PROPAGATION_REFERENCE[variant]
+            delta_fraction = abs(propagation["propagated_correct"] - expected_correct) / expected_correct
+            propagation["reference_correct"] = expected_correct
+            propagation["reference_relative_error"] = delta_fraction
+            propagation["gate_g1_pass"] = delta_fraction <= 0.01
         if variant != "affine_only":
             recovery = [row["exclusive_recovery_vs_affine_only"] for row in cases]
             summary[variant]["exclusive_recovery_vs_affine_only"] = {
@@ -326,7 +392,12 @@ def _make_report(output_dir: Path, variant_runs: dict, windows_by_variant: dict)
                     "initial_parameters_and_window_results": {
                         name: metric for name, metric in value["windows"].items()
                         if name not in {"correct_mask", "visible_mask", "centres_xy_native"}
+                        and name != "propagation"
                     },
+                    "propagation": (
+                        {k: v for k, v in value["windows"]["propagation"].items() if k != "ring_map"}
+                        if "propagation" in value["windows"] else None
+                    ),
                     "exclusive_recovery_vs_affine_only": value.get("exclusive_recovery_vs_affine_only"),
                     "conditional_recovery_vs_affine_ncc": value.get("conditional_recovery_vs_affine_ncc"),
                     "conditional_recovery_vs_affine_ndf": value.get("conditional_recovery_vs_affine_ndf"),
@@ -337,6 +408,8 @@ def _make_report(output_dir: Path, variant_runs: dict, windows_by_variant: dict)
                         "initial_translation_rmse_px": value["case"]["initial_translation_rmse_px"],
                         "initial_gradient_rmse": value["case"]["initial_gradient_rmse"],
                         "correct_windows_per_second": value["case"]["correct_windows_per_second"],
+                        "one_shot_icgn_s": value["case"].get("icgn_s"),
+                        "propagation_s": value["case"].get("propagation_wall_s"),
                     },
                 }
                 for variant, value in variants.items()
@@ -347,6 +420,8 @@ def _make_report(output_dir: Path, variant_runs: dict, windows_by_variant: dict)
     (output_dir / "summary.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     lines = [
         "# NDF causal ablation: image-derived affine, nonlinear residual and NCC",
+        "",
+        "Neural deformation field (NDF) is the learned residual field. Normalized cross-correlation (NCC) refines the affine prediction, and inverse-compositional Gauss-Newton (IC-GN) is the downstream window solver. These are digital image correlation (DIC) initializations on synthetic image pairs.",
         "",
         "All variants use paired heterogeneous synthetic image pairs, the same rotation bank, the same coarse matcher, the same image-derived affine prefit, and identical WebGPU IC-GN settings.",
         "The affine-only label means no NDF nonlinear residual after the image-derived affine. It still uses the learned coarse matcher to select rotation and estimate that affine.",
@@ -371,6 +446,56 @@ def _make_report(output_dir: Path, variant_runs: dict, windows_by_variant: dict)
             f"{values['initial_gradient_rmse_pair_median']:.4f} | {values['pipeline_seconds_median']:.3f} "
             f"| {values['correct_windows_per_second_median']:.0f} | {values['oracle_correct_windows']:,} |"
         )
+    if all("propagation" in values for values in summary.values()):
+        lines.extend([
+            "", "## Frontier propagation", "",
+            "Seeds are exactly the windows accepted by the first IC-GN status. The frontier loop does not use truth or visibility; those masks are used only for the reported scores. Each window is attempted at most three times. The geometric median prediction preserves each neighbor's affine gradients.",
+            "", "| Variant | One-pass correct | After propagation | Oracle | Pairs with seeds | Median rings | Median extra windows | Bad accepted (>=2 px) | Invisible accepted | Median solve / propagation (s) |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ])
+        for name, values in summary.items():
+            p = values["propagation"]
+            pair_cases = [row[name] for row in pair_rows.values()]
+            median_one = float(np.median([row["case"].get("icgn_s", 0.0) for row in pair_cases]))
+            median_prop = float(np.median([row["case"].get("propagation_wall_s", 0.0) for row in pair_cases]))
+            lines.append(
+                f"| {labels[name]} | {p['one_shot_correct']:,} | {p['propagated_correct']:,} | {p['oracle']:,} "
+                f"| {p['seeded_pairs']}/{p['pairs']} | {p['median_rings']:.1f} | {p['median_extra_windows']:.0f} "
+                f"| {p['accepted_error_ge_2px']:,} | {p['accepted_invisible']:,} | {median_one:.3f} / {median_prop:.3f} |"
+            )
+        lines.extend(["", "### Frozen propagation gates", ""])
+        for name, values in summary.items():
+            p = values["propagation"]
+            lines.append(
+                f"- G1 {labels[name]}: {p['propagated_correct']:,} vs {p['reference_correct']:,} "
+                f"({p['reference_relative_error']:.3%} relative difference): "
+                f"{'PASS' if p['gate_g1_pass'] else 'FAIL'}."
+            )
+            lines.append(
+                f"- G2 {labels[name]}: {p['accepted_error_ge_2px']}/{p['accepted_total']} "
+                f"accepted visible windows have displacement error >= 2 px "
+                f"({p['accepted_error_fraction']:.4%}; limit 0.1%): "
+                f"{'PASS' if p['gate_g2_pass'] else 'FAIL'}; "
+                f"{p['accepted_invisible']} accepted windows are outside analytical visibility."
+            )
+        bad_rows = []
+        for pair_key, variants in pair_rows.items():
+            for name, row in variants.items():
+                propagation = row["windows"].get("propagation")
+                if propagation:
+                    for item in propagation["bad_acceptances"]:
+                        bad_rows.append((pair_key, labels[name], item))
+        if bad_rows:
+            lines.extend(["", "Accepted visible windows with error >= 2 px:", ""])
+            lines.extend([
+                f"- Pair {pair_key}, {label}: window {item['window_index']} at "
+                f"({item['centre_xy'][0]:.1f}, {item['centre_xy'][1]:.1f}) px, "
+                f"error {item['error_px']:.3f} px, ring {item['propagation_ring']}, "
+                f"seed={item['was_seed']}."
+                for pair_key, label, item in bad_rows
+            ])
+        else:
+            lines.append("No accepted visible windows exceeded the 2 px error threshold.")
     lines.extend(["", "Exclusive recovery relative to affine-only:", ""])
     for name in ("affine_ncc", "affine_ndf", "affine_ndf_ncc"):
         recovery = summary[name]["exclusive_recovery_vs_affine_only"]
@@ -480,6 +605,7 @@ def main():
     parser.add_argument("--rotation-bank-steps", type=int, default=9)
     parser.add_argument("--probe-query-budget", type=int, default=256)
     parser.add_argument("--local-ncc-backend", choices=("cpu", "wgpu"), default="wgpu")
+    parser.add_argument("--propagation", choices=("none", "frontier"), default="frontier")
     parser.add_argument(
         "--summarize-only",
         action="store_true",
@@ -542,6 +668,7 @@ def main():
                 "--local-consensus-radius", "40",
                 "--local-consensus-threshold", "5",
                 "--projection", "raw_bilinear",
+                "--propagation", args.propagation,
             ]
             log_path = variant_dir / f"heterogeneous_seed{seed_offset}.log"
             with log_path.open("w", encoding="utf-8") as log:

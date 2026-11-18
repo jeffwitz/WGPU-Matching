@@ -1,0 +1,20 @@
+\section{Implementation and reproducibility}
+The operational objects have different resolutions. In the main synthetic campaigns both native images are $3840\times2160$. Area reduction produces $192\times108$ rasters; the convolutional feature grid is $48\times27$. Rotation ranking, global affine fitting and the $9\times9$ local photometric supports operate in this reduced raster. Native IC-GN supports are $64\times64$ with 64-pixel centre spacing. The later 32-pixel support experiment preserves these centres; it is not an increase in matching resolution or a denser sampling grid.
+
+The core proposal/solve interfaces are summarized in Table~\ref{tab:interfaces}. The supplementary parameter tables and machine-readable campaign configurations retain exact recorded values. Parameters absent from an archive are explicitly left unknown rather than copied from another experiment. The checkpoint fingerprint identifies the file inspected for this revision; it cannot prove which unrecorded historical binary was loaded.
+
+\begin{table}[tb]\centering\small
+\caption{Interfaces in the confirmatory chain. Pixels refer to the stated raster; all rows are image-derived until the separate scoring stage.}\label{tab:interfaces}
+\begin{tabular}{p{.19\linewidth}p{.34\linewidth}p{.36\linewidth}}\toprule
+Stage & Input and operation & Output / selection\\\midrule
+Coarse discovery & $192\times108$ images, shared encoder, global feature similarities & $1296$ hard coordinate pairs; confidence\\
+Orientation and geometry & Ten angles, sparse reciprocal probes, affine consensus & Image-derived ranking and global map\\
+Local proposal & Rectified raster, $9\times9$ ZNCC, residual radius 8 & Two-component residual; affine composition\\
+Grid conversion & Bilinear field and analytic cell derivatives & Six native parameters at requested centres\\
+Selection and confirmation & Native sparse solves, neighbour re-solves & Finite accepted states, confirmed anchors\\
+Propagation & Native pixels and transported affine states & Re-solved accepted field, parents, generations, rejects\\\bottomrule
+\end{tabular}\end{table}
+
+WebGPU is a portable graphics-compute interface, and WGSL denotes its WebGPU Shading Language \citep{webgpu,wgsl}. Canonical shaders in the matching package are shared by Python and browser-facing code; they do not imply identical host orchestration. Python supplies control, model inference and data preparation. The archived coarse learned matcher uses PyTorch on the central processing unit (CPU); the local-correlation and solver kernels use the graphics processing unit (GPU). Global affine fitting and the original frontier involve host arrays. Later device-resident frontier experiments keep local states and active masks on one device, with compact counters read per pass, but do not establish residency of the entire learned-matching chain. An Open Neural Network Exchange (ONNX) Runtime WebGPU prototype is a separate execution experiment, not the backend silently attributed to the main coverage tables.
+
+This revision freezes the inspected working-tree sources and their SHA-256 cryptographic fingerprints, the base Git commit, configurations and source-result paths. The repository is based on \texttt{4dce5d0} with later uncommitted changes; that commit alone is not a reproducible release of these studies. Current code establishes implemented behaviour; archived configurations establish requested campaign settings; saved window arrays establish retained outputs. Historical equivalence between those levels remains incomplete where source or external-solver fingerprints were not recorded. No algorithm, threshold, checkpoint or archived output was altered for this editorial revision.

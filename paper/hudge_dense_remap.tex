@@ -1,0 +1,152 @@
+\documentclass[11pt,a4paper,landscape]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage[french]{babel}
+\usepackage{lmodern,amsmath,amssymb,graphicx,booktabs,xcolor,hyperref,fancyhdr}
+\usepackage[margin=16mm]{geometry}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,pdftitle={Plaque trouée : champ dense et remapping des images}}
+\graphicspath{{../results/hudge_dense_remap_20261115/figures/}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{WGPU-Matching — Initialisation et images remappées}
+\fancyhead[R]{15 novembre 2026}\fancyfoot[R]{\thepage}\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+\newcommand{\fig}[2]{\begin{center}\includegraphics[width=\linewidth,height=#2,keepaspectratio]{#1}\end{center}}
+\begin{document}
+{\LARGE\bfseries Plaque trouée : reconstruire une initialisation\par
+et voir réellement les images remappées\par}
+\vspace{3mm}
+\textbf{Rectification après examen des textures : la recommandation comme initialisation près des trous est retirée.}
+La correction des contours rapproche les grands trous de leur forme de référence, mais dégrade
+le mouchetis entre 4 et 16 pixels des trous. Dans les bandes 4--8 puis 8--16 pixels, la corrélation
+des intensités passe respectivement de 0,700 à 0,614 et de 0,864 à 0,774. L'accord des contours
+ne valide pas la correspondance matérielle. Les images de ce document restent des diagnostics.
+
+Sur 825 centres décalés de ceux ayant servi à construire le champ, le solveur local retient
+764 fenêtres avec le champ grossier, 780 avec le champ dense, puis 782 avec les contours.
+\textbf{Aucun de ces centres n'est à moins de 8 pixels d'un trou.} Ces comptes ne qualifient donc pas
+la couronne proche des trous. Il n'y a pas de vérité de déplacement associée à ces images.
+
+\fig{native_images.pdf}{100mm}
+\textbf{Les trois images ont exactement le même canevas de 1024\,$\times$\,1024 pixels.}
+La matière de référence n'en occupe qu'une partie. L'image corrigée est obtenue par échantillonnage
+bilinéaire de la déformée originale. Aucun trou n'est redessiné, aucun cercle n'est imposé,
+aucun masque de référence n'est utilisé pour repeindre les pixels.
+
+\newpage
+\section*{1. Les images, aux mêmes coordonnées de référence}
+\fig{remapping_stages.pdf}{147mm}
+Chaque ligne compare une paire indépendante à la même référence, sans propagation temporelle.
+Les recadrages sont identiques ; ils ne modifient ni les coordonnées ni le champ exporté.
+Les ancrages sont les sorties retenues des fenêtres de 16 pixels, espacées de 8 pixels.
+
+\newpage
+\section*{2. Ce qui est corrigé, et ce qui ne l'est pas}
+\fig{holes_191.pdf}{120mm}
+Le rapport d'axes est obtenu à partir des moments d'aire du trou segmenté : il vaut un pour un
+cercle idéal, mais ne mesure pas à lui seul l'accord de taille ou de position.
+Au niveau 191, le grand trou central atteint un rapport de 1,014, un recouvrement de 97,8\,\%
+et un écart de centre de 0,10 pixel. Le petit trou proche de $(265,101)$ reste à un rapport
+de 1,479 et seulement 66,3\,\% de recouvrement. La forme et la position doivent être examinées ensemble.
+
+\textbf{Limite essentielle :} les contours participent à l'ajustement ; leur recouvrement n'est
+donc pas une mesure indépendante de précision mécanique. La corrélation globale du mouchetis
+passe de 0,806 à 0,828 au niveau 191. Une silhouette mieux recalée ne suffit pas à prouver
+un déplacement plus exact dans la matière.
+
+\newpage
+\section*{3. Construction du champ et signification des gradients}
+La corrélation d'images numériques (DIC) est raffinée ici par le solveur
+Gauss--Newton inverse compositionnel (IC-GN). Chaque fenêtre résolue fournit un déplacement
+$\mathbf d_i$ et son gradient $G_i$, exprimés en pixels natifs.
+Le champ dense initial combine les développements locaux :
+\[
+ \mathbf u_0(\mathbf x)=\sum_i\alpha_i(\mathbf x)
+ [\mathbf d_i+G_i(\mathbf x-\mathbf x_i)],\qquad
+ \alpha_i=\frac{\exp(-\|\mathbf x-\mathbf x_i\|^2/(2\ell^2))}
+ {\sum_j\exp(-\|\mathbf x-\mathbf x_j\|^2/(2\ell^2))},\quad \ell=12\ \mathrm{px}.
+\]
+La somme utilise les 24 voisins les plus proches. Les dérivées des poids sont incluses
+dans $\nabla\mathbf u_0$ ; les quatre gradients ne sont pas interpolés indépendamment du déplacement.
+La troncature aux voisins rend ce champ seulement lisse par morceaux.
+
+Les contours sont extraits des grandes composantes du fond uniforme réellement observé
+dans ces rendus. Une correction par fonctions de base radiale (RBF) gaussiennes est ajoutée :
+\[
+ \boldsymbol\varphi(\mathbf x)=\mathbf x+\mathbf u_0(\mathbf x)+
+ \sum_{k=1}^{384}\mathbf c_k K_k(\mathbf x),\qquad
+ K_k=\exp[-\|\mathbf x-\mathbf s_k\|^2/(2\cdot12^2)].
+\]
+Avec $D_1$ la distance signée au contour de la cible et $\Gamma_0$ le contour de référence,
+les coefficients minimisent, par six linéarisations successives,
+\[
+ 4\sum_{\mathbf x\in\Gamma_0}D_1(\boldsymbol\varphi(\mathbf x))^2+
+ \sum_{i\in\mathrm{ancrages}}\|\boldsymbol\varphi(\mathbf x_i)-
+ (\mathbf x_i+\mathbf u_0(\mathbf x_i))\|^2+0{,}05\sum_k\|\mathbf c_k\|^2.
+\]
+La linéarisation du premier terme est $D_1+\nabla D_1^{\mathsf T}\delta\boldsymbol\varphi$ :
+elle contraint la normale au contour, pas une correspondance tangentielle arbitraire.
+Une recherche de pas refuse les corrections créant un déterminant de jacobienne non positif
+sur les pixels de matière. Elle ne borne pas l'amplitude du gradient. Au niveau 150,
+plusieurs corrections sont refusées : le contrôle n'est pas contourné pour améliorer la figure.
+
+\newpage
+\section*{4. Le champ est-il une meilleure initialisation ?}
+\fig{offset_validation.pdf}{92mm}
+Les centres de ce contrôle sont décalés de $(4,4)$ pixels par rapport à la grille des ancrages.
+Les fenêtres font 24\,$\times$\,24 pixels, avec un pas de 8. Leurs supports recouvrent les observations
+utilisées dans le champ : ce n'est pas une validation sur de nouvelles images.
+
+\begin{center}\begin{tabular}{lrrr}\toprule
+Initialisation & Statut convergé après 30 itérations & Retenues après continuation & Total\\\midrule
+Champ grossier, 36 ancrages &699&764&825\\
+Champ dense de fenêtres 16 pixels &734&780&825\\
+Champ dense et contours, rayon 16, 196 bases &727&784&825\\
+Champ dense et contours, rayon 12, 384 bases &729&782&825\\\bottomrule
+\end{tabular}\end{center}
+La continuation comporte au plus quatre appels de 30 itérations ; seules les sorties non convergées
+et finies sont relancées. Le seuil d'arrêt vaut $10^{-3}$ et la corrélation normalisée minimale 0,65.
+Une fenêtre retenue doit en outre rester dans l'image et conserver un déterminant positif sur son support.
+Les statuts seuls donnent respectivement 767, 783, 786 et 784 candidats après continuation ; les contrôles
+finaux expliquent les effectifs retenus plus petits. Les temps archivés ne constituent pas un benchmark :
+ils incluent notamment des coûts de première compilation différents.
+
+Le champ est exporté aux centres sous l'ordre
+$(u,\partial_xu,\partial_yu,v,\partial_xv,\partial_yv)$, avec les pixels natifs comme unités.
+Les fichiers distinguent les valeurs prédites par le champ et les paramètres locaux effectivement mesurés.
+
+\newpage
+\section*{5. Bilan pratique et expériences conservées}
+\textbf{Choix pour cet essai.} Utiliser les 36 ancrages grossiers pour initialiser une grille plus fine,
+résoudre les fenêtres de 16 pixels, reconstruire le champ, puis exploiter les contours observables
+pour améliorer les zones proches des trous. Au niveau 191, une réinjection du champ corrigé
+augmente les ancrages fins de 784 à 790 sur 979. Les 189 fenêtres restantes ne sont pas déclarées résolues.
+
+\textbf{Résultats négatifs.} Les champs obtenus à partir des fenêtres quadratiques de 32 pixels
+recalent moins bien l'image entière dans ce protocole, malgré leur intérêt photométrique local.
+Les fenêtres quadratiques de 16 pixels et les fenêtres affines de 8 pixels produisent des champs
+avec replis lors de leur combinaison ; ces champs ne sont pas retenus pour l'export recommandé.
+Une RBF globale ajustée aux ancrages denses lisse trop les variations. Elle ne remplace pas
+le traitement des contours. Une correction de flot photométrique exploratoire améliore la corrélation,
+mais ses répétitions créent des replis ; elle n'entre pas dans le résultat livré.
+
+\textbf{Limites scientifiques.} Ces résultats concernent trois niveaux d'une même plaque.
+La segmentation par fond uniforme est spécifique à ces rendus ; elle ne constitue pas un segmentateur
+général de fissures ni un protocole validé sur des images expérimentales. Les déplacements du maillage
+en croix fourni dans l'autre dossier ne correspondent pas à cette plaque et ne sont pas utilisés.
+Sans vérité de déplacement associée, ni le statut du solveur ni le bon accord des trous ne certifient
+une erreur mécanique donnée. La petite ouverture reste une zone d'échec explicite.
+
+\textbf{Exécution.} Les résolutions locales utilisent WebGPU, interface portable de calcul sur
+processeur graphique. L'ajustement du champ, les distances aux contours et le remapping de ce
+prototype sont calculés sur le processeur central. Cette expérience ne prétend donc ni être entièrement
+résidente sur processeur graphique, ni tenir une cadence temps réel. Aucun code du solveur externe
+ni aucune conclusion du manuscrit principal n'ont été modifiés.
+
+\textbf{Fichiers pour inspection.} Pour chaque niveau, le dossier
+\texttt{results/hudge\_dense\_remap\_20261115/refined/level\_XXX/} contient
+la référence, la déformée originale, la déformée corrigée, une animation alternée,
+les déplacements et gradients natifs, les initialisations aux centres et les statistiques par trou.
+La galerie \texttt{index.html} à la racine du résultat donne accès aux images natives et aux animations.
+
+\textbf{Conclusion.} Les remappings rendent enfin visible l'effet du champ non affine.
+La densification améliore l'initialisation ; les contours améliorent surtout la géométrie visible.
+L'image corrigée est utile pour analyser les échecs, mais ne doit pas être présentée comme une
+mesure DIC achevée ni comme une restitution parfaite de tous les trous.
+\end{document}

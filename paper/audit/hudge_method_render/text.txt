@@ -1,0 +1,666 @@
+          Direct-pair tests on supplied large-deformation images
+                   Working addendum to the DIC initialization manuscript
+
+                                         14 November 2026
+
+
+1     Question and evidence boundary
+The two supplied image sets test initialization of digital image correlation (DIC) without temporal
+information. Every target is paired directly with its own Img_F reference. Spatial propagation within
+a pair is permitted; solutions from another target are never reused. Reference-image preprocessing
+may be cached.
+    The first set, labelled FEA, contains 191 deformed images of a perforated plate, each 1024 × 1024
+pixels. The second, labelled ClosedFormExpression, contains 500 targets of a strip, each 1024×5632
+pixels. The reference strip occupies only the first 512 rows. These labels are retained as supplied,
+without claiming verified generating formulas.
+    The displacement archive contains 51 triangular-mesh states and a script describing a cross-
+shaped geometry. It provides no documented correspondence to the 191 plate images or the 500 strip
+images, nor a physical-to-pixel coordinate map. Therefore no displacement-error or mechanically
+correct maximum deformation can yet be reported. The present measurements concern numerical
+acceptance and final photometric alignment. A high correlation is not independent displacement
+truth.
+
+
+2     Fixed protocol and separate comparator
+The manuscript pipeline uses learned coarse correspondences, image-derived affine proposals, local
+zero-mean normalized cross-correlation (ZNCC), and inverse-compositional Gauss–Newton (IC-GN)
+solves with neighbour confirmation and propagation. Its nonlinear learned residual remains disabled.
+Model rasters are 192 × 192 for the plate and 128 × 704 for the strip, preserving aspect ratio and
+bounding the global feature grid to 5632 tokens. The final solver uses native pixels, 64-pixel supports
+and stride, bilinear interpolation, 30 iterations, tolerance 10−3 and minimum ZNCC 0.65. The same
+weights and consistency settings are retained.
+    The image-only contour comparator is specified in detail in Section 3. Its purpose is to supply
+starting scale and translation, with no claim of contour-derived interior displacement truth.
+
+
+3     Silhouette-extent initialization: formulation and executed algo-
+      rithm
+3.1   Purpose and information available to the estimator
+The comparator supplies a large-displacement starting transformation from the observable extent of
+the specimen. It does not match contour landmarks, describe the speckle, or estimate a nonlinear
+interior displacement from the boundary. Its four unknowns are two axis-aligned scale factors and
+two translations. This deliberately restricted hypothesis tests whether the local solver can recover
+useful states once the order of magnitude of the motion is provided by the images.
+    Only the reference image I0 and the current target I1 enter this initialization. Neither the target
+index, a prescribed strain, the displacement files, nor a preceding target solution is used. The
+complete reference preparation may be cached, but the target states are reset for every pair. The
+
+                                                  1
+final field is a set of independently resolved local affine states, not the global diagonal map imposed
+as a final measurement.
+
+3.2   Image-derived material masks
+Pixel centres have integer coordinates (x, y), with x increasing to the right and y downwards. In each
+image separately, the background value is read from the bottom-right pixel, bj = Ij (Wj − 1, Hj − 1).
+Let Ej = {(x, y) : Ij (x, y) = bj }. We label its four-connected components Cjk and define
+                                                          [
+                                       Mj = Ωj \                     Cjk .                          (1)
+                                                     k: |Cjk |≥128
+
+Thus large constant-background regions, including sufficiently large internal holes, are excluded.
+Small islands with the same quantized intensity are kept: otherwise individual speckle pixels would
+perforate the mask and remove many usable supports. The threshold is a component area in native
+pixels, not an intensity tolerance. There is no morphological closing, learned segmentation, subpixel
+contour fit or analytical material mask in this operation.
+    The reference mask M0 defines the region of interest (ROI), meaning the domain eligible for
+correlation. A window is eligible only when its full reference support is contained in that mask. The
+target mask M1 supplies its bounding box; it is not passed as a target-material validity constraint to
+the solver. Target-image bounds are checked by the solver, but material occlusion is not independently
+certified. Exact equality to a single background intensity is suitable for these rendered images, not a
+general segmentation rule for noisy experimental backgrounds.
+
+3.3   Pixel-edge boxes and the four-parameter proposal
+For a nonempty mask, define the lower and upper edges of its bounding box:
+
+                          ℓj = (min x − 12 , min y − 21 )⊤ ,                                        (2)
+                                 Mj             Mj
+
+                          hj = (max x + 21 , max y + 12 )⊤ ,            Lj = hj − ℓj .              (3)
+                                 Mj             Mj
+
+A run of n pixels therefore has extent n, not n − 1. This half-pixel convention is important when
+the scale is large. Matching the two pairs of axis-aligned box edges gives
+                      "                     #
+                     L /L      0
+                 S = 1x 0x          ,                t = ℓ1 − Sℓ0 ,          φ0 (x) = Sx + t.       (4)
+                       0   L1y /L0y
+
+Indeed φ0 (ℓ0 ) = ℓ1 and φ0 (h0 ) = h1 . These conditions identify a map between boxes; they do not
+establish material correspondence between their extremal pixels. The initial displacement and its
+gradient are
+                            u0 (x) = (S − I)x + t,     G0 = ∇u0 = S − I.                        (5)
+No rotation or shear is estimated at this stage. Internal holes affect window eligibility but their
+relative positions are not fitted as landmarks.
+    For example, the strip reference has vertical edges [−0.5, 511.5] and target 500 has edges
+[−0.5, 5631.5]. Consequently sy = 11, ty = 5 pixels and v0 (y) = 10y + 5. Using v0 = 10y would
+introduce a five-pixel offset despite matching an apparently fixed top edge. For plate target 191, the
+edges change from [3.5, 214.5] to [3.5, 1018.5], yielding sy = 1015/211 ≃ 4.81043 and ty ≃ −13.33649
+pixels. Both examples have sx = 1 and tx = 0. These are observed envelope ratios, not known local
+stretches.
+
+
+
+
+                                                      2
+3.4    Conversion to the six local solver parameters
+For a window centred at xi = (xi , yi )⊤ , the inverse-compositional Gauss–Newton (IC-GN) solver
+uses
+                                pi = (ui , ux,i , uy,i , vi , vx,i , vy,i )⊤ .               (6)
+                                                                                                      ux,i uy,i 
+Its local forward warp, for a reference offset ξ, is q = xi + (ui , vi )⊤ + (I + Gi )ξ, where Gi =    vx,i vy,i   .
+The box proposal supplies
+                                                                                     ⊤
+                    p0i = (sx − 1)xi + tx , sx − 1, 0, (sy − 1)yi + ty , 0, sy − 1        .                   (7)
+All six components are passed to the solver, including the nonzero diagonal gradients. The native
+target pixels are sampled by the local warp: the full image is not first rescaled and then treated as
+an undeformed translation problem. During the solve, all six parameters may change, including the
+two cross derivatives initialized to zero. This is the mechanism by which local heterogeneity can be
+recovered from a simple global proposal.
+
+3.5    Status-based selection and confirmation of seeds
+Two hypotheses are tested in the fixed order: zero displacement/gradient, then the silhouette proposal.
+On the regular eligible-window grid, every second row and every second column are sampled. The
+identical sparse subset is solved under each hypothesis. Finite solver-accepted states are counted;
+the hypothesis with the larger count wins. A tie selects the first, zero hypothesis. No displacement
+truth, correlation-error ground truth or target index enters this ranking. The accepted counts in
+this selection are not yet the final propagated counts.
+    Let di = (ui , vi )⊤ and let j be an eight-neighbour of i. The first-order prediction transported
+from i to j is
+                                  dbj|i = di + Gi (xj − xi ), G
+                                                              b = Gi .
+                                                                j|i                                (8)
+Neighbour agreement uses the Euclidean displacement norm and the Frobenius gradient norm:
+                             ∥dj − dbj|i ∥2 ≤ 8 mpx,       ∥Gj − Gi ∥F ≤ 0.25.                                (9)
+The implementation has two confirmation routes. A candidate anchor and an already verified
+adjacent state are confirmed if they satisfy these tests. Otherwise eligible, not-yet-verified neighbours
+are solved from transported states; at least two successful and consistent neighbour solves confirm
+the parent and those neighbours. Solver status and finite parameters are also required. Batched
+confirmation is enabled and used when more than eight candidate anchors exist; results are replayed
+in the original confirmation order.
+    The argument minimum_anchors=3 only produces a diagnostic indicating whether each eligible
+grid component contains three confirmed anchors. In this comparator it does not reject a pair or
+disable propagation. It must not be described as an enforced three-anchor acceptance gate.
+
+3.6    Frontier propagation and its precise stopping rule
+Each propagation pass starts from an immutable snapshot of accepted windows. For an unresolved
+eligible window, the first two available accepted neighbours are considered in the fixed order up,
+left, right, down, then the four diagonals. The transported proposal is solved on the images. A
+finite, solver-accepted result is retained only if it also satisfies Equation (9) relative to that parent
+prediction. The second parent is attempted only when the first has not produced an accepted result.
+New states become parents on the next pass; accepted states remain unchanged. Propagation stops
+if no frontier exists or a complete pass adds no accepted window.
+    This is the existing confirmed-propagation policy: it is not a median over all neighbours, not
+inverse-distance averaging, and not the historical three-attempt frontier policy. There is no fixed
+three-attempt lifetime cap here. Neighbourhoods use the eligible-window grid, not an explicit
+pixel-level material-connectivity test along every link. The reference support mask prevents solving
+windows over holes but does not prove that every diagonal link avoids a narrow fissure. Discontinuity
+preservation is therefore not established by this experiment.
+
+                                                       3
+3.7   Frozen settings and observed stages
+The solver operates on native grayscale pixels with affine motion, bilinear interpolation, at most
+30 iterations, tolerance 10−3 , and minimum zero-mean normalized cross-correlation (ZNCC) 0.65.
+Its separate outlier policy is disabled; the above neighbour consistency checks remain active. The
+64-pixel experiment uses support and stride 64; the separate 32-pixel experiment uses both 32. No
+angular bank, learned residual, separate local correlation search, regional retry, or coarse-to-fine
+support transfer is used by this comparator.
+
+             Pair and support       Zero trial   Box trial   Confirmed seeds   Final accepted
+             Plate 191, 32 pixels           0            4                7            18/36
+             Strip 500, 64 pixels           0            8               35          109/128
+
+Both examples require six propagation passes, including the stopping pass when applicable. Confirmed
+seeds can outnumber sparse trial acceptances because neighbour confirmation performs additional
+solves. These counts come directly from the saved per-pair records. They show that the final
+coverage is not simply the fraction accepted under an uncorrected box map. They do not establish
+the correctness of the accepted displacement fields.
+
+3.8   Interpretation, failure modes and computational scope
+The useful role of the silhouette is to turn a difficult global texture search into a plausible starting
+scale and translation. If several windows fall inside the solver’s convergence domain, their solved
+gradients can transport initializations locally, without forcing the entire specimen to follow the
+diagonal box map. Conversely, a correct envelope does not guarantee any correct interior seed.
+Different non-affine fields can share the same bounding box, including fields with severe interior
+localization.
+    Cropping, occlusion, detached components, rotation, shear, an incorrectly identified corner
+background, or a few remote segmentation outliers can bias the extrema. The method has no
+built-in uncertainty estimate for these effects. For one coordinate s = L1 /L0 , first-order perturbation
+gives δs ≃ δL1 /L0 − L1 δL0 /L20 ; δt = δℓ1 − sδℓ0 − ℓ0 δs. Short reference extents and large scale
+ratios amplify boundary uncertainty. These limitations preclude presenting the method as a general
+replacement for feature matching or as a deformation measurement from contours.
+    Mask labelling and box extraction are host-side array operations. Hypothesis selection, confirma-
+tion and propagation are orchestrated in Python; the local solves use the WebGPU graphics interface
+and WebGPU Shading Language (WGSL) kernels. Parameter/status arrays cross the host–device
+boundary between calls. This experiment is therefore not a wholly graphics-resident pipeline, and it
+does not establish real-time performance. Its reproducible role is a non-learned, image-only control
+within the same local solver.
+    The new evidence motivates adding this proposal as an optional candidate when complete
+specimen silhouettes are available. It does not establish novelty or general superiority. Indepen-
+dent displacement truth, segmentation perturbation tests, and paired ablations of proposal-only,
+confirmation and propagation are still required before attributing a quantified accuracy gain to the
+silhouette itself.
+
+
+4     Operational limits, not accuracy limits
+Table 1 gives the largest tested image indices reaching each acceptance fraction. The contour
+comparator evaluates every target at both supports. The learned pipeline uses a coarse level sweep
+followed by direct-pair tests near its loss of seeds. Coverage is not monotone, so a maximum does
+not guarantee success at every lower index. The targets reuse one texture per set and cannot be
+treated as independent statistical samples.
+
+
+
+                                                     4
+                                                                    No documented mesh-to-image or state association
+                                  Supplied mesh: reference                                                Mesh + last DEPL field
+                         50
+                                                                                                                                                                                                Supplied plate reference (crop)
+                                                                                              100                                                                                       0
+                         40
+ Mesh y (source units)
+
+
+
+
+                                                                      Mesh y (source units)
+
+
+
+
+                                                                                                                                                                   Image y (pixels)
+                                                                                               80                                                                                      50
+                         30
+                                                                                               60                                                                                     100
+
+                         20                                                                                                                                                           150
+                                                                                               40
+
+                         10                                                                                                                                                           200
+                                                                                               20
+                                                                                                                                                                                            0      100      200        300    400
+                          0                                                                     0                                                                                                        Image x (pixels)
+                              0       10   20     30     40    50                                   0    25    50      75    100               125    150
+                                      Mesh x (source units)                                                   Mesh x (source units)
+
+
+
+Figure 1: Provenance check. The supplied displacement mesh and its last deformation are shown in their
+own coordinates, beside the perforated image reference. No mesh-to-pixel registration or state association is
+documented; the geometry cannot be treated as image truth merely by matching file indices.
+
+
+
+
+                                                      Image-only extent proposal: sx = 1, sy = 4.81043, ty = -13.33649 px
+                                                     Panels (a), (c), (d): reference coordinates; panel (b): target coordinates
+                                                                                                                                                      (b) Target 191 and observed box
+                                                                                                                                                                                       0
+
+                                             (a) Reference and observed box
+                              0
+                                                                                                                                                                              200
+
+                          50
+                                                                                                                                                                              400
+ y (pixels)
+
+
+
+
+                                                                                                                                                      y (pixels)
+
+
+
+
+                         100
+
+                                                                                                                                                                              600
+                         150
+
+
+                         200                                                                                                                                                  800
+
+                                  0     50    100    150      200 250                          300      350   400
+                                                              x (pixels)                                                                                            1000
+                                                                                                                                                                                            0       250
+                                                                                                                                                                                                x (pixels)
+
+                                                (c) Box proposal only                                                                            (d) After local solves and propagation
+                                         No local solve; not an accepted field                                                                    18/36 accepted; pink = unavailable
+                              0                                                                                                       0
+
+
+                          50                                                                                                         50
+ y (pixels)
+
+
+
+
+                                                                                                                        y (pixels)
+
+
+
+
+                         100                                                                                                         100
+
+
+                         150                                                                                                         150
+
+
+                         200                                                                                                         200
+
+                                  0     50    100    150      200 250                          300      350   400                          0     50         100                         150     200 250       300     350    400
+                                                              x (pixels)                                                                                                                        x (pixels)
+
+
+Figure 2: What the silhouette contributes, and what the solver adds. Plate target 191 is paired directly
+with its reference. The orange boxes supply the global diagonal proposal. Its pullback (bottom left) samples
+the target using that proposal alone and is not a validated result. The final accepted local affine pullbacks
+(bottom right) use states updated by the solver and propagation; pink means no accepted support. Neither
+correction panel uses displacement truth.
+
+
+
+
+                                                                                                                      5
+Table 1: Operational acceptance. Last-state counts refer to image 191 for the plate and 500 for the strip.
+The last three columns give largest tested indices with at least 50, 90 and 95% acceptance. A dash means
+none; none of these columns is a ground-truth accuracy result.
+
+                    Set     Proposal, support   Pairs   Last state   50%   90%   95%
+                    Plate   Learned, 64           28         0/3      14    14     14
+                    Plate   Contour, 64          191         0/3      39    39     39
+                    Plate   Contour, 32          191       18/36     191    42     36
+                    Strip   Learned, 64           33       0/128      44     –      –
+                    Strip   Contour, 64          500     109/128     500   475      –
+                    Strip   Contour, 32          500     349/512     500   242    150
+
+
+
+    At the last supplied states, observed vertical extent ratios are 1015/211 ≃ 4.81 for the plate and
+5632/512 = 11 for the strip. These envelope ratios are not local material stretches or prescribed
+strain levels.
+    A known zero-motion control on the strip accepts 98 of 128 mask-admissible 64-pixel windows.
+Its accepted parameters have maximum absolute value below 6 × 10−8 . The remaining 30 centres
+lie on the top row and lateral edge columns; the solver enforces a two-pixel margin on transformed
+target supports. The mask denominator is retained. This identity result is not a bound for nonzero
+motion, which can move supports away from the edges.
+
+
+5    A diagnosed mismatch between the pipeline and these images
+In the plate reference, 2125 of 2304 coarse queries lie on the uniform background; for the strip the
+count is 5120 of 5632. The global affine validator requires inliers in at least four cells of a 3 × 3
+grid covering the entire image. Material queries occupy at most two and three cells, respectively. A
+material-only affine fit cannot meet this full-raster coverage guard. The existing pipeline is evaluated
+unchanged: these failures must not be interpreted solely as a descriptor’s intrinsic inability to
+recognize deformed speckle.
+    The contour control separates discovery of a useful global starting scale from the subsequent
+photometric solution. It is deliberately simple and specific to these images. It is neither an analytical
+oracle nor a reproduction of a published feature-based method.
+
+
+6    Fields, remapping and difficult supports
+Only solver-accepted windows are plotted and remapped. Missing regions are shown explicitly rather
+than completed by interpolation. The detailed patch illustrations select the accepted window with the
+lowest recomputed final correlation, not the most attractive example. Absolute intensity differences
+are not displacement-error maps. The original TIFF images and saved final states determine every
+panel.
+
+
+7    Reproducibility and consequences for the manuscript
+The result directory contains per-pair commands, final six-parameter states, masks, seed provenance,
+source and image fingerprints, all 51 inspected displacement files’ metadata, and scripts regenerating
+the tables, figures and animations. A triangle-field evaluator has been tested at exact pixel centres
+with explicit anisotropic coordinate maps and axis reversal; it is not applied to these images without
+an established association.
+    The learned and contour timings have different process-startup and reference-cache scopes and
+are not used to claim an acceleration factor. No training or production thresholds were changed.
+The study adds external rendered images and demonstrates an operational limitation of the present
+
+
+                                                    6
+                                                                                        Independent reference-to-target pairs; displacement truth not associated
+                                                                                             FEA                                                                                                                                 ClosedFormExpression
+Solver-accepted / reference-mask windows (%)
+
+
+
+
+                                                                                                                                                         Solver-accepted / reference-mask windows (%)
+                                               100                                                         Learned proposals, 64 px                                                                     100
+                                                                                                           Silhouette, 64 px
+                                                                                                           Silhouette, 32 px
+                                                80                                                                                                                                                       80
+
+
+
+                                                60                                                                                                                                                       60
+
+
+
+                                                40                                                                                                                                                       40
+
+
+
+                                                20                                                                                                                                                       20
+
+
+
+                                                 0                                                                                                                                                        0
+                                                          0           25       50      75     100     125      150                       175     200                                                          0           100         200          300         400                    500
+                                                                            Target image index (not nominal strain)                                                                                                        Target image index (not nominal strain)
+
+
+
+Figure 3: Acceptance versus target index, using independent reference-to-target pairs. Sparse learned-pipeline
+tests are shown as markers connected only for readability; the contour comparator tests every target. The two
+support sizes have different populations.
+
+
+
+
+                                                                                                         FEA, reference → 191; Silhouette, 32 px
+                                                                                                     18/36 accepted; no displacement-accuracy claim
+                                                                                                                                           (b) Native target image
+                                                                                                                                 0
+                                                                                                                                                                                                                                                              (c) Numerical status
+                                                         (a) Reference material (crop)                                         200                                                                                                                      Dots accepted; crosses rejected
+                                                 0                                                                                                                                                                                                  0
+
+                                                                                                                               400
+y (pixels)
+
+
+
+
+                                                                                                             y (pixels)
+
+
+
+
+                                                                                                                                                                                                                                     y (pixels)
+
+
+
+
+                                               100                                                                                                                                                                                                100
+
+                                                                                                                               600
+
+                                               200                                                                                                                                                                                                200
+                                                                                                                               800
+                                                     0          100         200       300   400                                                                                                                                                         0      100    200       300   400
+                                                                           x (pixels)                                                                                                                                                                                x (pixels)
+                                                                                                                          1000
+                                                                                                                                     0     200       400    600                                               800    1000
+                                                                                                                                                      x (pixels)
+
+
+                                                                                                     0.0
+                                                                                                                                                                                                                                                                (f) Affine pullbacks
+                                                              (d) Estimated u (pixels)                                                     (e) Estimated v (pixels)                                                            600                          Pink: no accepted support
+                                                 0                                                   −2.5                        0                                                                                                                  0
+
+                                                                                                     −5.0                                                                                                                      500
+y (pixels)
+
+
+
+
+                                                                                                                  y (pixels)
+
+
+
+
+                                                                                                                                                                                                                                     y (pixels)
+
+
+
+
+                                               100                                                                             100                                                                                                                100
+                                                                                                     −7.5                                                                                                                      400
+
+                                                                                                     −10.0
+                                               200                                                                             200                                                                                             300                200
+
+                                                     0         100          200       300   400      −12.5                           0         100     200       300                                                400                                 0      100    200       300   400
+                                                                           x (pixels)                                                                 x (pixels)                                                               200                                   x (pixels)
+
+
+
+Figure 4: Last supplied plate image, direct reference-to-target solution with the contour proposal and
+32-pixel supports. Colours indicate numerical status or estimated displacement in pixels. Pink remapping
+regions have no accepted support. No displacement truth is associated.
+
+
+
+
+                                                                                                                                                     7
+                                                             FEA 191, Silhouette, 32 px: least-correlated accepted support
+                                                     Centre (399.5, 111.5) px; final correlation 0.713; not a displacement-error test
+                                  Reference                                        Centre translation only                                                         Final affine pullback                                 Absolute intensity residual
+                    0                                                        0                                                                             0                                                         0
+                                                                                                                                                                                                                                                         0.25
+                    5                                                        5                                                                             5                                                         5
+                                                                                                                                                                                                                                                         0.20
+Patch y (pixels)
+
+
+
+
+                                                         Patch y (pixels)
+
+
+
+
+                                                                                                                                       Patch y (pixels)
+
+
+
+
+                                                                                                                                                                                                 Patch y (pixels)
+                   10                                                       10                                                                            10                                                        10
+                                                                                                                                                                                                                                                         0.15
+                   15                                                       15                                                                            15                                                        15
+                                                                                                                                                                                                                                                         0.10
+                   20                                                       20                                                                            20                                                        20
+                                                                                                                                                                                                                                                         0.05
+                   25                                                       25                                                                            25                                                        25
+                                                                                                                                                                                                                                                         0.00
+                   30                                                       30                                                                            30                                                        30
+                         0        10        20      30                           0         10        20                           30                           0       10        20        30                             0       10        20      30
+                                 Patch x (pixels)                                         Patch x (pixels)                                                            Patch x (pixels)                                           Patch x (pixels)
+
+
+
+Figure 5: Least-correlated accepted plate support in the preceding field. Comparing centre translation with
+the final affine pullback shows why displacement alone does not describe the deformed support. The final
+intensity residual is a photometric diagnostic.
+
+
+                                                                                 ClosedFormExpression, reference → 500; Silhouette, 32 px
+                                                                                    349/512 accepted; no displacement-accuracy claim
+                                                                                                                     (b) Native target image
+                                                                                                                                          0
+
+                                                                                                                                                                                                                                (c) Numerical status
+                                                                                                                                  1000
+                             (a) Reference material (crop)                                                                                                                                                                Dots accepted; crosses rejected
+                     0                                                                                                                                                                                                0
+                                                                                                                                  2000
+y (pixels)
+
+
+
+
+                                                                                                                     y (pixels)
+
+
+
+
+                                                                                                                                                                                                y (pixels)
+                   200                                                                                                                                                                                              200
+                                                                                                                                  3000
+                   400                                                                                                                                                                                              400
+                                                                                                                                  4000
+                         0        250      500     750                      1000                                                                                                                                          0      250       500     750   1000
+                                        x (pixels)                                                                                5000                                                                                                  x (pixels)
+
+
+                                                                                                                                                      0     1000
+                                                                                                                                                      x (pixels)
+
+
+                                                                                                                                                                                                                                  (f) Affine pullbacks
+                                                                                      40
+                               (d) Estimated u (pixels)                                                              (e) Estimated v (pixels)                                            4000                                 Pink: no accepted support
+                     0                                                                                       0                                                                                                        0
+                                                                                      20
+                                                                                                                                                                                         3000
+y (pixels)
+
+
+
+
+                                                                                              y (pixels)
+
+
+
+
+                                                                                                                                                                                                y (pixels)
+
+
+
+
+                   200                                                                                     200                                                                                                      200
+                                                                                      0
+                                                                                                                                                                                         2000
+                   400                                                                                     400                                                                                                      400
+                                                                                      −20
+                                                                                                                                                                                         1000
+                         0        250      500     750                      1000                                 0            250                        500     750         1000                                         0      250       500     750   1000
+                                                                                      −40
+                                        x (pixels)                                                                                                    x (pixels)                                                                        x (pixels)
+
+
+
+Figure 6: Last supplied strip image, directly paired with the reference. The target is shown at its native
+aspect ratio; reference and remapping crops retain the same physical pixel coordinates. Numerical acceptance
+is not established accuracy.
+
+
+                                                    ClosedFormExpression 500, Silhouette, 32 px: least-correlated accepted support
+                                                     Centre (175.5, 47.5) px; final correlation 0.861; not a displacement-error test
+                                  Reference                                        Centre translation only                                                         Final affine pullback                                 Absolute intensity residual
+                    0                                                        0                                                                             0                                                         0
+                                                                                                                                                                                                                                                         0.25
+                    5                                                        5                                                                             5                                                         5
+                                                                                                                                                                                                                                                         0.20
+Patch y (pixels)
+
+
+
+
+                                                         Patch y (pixels)
+
+
+
+
+                                                                                                                                       Patch y (pixels)
+
+
+
+
+                                                                                                                                                                                                 Patch y (pixels)
+
+
+
+
+                   10                                                       10                                                                            10                                                        10
+                                                                                                                                                                                                                                                         0.15
+                   15                                                       15                                                                            15                                                        15
+                                                                                                                                                                                                                                                         0.10
+                   20                                                       20                                                                            20                                                        20
+                                                                                                                                                                                                                                                         0.05
+                   25                                                       25                                                                            25                                                        25
+                                                                                                                                                                                                                                                         0.00
+                   30                                                       30                                                                            30                                                        30
+                         0        10        20      30                           0         10        20                           30                           0       10        20        30                             0       10        20      30
+                                 Patch x (pixels)                                         Patch x (pixels)                                                            Patch x (pixels)                                           Patch x (pixels)
+
+
+
+Figure 7: Least-correlated accepted strip support at image 500. The complete affine state, not a translation-
+only image shift, supplies the pullback.
+
+
+                                                                                                                                                          8
+initialization. It does not yet resolve the reviewer’s demands for independent displacement truth,
+experimental metrology or matched comparisons with published methods. The original manuscript
+conclusions remain unchanged pending that evidence.
+
+
+
+
+                                                9
+

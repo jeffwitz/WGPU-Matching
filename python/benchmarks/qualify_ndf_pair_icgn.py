@@ -21,8 +21,8 @@ from ndf_field import (
 from ndf_pair_model import NDFPairMatcher, PairPrediction, refine_local_features, refine_local_ncc
 from ndf_rotation_search import rotation_bank_angles, rotation_refinement_candidates
 from train_ndf_pair_matcher import local_affine_consensus
-from wgpu_matching.api import WGPUMatching
-from wgpu_matching.dic_synthetic import generate_speckle_pair
+from wgpu_matching.api import DeepMatchingOptions, HORGOptions, WGPUMatching
+from wgpu_matching.dic_synthetic import generate_speckle_pair, perturb_target
 
 
 def centres(width: int, height: int, subset: int = 64, stride: int = 64):
@@ -503,20 +503,216 @@ def robust_affine_projection(source_xy, displacement_xy, evaluation_xy):
     return mapped - evaluation, gradient.expand(len(evaluation), -1, -1)
 
 
+def _frontier_propagation(solver, target, centres_xy, one_shot_parameters, one_shot_status):
+    """Propagate accepted IC-GN solutions through an 8-connected window grid.
+
+    The iteration is deliberately status-only: truth, image visibility, and
+    analytic masks are not consulted until the caller scores the returned field.
+    Each window may be attempted at most three times.
+    """
+    points = np.asarray(centres_xy, dtype=np.float32).reshape(-1, 2)
+    parameters = np.asarray(one_shot_parameters, dtype=np.float32).reshape(-1, 6).copy()
+    status = np.asarray(one_shot_status, dtype=bool).reshape(-1).copy()
+    if len(points) != len(parameters) or len(points) != len(status):
+        raise ValueError("frontier inputs must describe the same windows")
+    xs, ys = np.unique(points[:, 0]), np.unique(points[:, 1])
+    if len(xs) * len(ys) != len(points):
+        raise ValueError("frontier propagation requires a complete regular window grid")
+    lookup = {(int(np.rint(x)), int(np.rint(y))): index for index, (x, y) in enumerate(points)}
+    neighbours = [[] for _ in range(len(points))]
+    for index, (x, y) in enumerate(points):
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                neighbour = lookup.get((int(np.rint(x + dx * (xs[1] - xs[0] if len(xs) > 1 else 0))),
+                                        int(np.rint(y + dy * (ys[1] - ys[0] if len(ys) > 1 else 0)))))
+                if neighbour is not None:
+                    neighbours[index].append((neighbour, dx, dy))
+
+    attempts = np.zeros(len(points), dtype=np.uint8)
+    ring = np.zeros(len(points), dtype=np.uint8)
+    seed_mask = status.copy()
+    rings = []
+    extra_total = 0
+    started = time.perf_counter()
+    while True:
+        frontier = np.flatnonzero(~status & (attempts < 3) & np.fromiter(
+            (any(status[n] for n, _, _ in adjacent) for adjacent in neighbours),
+            dtype=bool, count=len(points),
+        ))
+        if not len(frontier):
+            break
+        candidate_state = np.zeros((len(points), 8), dtype=np.float32)
+        for index in frontier:
+            adjacent = neighbours[index]
+            estimates = []
+            for neighbour, dx, dy in adjacent:
+                if not status[neighbour]:
+                    continue
+                p = parameters[neighbour]
+                # ``dx, dy`` locate the neighbor relative to this candidate;
+                # prediction must advance from the neighbor back to the candidate.
+                step_x = -(dx * (xs[1] - xs[0] if len(xs) > 1 else 0))
+                step_y = -(dy * (ys[1] - ys[0] if len(ys) > 1 else 0))
+                estimates.append((p[0] + p[1] * step_x + p[2] * step_y,
+                                  p[1], p[2],
+                                  p[3] + p[4] * step_x + p[5] * step_y,
+                                  p[4], p[5]))
+            if estimates:
+                candidate_state[index, :6] = np.median(np.asarray(estimates), axis=0)
+                candidate_state[index, 6] = 1.0
+        active = np.zeros(len(points), dtype=np.uint32)
+        active[frontier] = 1
+        attempts[frontier] += 1
+        roi = getattr(solver, "roi", None)
+        solve_active = active.reshape(roi.selected.shape) if roi is not None else active
+        result = solver._register_seeded_frame(target, candidate_state, solve_active)
+        new_parameters = np.asarray(result.parameters, dtype=np.float32).reshape(-1, 6)
+        new_status = np.asarray(result.status).reshape(-1) > 0.5
+        newly_accepted = frontier[new_status[frontier]]
+        parameters[newly_accepted] = new_parameters[newly_accepted]
+        status[newly_accepted] = True
+        ring[newly_accepted] = len(rings) + 1
+        rings.append({
+            "ring": len(rings) + 1,
+            "frontier_attempts": len(frontier),
+            "newly_accepted": len(newly_accepted),
+        })
+        extra_total += len(newly_accepted)
+    return {
+        "parameters": parameters,
+        "status": status,
+        "seed_mask": seed_mask,
+        "ring": ring,
+        "attempts": attempts,
+        "rings": rings,
+        "extra_accepted": int(extra_total),
+        "wall_s": time.perf_counter() - started,
+    }
+
+
+def _wgpu_matcher_affine_prediction(
+    matcher: WGPUMatching,
+    method: str,
+    reference: torch.Tensor,
+    target: torch.Tensor,
+) -> tuple[PairPrediction, dict]:
+    """Build a feature-grid affine field from direct HORG/DeepMatching pairs."""
+    height, width = reference.shape[-2:]
+    reference_u8 = np.rint(reference[0, 0].cpu().numpy() * 255).astype(np.uint8)
+    target_u8 = np.rint(target[0, 0].cpu().numpy() * 255).astype(np.uint8)
+    if method not in {"horg", "deepmatching"}:
+        raise ValueError(f"unsupported WGSL coarse matcher: {method}")
+    matcher_error = None
+    try:
+        if method == "horg":
+            field = matcher.match_horg(
+                reference_u8, target_u8,
+                options=HORGOptions(
+                    patch_size=32, stride=16, reduction=1, max_features=4096, seed_points=None
+                ),
+                include_correspondences=True,
+            )
+        else:
+            field = matcher.match_deepmatching(
+                reference_u8, target_u8,
+                options=DeepMatchingOptions(
+                    patch_size=32, root_patch_size=64, stride=32,
+                    downscale_levels=1, search_radius_px=96,
+                    mode="inria", seed_points=None,
+                ),
+                include_correspondences=True,
+            )
+    except ValueError as error:
+        matcher_error = str(error)
+        field = None
+    if field is None:
+        pairs = np.empty((0, 4), dtype=np.float64)
+        accepted = np.empty(0, dtype=bool)
+    else:
+        pairs = np.asarray(
+            field.metadata.get("raw_correspondences_xyxy", []), dtype=np.float64
+        ).reshape(-1, 4)
+        accepted = np.asarray(
+            field.metadata.get("raw_correspondence_accepted", []), dtype=bool
+        ).reshape(-1)
+    if accepted.shape != (len(pairs),):
+        raise ValueError(f"{method} did not return aligned direct correspondences and acceptance flags")
+    measured = pairs[accepted]
+    coefficients, inliers, median_residual = fit_global_affine_ransac(
+        measured[:, :2], measured[:, 2:], threshold=5.0, min_inliers=24
+    ) if len(measured) >= 24 else (None, np.zeros(len(measured), dtype=bool), None)
+    grid_height, grid_width = (height + 3) // 4, (width + 3) // 4
+    yy, xx = torch.meshgrid(
+        torch.arange(grid_height, dtype=torch.float64),
+        torch.arange(grid_width, dtype=torch.float64), indexing="ij",
+    )
+    source = torch.stack(
+        ((xx + 0.5) * (width / grid_width) - 0.5,
+         (yy + 0.5) * (height / grid_height) - 0.5), dim=-1,
+    )
+    if coefficients is None:
+        mapped = source.numpy()
+    else:
+        mapped = np.column_stack((np.ones(source.numel() // 2), source.numpy().reshape(-1, 2))) @ coefficients
+        mapped = mapped.reshape(grid_height, grid_width, 2)
+    mapped_tensor = torch.from_numpy(np.asarray(mapped, dtype=np.float32))[None]
+    displacement = mapped_tensor - source.to(torch.float32)[None]
+    prediction = PairPrediction(
+        displacement_xy=displacement,
+        target_xy=mapped_tensor,
+        hard_displacement_xy=displacement.clone(),
+        hard_target_xy=mapped_tensor.clone(),
+        topk_displacement_xy=None,
+        topk_target_xy=None,
+        confidence=torch.ones((1, grid_height, grid_width), dtype=torch.float32),
+    )
+    diagnostics = {
+        "matcher": method,
+        "matching_error": matcher_error,
+        "raw_direct_correspondences": len(pairs),
+        "matcher_accepted_correspondences": int(accepted.sum()),
+        "affine_fit_inliers": int(inliers.sum()),
+        "affine_fit_median_residual_model_px": median_residual,
+        "affine_fit_available": coefficients is not None,
+        "affine_coefficients_model": coefficients.tolist() if coefficients is not None else None,
+    }
+    return prediction, diagnostics
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--weights", type=Path, required=True)
     parser.add_argument("--live-dic-source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--solver-image-cache-dir", type=Path,
+                        help="optionally save exact 8-bit solver inputs bound to the window archive")
     parser.add_argument("--native-scale", type=int, default=8)
     parser.add_argument("--native-width", type=int)
     parser.add_argument("--native-height", type=int)
     parser.add_argument("--model-width", type=int, default=96)
     parser.add_argument("--model-height", type=int, default=64)
+    parser.add_argument("--subset-size", type=int, default=64)
+    parser.add_argument("--subset-stride", type=int, default=64)
+    parser.add_argument("--discontinuity-boundary-fraction", type=float, default=.5)
+    parser.add_argument("--speckle-noise-std", type=float, default=.025)
+    parser.add_argument("--target-gain", type=float, default=1.)
+    parser.add_argument("--target-offset", type=float, default=0.)
+    parser.add_argument("--target-blur-sigma", type=float, default=0.)
+    parser.add_argument("--target-noise-std", type=float, default=0.)
+    parser.add_argument("--periodic-strength", type=float, default=0.)
+    parser.add_argument("--periodic-period-px", type=float, default=128.)
+    parser.add_argument("--external-reference", type=Path)
+    parser.add_argument("--external-target", type=Path)
+    parser.add_argument("--external-stretch-x", type=float)
+    parser.add_argument("--external-stretch-y", type=float)
     parser.add_argument("--speckle-size", type=float, default=3.5,
                         help="characteristic speckle size at model input resolution")
     parser.add_argument("--local-ncc-radius", type=int, default=0,
                         help="optional local NCC search radius in model-input pixels; zero disables refinement")
+    parser.add_argument("--export-pre-ncc", action="store_true",
+                        help="also save the affine-only initialization and solve from the same image-pair inference")
     parser.add_argument(
         "--field-residual",
         choices=("ndf", "none"),
@@ -531,8 +727,18 @@ def main():
     parser.add_argument("--local-ncc-jacobian-damping", type=float, default=1.0,
                         help="blend affine patch warps toward identity (0=fixed patches, 1=full predicted Jacobian)")
     parser.add_argument("--local-ncc-backend", choices=("cpu", "wgpu"), default="cpu")
+    parser.add_argument(
+        "--coarse-matcher",
+        choices=("learned", "horg", "deepmatching"),
+        default="learned",
+        help="image-pair source for the coarse global affine hypothesis",
+    )
     parser.add_argument("--local-ncc-implementation", choices=("parallel", "serial"), default="parallel")
     parser.add_argument("--coarse-estimate", choices=("soft", "topk8", "hard"), default="soft")
+    parser.add_argument("--ndf-onnx-webgpu-cache", type=Path,
+                        help="experimental fixed-shape ONNX Runtime WebGPU graphs stored in this directory")
+    parser.add_argument("--ndf-onnx-profile", action="store_true",
+                        help="diagnostic ONNX Runtime operator profiling; do not use for production timings")
     parser.add_argument("--contextual-features", action="store_true",
                         help="load a checkpoint trained with dilated contextual feature convolutions")
     parser.add_argument(
@@ -603,6 +809,17 @@ def main():
         help="ignore nonzero angle hypotheses smaller than this magnitude",
     )
     parser.add_argument(
+        "--forced-rotation-angle-rad",
+        type=float,
+        help="evaluate one image-derived rotation hypothesis (for fixed-subset verification)",
+    )
+    parser.add_argument(
+        "--solver-window-budget",
+        type=int,
+        default=0,
+        help="solve an evenly spaced fixed subset only; zero keeps the full window grid",
+    )
+    parser.add_argument(
         "--global-affine-prefit",
         action="store_true",
         help=(
@@ -645,6 +862,10 @@ def main():
             "norm before affine rectification; suppresses affine prefit on translations"
         ),
     )
+    parser.add_argument(
+        "--retain-translation-affine", action="store_true",
+        help="retain a valid near-identity affine when the learned residual is disabled",
+    )
     parser.add_argument("--local-ncc-patch-radius", type=int, default=4,
                         help="half-width of the local NCC patch in model-input pixels")
     parser.add_argument("--local-consensus-radius", type=float, default=20.0,
@@ -654,10 +875,11 @@ def main():
     parser.add_argument("--local-feature-radius-cells", type=int, default=0,
                         help="optional local CNN-feature search radius; zero disables refinement")
     parser.add_argument("--cases-per-family", type=int, default=8)
+    parser.add_argument("--shear-band-peak-gradient", type=float, default=0.67)
     parser.add_argument(
         "--families",
         nargs="+",
-        choices=("translation", "heterogeneous"),
+        choices=("translation", "rigid", "affine", "heterogeneous", "discontinuous", "shear_band"),
         default=("translation", "heterogeneous"),
         help="motion families to run (useful for focused paired diagnostics)",
     )
@@ -675,6 +897,12 @@ def main():
             "initial/truth fields, IC-GN status and result)"
         ),
     )
+    parser.add_argument(
+        "--propagation",
+        choices=("none", "frontier"),
+        default="none",
+        help="optionally propagate accepted IC-GN seeds through an 8-connected frontier",
+    )
     parser.add_argument("--seed-offset", type=int, default=100000)
     parser.add_argument(
         "--projection",
@@ -682,6 +910,25 @@ def main():
         default="multilevel_spline",
     )
     args = parser.parse_args()
+    if args.solver_image_cache_dir and not args.window_diagnostics_dir:
+        parser.error("--solver-image-cache-dir requires --window-diagnostics-dir")
+    if args.export_pre_ncc and not (args.local_ncc_radius > 0 and args.field_residual == "none"
+                                    and args.global_affine_prefit and args.projection == "raw_bilinear"
+                                    and args.local_feature_radius_cells == 0 and args.window_diagnostics_dir):
+        parser.error("--export-pre-ncc requires local NCC, no field residual, global affine, raw bilinear projection, "
+                     "no local feature refinement and window diagnostics")
+    if args.subset_size <= 0 or args.subset_stride <= 0:
+        parser.error("subset size and stride must be positive")
+    if bool(args.external_reference) != bool(args.external_target):
+        parser.error("external reference and target must be supplied together")
+    if (args.external_stretch_x is None) != (args.external_stretch_y is None):
+        parser.error("both external stretch values are required for analytic truth")
+    if args.external_reference and (args.cases_per_family != 1 or len(args.families) != 1):
+        parser.error("external image mode requires exactly one family and one case")
+    if (not 0 < args.discontinuity_boundary_fraction < 1 or args.speckle_noise_std < 0
+            or args.target_gain <= 0 or args.target_blur_sigma < 0 or args.target_noise_std < 0
+            or not 0 <= args.periodic_strength <= 1 or args.periodic_period_px <= 0):
+        parser.error("invalid synthetic perturbation parameters")
     if not 0.0 <= args.local_ncc_jacobian_damping <= 1.0:
         parser.error("--local-ncc-jacobian-damping must be between 0 and 1")
     if args.rotation_bank_steps < 0:
@@ -700,6 +947,8 @@ def main():
         parser.error("--rotation-bank-refine-topk requires sparse rotation probes")
     if args.rotation_bank_min_consensus_support < 0:
         parser.error("--rotation-bank-min-consensus-support cannot be negative")
+    if args.solver_window_budget < 0:
+        parser.error("--solver-window-budget cannot be negative")
     if not 0.0 <= args.rotation_bank_min_angle_deg <= 180.0:
         parser.error("--rotation-bank-min-angle-deg must be in [0, 180]")
     if args.oracle_rotation_rectification and args.rotation_bank_steps:
@@ -710,6 +959,17 @@ def main():
         parser.error("global affine and local B-spline prefit are mutually exclusive")
     if args.field_residual == "none" and not args.global_affine_prefit:
         parser.error("--field-residual none requires --global-affine-prefit")
+    if args.coarse_matcher != "learned" and (
+        not args.global_affine_prefit or args.field_residual != "none"
+    ):
+        parser.error("HORG/DeepMatching coarse sources require global affine prefit and --field-residual none")
+    if args.coarse_matcher != "learned" and args.forced_rotation_angle_rad is not None:
+        parser.error("forced learned rotation hypotheses require --coarse-matcher learned")
+    if args.ndf_onnx_profile and not args.ndf_onnx_webgpu_cache:
+        parser.error("--ndf-onnx-profile requires --ndf-onnx-webgpu-cache")
+    if args.ndf_onnx_webgpu_cache and (args.coarse_matcher != "learned" or args.coarse_estimate == "topk8"
+                                       or (args.rotation_bank_steps and not args.rotation_bank_probe_query_budget)):
+        parser.error("ONNX WebGPU requires learned matching, soft/hard output and sparse rotation probing")
     if args.oracle_rotation_rectification and args.local_bspline_prefit:
         parser.error("oracle rotation and image-derived B-spline prefit cannot be combined")
     if args.local_bspline_prefit_min_support < 8:
@@ -726,26 +986,54 @@ def main():
     small_width, small_height = args.model_width, args.model_height
     width = args.native_width or small_width * args.native_scale
     height = args.native_height or small_height * args.native_scale
+    if args.external_reference:
+        from external_dic_input import load_gray_pair
+        external_reference, external_target = load_gray_pair(args.external_reference, args.external_target)
+        height, width = external_reference.shape
     scale_x, scale_y = width / small_width, height / small_height
     texture_scale = 0.5 * (scale_x + scale_y)
     torch.set_num_threads(min(4, torch.get_num_threads()))
     model = NDFPairMatcher(contextual_features=args.contextual_features)
     model.load_state_dict(torch.load(args.weights, map_location="cpu", weights_only=True))
     model.eval()
+    if args.ndf_onnx_webgpu_cache:
+        from ndf_onnx_webgpu import NDFOnnxWebGPU
+
+        model = NDFOnnxWebGPU(model, args.weights, small_height, small_width, args.ndf_onnx_webgpu_cache,
+                             profiling=args.ndf_onnx_profile)
     solver = ICGNWGPU(
         device_type="gpu",
         prefer_subgroups=False,
-        subset_size=64,
-        subset_stride=64,
+        subset_size=args.subset_size,
+        subset_stride=args.subset_stride,
         interpolation="linear",
         motion_model="affine",
         outlier_policy="disabled",
     )
     ndf_wgpu = WGPUMatching(device_type="gpu") if args.local_ncc_backend == "wgpu" else None
+    external_matcher_wgpu = None
+    if args.coarse_matcher != "learned" and ndf_wgpu is None:
+        external_matcher_wgpu = WGPUMatching(device_type="gpu")
+    coarse_matcher_wgpu = ndf_wgpu or external_matcher_wgpu
     report = {
         "protocol": {
             "model_input_px": [small_width, small_height],
             "speckle_size_px_at_model_input": args.speckle_size,
+            "shear_band_peak_gradient": args.shear_band_peak_gradient,
+            "synthetic_truth_convention": "analytic_exact_center",
+            "discontinuity_boundary_fraction": args.discontinuity_boundary_fraction,
+            "speckle_noise_std": args.speckle_noise_std,
+            "target_gain": args.target_gain,
+            "target_offset": args.target_offset,
+            "target_blur_sigma": args.target_blur_sigma,
+            "target_noise_std": args.target_noise_std,
+            "periodic_strength": args.periodic_strength,
+            "periodic_period_px": args.periodic_period_px,
+            "external_reference": str(args.external_reference) if args.external_reference else None,
+            "external_target": str(args.external_target) if args.external_target else None,
+            "truth_available": not args.external_reference or args.external_stretch_x is not None,
+            "external_stretch_x": args.external_stretch_x,
+            "external_stretch_y": args.external_stretch_y,
             "generated_native_px": [width, height],
             "scale_xy": [scale_x, scale_y],
             "candidates_per_query": ((small_width + 3) // 4) * ((small_height + 3) // 4),
@@ -770,6 +1058,8 @@ def main():
             "rotation_bank_consensus": args.rotation_bank_consensus,
             "rotation_bank_min_consensus_support": args.rotation_bank_min_consensus_support,
             "rotation_bank_min_angle_deg": args.rotation_bank_min_angle_deg,
+            "forced_rotation_angle_rad": args.forced_rotation_angle_rad,
+            "solver_window_budget": args.solver_window_budget,
             "global_affine_prefit": args.global_affine_prefit,
             "nonlinear_field_residual": args.field_residual,
             "local_bspline_prefit": args.local_bspline_prefit,
@@ -777,15 +1067,18 @@ def main():
             "local_bspline_prefit_bending": args.local_bspline_prefit_bending,
             "affine_prefit_min_inliers": args.affine_prefit_min_inliers,
             "affine_prefit_min_linear_deviation": args.affine_prefit_min_linear_deviation,
+            "retain_translation_affine": args.retain_translation_affine,
             "visibility_mask_used_to_activate_windows": False,
-            "solver": "WebGPU IC-GN, affine, 64 px subset and stride",
+            "solver": f"WebGPU IC-GN, affine, {args.subset_size} px subset and {args.subset_stride} px stride",
             "field_projection": args.projection,
             "local_ncc_search_radius_px": args.local_ncc_radius,
+            "export_pre_ncc": args.export_pre_ncc,
             "local_ncc_geometry": args.local_ncc_geometry,
             "local_ncc_jacobian_damping": args.local_ncc_jacobian_damping,
             "local_ncc_backend": args.local_ncc_backend,
             "local_ncc_implementation": args.local_ncc_implementation,
             "coarse_estimate": args.coarse_estimate,
+            "coarse_matcher": args.coarse_matcher,
             "contextual_features": args.contextual_features,
             "local_ncc_adapter": ndf_wgpu.device_name if ndf_wgpu is not None else None,
             "local_ncc_patch_radius_px": args.local_ncc_patch_radius,
@@ -795,7 +1088,12 @@ def main():
         },
         "cases": [],
     }
-    family_indices = {"translation": 0, "heterogeneous": 1}
+    if args.ndf_onnx_webgpu_cache:
+        report["protocol"]["ndf_onnx_webgpu"] = model.metadata()
+    family_indices = {
+        "translation": 0, "heterogeneous": 1, "rigid": 2, "affine": 3,
+        "discontinuous": 4, "shear_band": 5,
+    }
     for mode in args.families:
         mode_index = family_indices[mode]
         for sample in range(args.case_start_index, args.case_start_index + args.cases_per_family):
@@ -807,6 +1105,10 @@ def main():
                 width,
                 height,
                 motion_mode=mode,
+                discontinuity_boundary_fraction=args.discontinuity_boundary_fraction,
+                shear_band_peak_gradient=(
+                    args.shear_band_peak_gradient if mode == "shear_band" else None
+                ),
                 texture_options={
                     "characteristic_size_px": args.speckle_size * texture_scale,
                     "coverage": 0.31,
@@ -814,9 +1116,17 @@ def main():
                     # Match the dimensionless speckle edge softness used by
                     # training, independent of native image scale.
                     "softness": 0.612,
-                    "noise_std": 0.025,
+                    "noise_std": args.speckle_noise_std,
+                    "periodic_strength": args.periodic_strength,
+                    "periodic_period_px": args.periodic_period_px,
                 },
+            ) if not args.external_reference else SimpleNamespace(
+                reference=external_reference, target=external_target,
+                metadata={"angle_rad": 0.0}, flow_xy=None, visible=None,
             )
+            pair.target = perturb_target(pair.target, warp_seed, gain=args.target_gain,
+                                         offset=args.target_offset, blur_sigma=args.target_blur_sigma,
+                                         noise_std=args.target_noise_std)
             reference_tensor = torch.nn.functional.interpolate(
                 torch.from_numpy(pair.reference.copy())[None, None],
                 size=(small_height, small_width),
@@ -834,13 +1144,16 @@ def main():
                 target_tensor = rotate_target_about_image_center(target_tensor, oracle_angle)
             inference_start = time.perf_counter()
             local_ncc = None
+            pre_ncc_flow = None
             local_feature = None
+            coarse_matcher_diagnostics = None
             consensus_usable_fraction = None
             rotation_bank_candidate_scores = None
             rotation_probe_encoder_s = 0.0
             rotation_probe_matching_s = 0.0
             rotation_probe_consensus_s = 0.0
             affine_prefit_coefficients = None
+            hard_match_pairs = None
             affine_prefit_inliers = 0
             affine_prefit_median_residual = None
             affine_prefit_spatial_bins = 0
@@ -849,220 +1162,48 @@ def main():
             local_bspline_prefit_diagnostics = None
             with torch.no_grad():
                 model_inference_start = time.perf_counter()
-                if args.rotation_bank_steps and args.rotation_bank_probe_query_budget:
-                    bank_angles = rotation_bank_angles(args.rotation_bank_steps)
-                    reference_centered = reference_tensor - reference_tensor.mean(
-                        dim=(-2, -1), keepdim=True
-                    )
-                    reference_scale = reference_centered.square().mean(
-                        dim=(-2, -1), keepdim=True
-                    ).sqrt().clamp_min(1e-4)
-                    cached_reference_features = model.encoder(reference_centered / reference_scale)
-                    best_bank_score = (-1, -float("inf"))
-                    identity_bank_score = None
-                    identity_mean_confidence = 0.0
-                    best_mean_confidence = 0.0
-                    selected_rotation_target = None
-                    rotation_bank_candidate_scores = []
-                    for bank_angle in bank_angles:
-                        candidate_target = rotate_target_about_image_center(
-                            target_tensor, float(bank_angle)
+                if args.coarse_matcher == "learned":
+                    if (args.rotation_bank_steps and args.rotation_bank_probe_query_budget
+                            and args.forced_rotation_angle_rad is None):
+                        bank_angles = rotation_bank_angles(args.rotation_bank_steps)
+                        reference_centered = reference_tensor - reference_tensor.mean(
+                            dim=(-2, -1), keepdim=True
                         )
-                        (
-                            support,
-                            mean_confidence,
-                            reciprocal_count,
-                            probe_encoder_s,
-                            probe_matching_s,
-                            probe_consensus_s,
-                        ) = probe_rotation_hypothesis(
-                            model,
-                            reference_tensor,
-                            candidate_target,
-                            args.rotation_bank_probe_query_budget,
-                            args.local_consensus_radius,
-                            args.local_consensus_threshold,
-                            args.rotation_bank_consensus,
-                            reference_features=cached_reference_features,
-                        )
-                        rotation_probe_encoder_s += probe_encoder_s
-                        rotation_probe_matching_s += probe_matching_s
-                        rotation_probe_consensus_s += probe_consensus_s
-                        support_fraction = support / max(args.rotation_bank_probe_query_budget, 1)
-                        primary_score = (
-                            mean_confidence
-                            if args.rotation_bank_selection == "confidence"
-                            else support_fraction
-                            if args.rotation_bank_selection == "support"
-                            else mean_confidence * support_fraction
-                        )
-                        bank_score = (primary_score, support)
-                        rotation_bank_candidate_scores.append({
-                            "angle_rad": float(bank_angle),
-                            "consensus_support": support,
-                            "mean_confidence_on_support": mean_confidence,
-                            "reciprocal_queries": reciprocal_count,
-                            "ranking_score": primary_score,
-                        })
-                        if abs(float(bank_angle)) < 1e-8:
-                            identity_bank_score = bank_score
-                            identity_mean_confidence = mean_confidence
-                        angle_eligible = (
-                            abs(float(bank_angle)) < 1e-8
-                            or abs(float(bank_angle)) * 180.0 / np.pi >= args.rotation_bank_min_angle_deg
-                        )
-                        if angle_eligible and bank_score > best_bank_score:
-                            best_bank_score = bank_score
-                            best_mean_confidence = mean_confidence
-                            selected_rotation = float(bank_angle)
-                            selected_rotation_target = candidate_target
-                    refinement_angles = rotation_refinement_candidates(
-                        rotation_bank_candidate_scores,
-                        coarse_steps=args.rotation_bank_steps,
-                        top_k=args.rotation_bank_refine_topk,
-                    )
-                    for refine_angle in refinement_angles:
-                        candidate_target = rotate_target_about_image_center(
-                            target_tensor, refine_angle
-                        )
-                        (
-                            support,
-                            mean_confidence,
-                            reciprocal_count,
-                            probe_encoder_s,
-                            probe_matching_s,
-                            probe_consensus_s,
-                        ) = probe_rotation_hypothesis(
-                            model,
-                            reference_tensor,
-                            candidate_target,
-                            args.rotation_bank_probe_query_budget,
-                            args.local_consensus_radius,
-                            args.local_consensus_threshold,
-                            args.rotation_bank_consensus,
-                            reference_features=cached_reference_features,
-                        )
-                        rotation_probe_encoder_s += probe_encoder_s
-                        rotation_probe_matching_s += probe_matching_s
-                        rotation_probe_consensus_s += probe_consensus_s
-                        support_fraction = support / max(
-                            args.rotation_bank_probe_query_budget, 1
-                        )
-                        primary_score = (
-                            mean_confidence
-                            if args.rotation_bank_selection == "confidence"
-                            else support_fraction
-                            if args.rotation_bank_selection == "support"
-                            else mean_confidence * support_fraction
-                        )
-                        bank_score = (primary_score, support)
-                        rotation_bank_candidate_scores.append({
-                            "angle_rad": refine_angle,
-                            "consensus_support": support,
-                            "mean_confidence_on_support": mean_confidence,
-                            "reciprocal_queries": reciprocal_count,
-                            "ranking_score": primary_score,
-                            "refined_from_coarse_peak": True,
-                        })
-                        angle_eligible = (
-                            abs(refine_angle) < 1e-8
-                            or abs(refine_angle) * 180.0 / np.pi
-                            >= args.rotation_bank_min_angle_deg
-                        )
-                        if angle_eligible and bank_score > best_bank_score:
-                            best_bank_score = bank_score
-                            best_mean_confidence = mean_confidence
-                            selected_rotation = refine_angle
-                            selected_rotation_target = candidate_target
-                    assert selected_rotation_target is not None and identity_bank_score is not None
-                    score_gain_over_identity = (
-                        best_bank_score[0] - identity_bank_score[0]
-                    ) / max(abs(identity_bank_score[0]), 1e-6)
-                    best_support = best_bank_score[1]
-                    if (
-                        best_support < args.rotation_bank_min_consensus_support
-                        or score_gain_over_identity < args.rotation_bank_min_score_gain
-                    ):
-                        selected_rotation = 0.0
-                        selected_rotation_target = rotate_target_about_image_center(target_tensor, 0.0)
-                        best_bank_score = identity_bank_score
-                        best_mean_confidence = identity_mean_confidence
-                    target_tensor = selected_rotation_target
-                    prediction = model(
-                        reference_tensor,
-                        target_tensor,
-                        include_topk=args.coarse_estimate == "topk8",
-                    )
-                    rotation_bank_support = best_bank_score[1]
-                    rotation_bank_mean_confidence = best_mean_confidence
-                elif args.rotation_bank_steps:
-                    bank_angles = rotation_bank_angles(args.rotation_bank_steps)
-                    feature_height = (small_height + 3) // 4
-                    feature_width = (small_width + 3) // 4
-                    yy, xx = torch.meshgrid(
-                        torch.arange(feature_height, dtype=torch.float64),
-                        torch.arange(feature_width, dtype=torch.float64), indexing="ij",
-                    )
-                    bank_source_xy = torch.stack(
-                        ((xx + 0.5) * (small_width / feature_width) - 0.5,
-                         (yy + 0.5) * (small_height / feature_height) - 0.5), dim=-1,
-                    ).reshape(-1, 2).numpy()
-                    best_bank_score = (-1, -float("inf"))
-                    prediction = None
-                    selected_rotation_target = None
-                    rotation_bank_candidate_scores = []
-                    identity_prediction = None
-                    identity_target = None
-                    identity_bank_score = None
-                    identity_mean_confidence = 0.0
-                    best_mean_confidence = 0.0
-                    for batch_start in range(0, len(bank_angles), args.rotation_bank_batch_size):
-                        angle_batch = bank_angles[
-                            batch_start : batch_start + args.rotation_bank_batch_size
-                        ]
-                        target_batch = torch.cat(
-                            [
-                                rotate_target_about_image_center(target_tensor, float(angle))
-                                for angle in angle_batch
-                            ],
-                            dim=0,
-                        )
-                        prediction_batch = model(
-                            reference_tensor.expand(len(angle_batch), -1, -1, -1),
-                            target_batch,
-                            include_topk=args.coarse_estimate == "topk8",
-                        )
-                        for batch_index, bank_angle in enumerate(angle_batch):
-                            candidate_prediction = PairPrediction(
-                                displacement_xy=prediction_batch.displacement_xy[batch_index : batch_index + 1],
-                                target_xy=prediction_batch.target_xy[batch_index : batch_index + 1],
-                                hard_displacement_xy=prediction_batch.hard_displacement_xy[batch_index : batch_index + 1],
-                                hard_target_xy=prediction_batch.hard_target_xy[batch_index : batch_index + 1],
-                                topk_displacement_xy=(
-                                    prediction_batch.topk_displacement_xy[batch_index : batch_index + 1]
-                                    if prediction_batch.topk_displacement_xy is not None else None
-                                ),
-                                topk_target_xy=(
-                                    prediction_batch.topk_target_xy[batch_index : batch_index + 1]
-                                    if prediction_batch.topk_target_xy is not None else None
-                                ),
-                                confidence=prediction_batch.confidence[batch_index : batch_index + 1],
+                        reference_scale = reference_centered.square().mean(
+                            dim=(-2, -1), keepdim=True
+                        ).sqrt().clamp_min(1e-4)
+                        cached_reference_features = model.encoder(reference_centered / reference_scale)
+                        best_bank_score = (-1, -float("inf"))
+                        identity_bank_score = None
+                        identity_mean_confidence = 0.0
+                        best_mean_confidence = 0.0
+                        selected_rotation_target = None
+                        rotation_bank_candidate_scores = []
+                        for bank_angle in bank_angles:
+                            candidate_target = rotate_target_about_image_center(
+                                target_tensor, float(bank_angle)
                             )
-                            candidate_affine, candidate_usable = local_affine_consensus(
-                                bank_source_xy,
-                                candidate_prediction.hard_target_xy[0].reshape(-1, 2).numpy(),
-                                small_width,
-                                small_height,
-                                radius=args.local_consensus_radius,
-                                threshold=args.local_consensus_threshold,
+                            (
+                                support,
+                                mean_confidence,
+                                reciprocal_count,
+                                probe_encoder_s,
+                                probe_matching_s,
+                                probe_consensus_s,
+                            ) = probe_rotation_hypothesis(
+                                model,
+                                reference_tensor,
+                                candidate_target,
+                                args.rotation_bank_probe_query_budget,
+                                args.local_consensus_radius,
+                                args.local_consensus_threshold,
+                                args.rotation_bank_consensus,
+                                reference_features=cached_reference_features,
                             )
-                            del candidate_affine
-                            support = int(candidate_usable.sum())
-                            mean_confidence = (
-                                float(candidate_prediction.confidence[0].reshape(-1)[candidate_usable].mean())
-                                if support else 0.0
-                            )
-                            support_fraction = support / max(len(bank_source_xy), 1)
+                            rotation_probe_encoder_s += probe_encoder_s
+                            rotation_probe_matching_s += probe_matching_s
+                            rotation_probe_consensus_s += probe_consensus_s
+                            support_fraction = support / max(args.rotation_bank_probe_query_budget, 1)
                             primary_score = (
                                 mean_confidence
                                 if args.rotation_bank_selection == "confidence"
@@ -1075,10 +1216,10 @@ def main():
                                 "angle_rad": float(bank_angle),
                                 "consensus_support": support,
                                 "mean_confidence_on_support": mean_confidence,
+                                "reciprocal_queries": reciprocal_count,
+                                "ranking_score": primary_score,
                             })
                             if abs(float(bank_angle)) < 1e-8:
-                                identity_prediction = candidate_prediction
-                                identity_target = target_batch[batch_index : batch_index + 1]
                                 identity_bank_score = bank_score
                                 identity_mean_confidence = mean_confidence
                             angle_eligible = (
@@ -1088,36 +1229,229 @@ def main():
                             if angle_eligible and bank_score > best_bank_score:
                                 best_bank_score = bank_score
                                 best_mean_confidence = mean_confidence
-                                prediction = candidate_prediction
                                 selected_rotation = float(bank_angle)
-                                selected_rotation_target = target_batch[batch_index : batch_index + 1]
-                    assert prediction is not None and selected_rotation_target is not None
-                    assert identity_prediction is not None and identity_target is not None
-                    assert identity_bank_score is not None
-                    score_gain_over_identity = (
-                        best_bank_score[0] - identity_bank_score[0]
-                    ) / max(abs(identity_bank_score[0]), 1e-6)
-                    best_support = best_bank_score[1]
-                    if (
-                        best_support < args.rotation_bank_min_consensus_support
-                        or score_gain_over_identity < args.rotation_bank_min_score_gain
-                    ):
-                        prediction = identity_prediction
-                        selected_rotation_target = identity_target
-                        selected_rotation = 0.0
-                        best_bank_score = identity_bank_score
-                        best_mean_confidence = identity_mean_confidence
-                    target_tensor = selected_rotation_target
-                    rotation_bank_support = best_bank_score[1]
-                    rotation_bank_mean_confidence = best_mean_confidence
+                                selected_rotation_target = candidate_target
+                        refinement_angles = rotation_refinement_candidates(
+                            rotation_bank_candidate_scores,
+                            coarse_steps=args.rotation_bank_steps,
+                            top_k=args.rotation_bank_refine_topk,
+                        )
+                        for refine_angle in refinement_angles:
+                            candidate_target = rotate_target_about_image_center(
+                                target_tensor, refine_angle
+                            )
+                            (
+                                support,
+                                mean_confidence,
+                                reciprocal_count,
+                                probe_encoder_s,
+                                probe_matching_s,
+                                probe_consensus_s,
+                            ) = probe_rotation_hypothesis(
+                                model,
+                                reference_tensor,
+                                candidate_target,
+                                args.rotation_bank_probe_query_budget,
+                                args.local_consensus_radius,
+                                args.local_consensus_threshold,
+                                args.rotation_bank_consensus,
+                                reference_features=cached_reference_features,
+                            )
+                            rotation_probe_encoder_s += probe_encoder_s
+                            rotation_probe_matching_s += probe_matching_s
+                            rotation_probe_consensus_s += probe_consensus_s
+                            support_fraction = support / max(
+                                args.rotation_bank_probe_query_budget, 1
+                            )
+                            primary_score = (
+                                mean_confidence
+                                if args.rotation_bank_selection == "confidence"
+                                else support_fraction
+                                if args.rotation_bank_selection == "support"
+                                else mean_confidence * support_fraction
+                            )
+                            bank_score = (primary_score, support)
+                            rotation_bank_candidate_scores.append({
+                                "angle_rad": refine_angle,
+                                "consensus_support": support,
+                                "mean_confidence_on_support": mean_confidence,
+                                "reciprocal_queries": reciprocal_count,
+                                "ranking_score": primary_score,
+                                "refined_from_coarse_peak": True,
+                            })
+                            angle_eligible = (
+                                abs(refine_angle) < 1e-8
+                                or abs(refine_angle) * 180.0 / np.pi
+                                >= args.rotation_bank_min_angle_deg
+                            )
+                            if angle_eligible and bank_score > best_bank_score:
+                                best_bank_score = bank_score
+                                best_mean_confidence = mean_confidence
+                                selected_rotation = refine_angle
+                                selected_rotation_target = candidate_target
+                        assert selected_rotation_target is not None and identity_bank_score is not None
+                        score_gain_over_identity = (
+                            best_bank_score[0] - identity_bank_score[0]
+                        ) / max(abs(identity_bank_score[0]), 1e-6)
+                        best_support = best_bank_score[1]
+                        if (
+                            best_support < args.rotation_bank_min_consensus_support
+                            or score_gain_over_identity < args.rotation_bank_min_score_gain
+                        ):
+                            selected_rotation = 0.0
+                            selected_rotation_target = rotate_target_about_image_center(target_tensor, 0.0)
+                            best_bank_score = identity_bank_score
+                            best_mean_confidence = identity_mean_confidence
+                        target_tensor = selected_rotation_target
+                        prediction = model(
+                            reference_tensor,
+                            target_tensor,
+                            include_topk=args.coarse_estimate == "topk8",
+                        )
+                        rotation_bank_support = best_bank_score[1]
+                        rotation_bank_mean_confidence = best_mean_confidence
+                    elif args.rotation_bank_steps and args.forced_rotation_angle_rad is None:
+                        bank_angles = rotation_bank_angles(args.rotation_bank_steps)
+                        feature_height = (small_height + 3) // 4
+                        feature_width = (small_width + 3) // 4
+                        yy, xx = torch.meshgrid(
+                            torch.arange(feature_height, dtype=torch.float64),
+                            torch.arange(feature_width, dtype=torch.float64), indexing="ij",
+                        )
+                        bank_source_xy = torch.stack(
+                            ((xx + 0.5) * (small_width / feature_width) - 0.5,
+                             (yy + 0.5) * (small_height / feature_height) - 0.5), dim=-1,
+                        ).reshape(-1, 2).numpy()
+                        best_bank_score = (-1, -float("inf"))
+                        prediction = None
+                        selected_rotation_target = None
+                        rotation_bank_candidate_scores = []
+                        identity_prediction = None
+                        identity_target = None
+                        identity_bank_score = None
+                        identity_mean_confidence = 0.0
+                        best_mean_confidence = 0.0
+                        for batch_start in range(0, len(bank_angles), args.rotation_bank_batch_size):
+                            angle_batch = bank_angles[
+                                batch_start : batch_start + args.rotation_bank_batch_size
+                            ]
+                            target_batch = torch.cat(
+                                [
+                                    rotate_target_about_image_center(target_tensor, float(angle))
+                                    for angle in angle_batch
+                                ],
+                                dim=0,
+                            )
+                            prediction_batch = model(
+                                reference_tensor.expand(len(angle_batch), -1, -1, -1),
+                                target_batch,
+                                include_topk=args.coarse_estimate == "topk8",
+                            )
+                            for batch_index, bank_angle in enumerate(angle_batch):
+                                candidate_prediction = PairPrediction(
+                                    displacement_xy=prediction_batch.displacement_xy[batch_index : batch_index + 1],
+                                    target_xy=prediction_batch.target_xy[batch_index : batch_index + 1],
+                                    hard_displacement_xy=prediction_batch.hard_displacement_xy[batch_index : batch_index + 1],
+                                    hard_target_xy=prediction_batch.hard_target_xy[batch_index : batch_index + 1],
+                                    topk_displacement_xy=(
+                                        prediction_batch.topk_displacement_xy[batch_index : batch_index + 1]
+                                        if prediction_batch.topk_displacement_xy is not None else None
+                                    ),
+                                    topk_target_xy=(
+                                        prediction_batch.topk_target_xy[batch_index : batch_index + 1]
+                                        if prediction_batch.topk_target_xy is not None else None
+                                    ),
+                                    confidence=prediction_batch.confidence[batch_index : batch_index + 1],
+                                )
+                                candidate_affine, candidate_usable = local_affine_consensus(
+                                    bank_source_xy,
+                                    candidate_prediction.hard_target_xy[0].reshape(-1, 2).numpy(),
+                                    small_width,
+                                    small_height,
+                                    radius=args.local_consensus_radius,
+                                    threshold=args.local_consensus_threshold,
+                                )
+                                del candidate_affine
+                                support = int(candidate_usable.sum())
+                                mean_confidence = (
+                                    float(candidate_prediction.confidence[0].reshape(-1)[candidate_usable].mean())
+                                    if support else 0.0
+                                )
+                                support_fraction = support / max(len(bank_source_xy), 1)
+                                primary_score = (
+                                    mean_confidence
+                                    if args.rotation_bank_selection == "confidence"
+                                    else support_fraction
+                                    if args.rotation_bank_selection == "support"
+                                    else mean_confidence * support_fraction
+                                )
+                                bank_score = (primary_score, support)
+                                rotation_bank_candidate_scores.append({
+                                    "angle_rad": float(bank_angle),
+                                    "consensus_support": support,
+                                    "mean_confidence_on_support": mean_confidence,
+                                })
+                                if abs(float(bank_angle)) < 1e-8:
+                                    identity_prediction = candidate_prediction
+                                    identity_target = target_batch[batch_index : batch_index + 1]
+                                    identity_bank_score = bank_score
+                                    identity_mean_confidence = mean_confidence
+                                angle_eligible = (
+                                    abs(float(bank_angle)) < 1e-8
+                                    or abs(float(bank_angle)) * 180.0 / np.pi >= args.rotation_bank_min_angle_deg
+                                )
+                                if angle_eligible and bank_score > best_bank_score:
+                                    best_bank_score = bank_score
+                                    best_mean_confidence = mean_confidence
+                                    prediction = candidate_prediction
+                                    selected_rotation = float(bank_angle)
+                                    selected_rotation_target = target_batch[batch_index : batch_index + 1]
+                        assert prediction is not None and selected_rotation_target is not None
+                        assert identity_prediction is not None and identity_target is not None
+                        assert identity_bank_score is not None
+                        score_gain_over_identity = (
+                            best_bank_score[0] - identity_bank_score[0]
+                        ) / max(abs(identity_bank_score[0]), 1e-6)
+                        best_support = best_bank_score[1]
+                        if (
+                            best_support < args.rotation_bank_min_consensus_support
+                            or score_gain_over_identity < args.rotation_bank_min_score_gain
+                        ):
+                            prediction = identity_prediction
+                            selected_rotation_target = identity_target
+                            selected_rotation = 0.0
+                            best_bank_score = identity_bank_score
+                            best_mean_confidence = identity_mean_confidence
+                        target_tensor = selected_rotation_target
+                        rotation_bank_support = best_bank_score[1]
+                        rotation_bank_mean_confidence = best_mean_confidence
+                    else:
+                        prediction = model(
+                            reference_tensor, target_tensor,
+                            include_topk=args.coarse_estimate == "topk8",
+                        )
+                        rotation_bank_support = None
+                        rotation_bank_mean_confidence = None
+                        score_gain_over_identity = None
+                    if args.forced_rotation_angle_rad is not None:
+                        selected_rotation = args.forced_rotation_angle_rad
+                        target_tensor = rotate_target_about_image_center(
+                            original_target_tensor, selected_rotation
+                        )
+                        prediction = model(
+                            reference_tensor, target_tensor,
+                            include_topk=args.coarse_estimate == "topk8",
+                        )
                 else:
-                    prediction = model(
-                        reference_tensor, target_tensor,
-                        include_topk=args.coarse_estimate == "topk8",
+                    prediction, coarse_matcher_diagnostics = _wgpu_matcher_affine_prediction(
+                        coarse_matcher_wgpu, args.coarse_matcher, reference_tensor,
+                        original_target_tensor,
                     )
+                    selected_rotation = 0.0
                     rotation_bank_support = None
                     rotation_bank_mean_confidence = None
                     score_gain_over_identity = None
+                    model_inference_s = time.perf_counter() - model_inference_start
                 if args.global_affine_prefit:
                     feature_height, feature_width = prediction.confidence.shape[-2:]
                     yy, xx = torch.meshgrid(
@@ -1136,6 +1470,10 @@ def main():
                             match_flow, (small_width, small_height), selected_rotation
                         )
                     affine_target_xy = affine_source_xy + match_flow[0].reshape(-1, 2).numpy()
+                    # Record image-derived hard matches for optional local WGSL fitting.
+                    native_source = (affine_source_xy + 0.5) * np.array([scale_x, scale_y]) - 0.5
+                    native_target = (affine_target_xy + 0.5) * np.array([scale_x, scale_y]) - 0.5
+                    hard_match_pairs = np.concatenate((native_source, native_target), axis=1).astype(np.float32)
                     affine_prefit_coefficients, inlier_mask, affine_prefit_median_residual = (
                         fit_global_affine_ransac(
                             affine_source_xy,
@@ -1158,8 +1496,12 @@ def main():
                         determinant = float(np.linalg.det(linear))
                         valid_affine = (
                             affine_prefit_spatial_bins >= 4
-                            and affine_prefit_linear_deviation
-                            >= args.affine_prefit_min_linear_deviation
+                            # The identity guard avoids unnecessary rectification when
+                            # the neural residual can carry translation. Without that
+                            # residual, rejecting the affine also discards translation.
+                            and ((args.retain_translation_affine and args.field_residual == "none")
+                                 or affine_prefit_linear_deviation
+                                 >= args.affine_prefit_min_linear_deviation)
                             and 0.05 < determinant < 20.0
                             and singular_values[-1] > 1e-6
                             and singular_values[0] / singular_values[-1] < 20.0
@@ -1289,6 +1631,8 @@ def main():
                     )
                     prediction.displacement_xy = local_feature.displacement_xy
                 if args.local_ncc_radius:
+                    if args.export_pre_ncc:
+                        pre_ncc_flow = prediction.displacement_xy.clone()
                     local_jacobian = None
                     if args.local_ncc_geometry in {"affine", "hybrid"}:
                         flow = prediction.displacement_xy[0]
@@ -1342,6 +1686,9 @@ def main():
                         )
                     prediction.displacement_xy = local_ncc.displacement_xy
                 if affine_prefit_coefficients is not None:
+                    if pre_ncc_flow is not None:
+                        pre_ncc_flow = compose_affine_residual_flow(
+                            pre_ncc_flow, affine_prefit_coefficients, (small_width, small_height))
                     if local_ncc is not None:
                         local_ncc.displacement_xy = compose_affine_residual_flow(
                             local_ncc.displacement_xy,
@@ -1378,6 +1725,9 @@ def main():
                         (small_width, small_height),
                     )
                 elif args.oracle_rotation_rectification or args.rotation_bank_steps:
+                    if pre_ncc_flow is not None:
+                        pre_ncc_flow = unrotate_target_displacement(
+                            pre_ncc_flow, (small_width, small_height), selected_rotation)
                     prediction.displacement_xy = unrotate_target_displacement(
                         prediction.displacement_xy,
                         (small_width, small_height),
@@ -1392,7 +1742,7 @@ def main():
             )
             flow_coarse = prediction.displacement_xy[0].reshape(-1, 2).to(torch.float64)
             fit_start = time.perf_counter()
-            native_centres = centres(width, height)
+            native_centres = centres(width, height, subset=args.subset_size, stride=args.subset_stride)
             coarse_centres = resize_pixel_center_coordinates(
                 torch.from_numpy(native_centres).to(torch.float64), (scale_x, scale_y)
             ).to(torch.float64)
@@ -1427,11 +1777,28 @@ def main():
                     (initial_f[:, 1, 1].numpy() - 1),
                 )
             ).astype(np.float32)
-            truth = truth_parameters(pair, native_centres)
-            visible = pair.visible[
-                np.rint(native_centres[:, 1]).astype(int),
-                np.rint(native_centres[:, 0]).astype(int),
-            ]
+            pre_ncc_initial = None
+            if pre_ncc_flow is not None:
+                pre_field = feature_grid_displacement_field(pre_ncc_flow[0].to(torch.float64),
+                                                             (small_width, small_height))
+                pre_u, pre_f = pre_field.evaluate(coarse_centres)
+                pre_ncc_initial = np.column_stack((
+                    pre_u[:, 0].numpy() * scale_x, pre_f[:, 0, 0].numpy() - 1,
+                    pre_f[:, 0, 1].numpy() * (scale_x / scale_y), pre_u[:, 1].numpy() * scale_y,
+                    pre_f[:, 1, 0].numpy() * (scale_y / scale_x), pre_f[:, 1, 1].numpy() - 1,
+                )).astype(np.float32)
+            truth_available = not args.external_reference or args.external_stretch_x is not None
+            if args.external_reference:
+                from external_dic_input import affine_truth
+                external_truth, external_visible = affine_truth(
+                    native_centres, (height, width), args.external_stretch_x, args.external_stretch_y)
+                truth = external_truth if truth_available else np.zeros((len(native_centres), 6), np.float32)
+                visible = external_visible if truth_available else np.zeros(len(native_centres), bool)
+            else:
+                from wgpu_matching.dic_synthetic import analytic_truth_at_points
+
+                truth, visible = analytic_truth_at_points(pair.metadata, native_centres)
+                truth = truth.astype(np.float32)
             init_translation = np.linalg.norm(
                 initial_parameters[:, [0, 3]] - truth[:, [0, 3]], axis=1
             )
@@ -1448,7 +1815,7 @@ def main():
             refinement_reference = next(
                 (result for _, result in measured_refinements if result is not None), None
             )
-            if refinement_reference is not None:
+            if refinement_reference is not None and not args.external_reference:
                 feature_height, feature_width = refinement_reference.valid.shape[-2:]
                 flow_model = torch.nn.functional.interpolate(
                     torch.from_numpy(pair.flow_xy.copy()).permute(2, 0, 1)[None],
@@ -1511,6 +1878,12 @@ def main():
             target = np.rint(pair.target * 255).astype(np.uint8)
             solver.set_reference(reference, iterations=30, tolerance=1e-3, zncc_min=0.65)
             active = np.ones(len(native_centres), dtype=np.uint32)
+            if args.solver_window_budget:
+                active[:] = 0
+                selected = np.linspace(
+                    0, len(active) - 1, min(args.solver_window_budget, len(active))
+                ).round().astype(int)
+                active[selected] = 1
             state = np.zeros((len(native_centres), 8), dtype=np.float32)
             state[:, :6] = initial_parameters
             state[:, 6] = 1
@@ -1523,15 +1896,32 @@ def main():
             oracle_state[:, :6] = truth
             oracle_state[:, 6] = 1
             oracle_start = time.perf_counter()
-            oracle_result = solver._register_seeded_frame(target, oracle_state, active)
+            oracle_result = solver._register_seeded_frame(target, oracle_state, active) if truth_available else zero_result
             oracle_s = time.perf_counter() - oracle_start
             solve_start = time.perf_counter()
             result = solver._register_seeded_frame(target, state, active)
             solve_s = time.perf_counter() - solve_start
+            pre_ncc_result = None
+            if pre_ncc_initial is not None:
+                pre_state = np.zeros_like(state)
+                pre_state[:, :6] = pre_ncc_initial
+                pre_state[:, 6] = 1
+                pre_ncc_result = solver._register_seeded_frame(target, pre_state, active)
             returned = np.asarray(result.parameters).reshape(-1, 6)
             status = np.asarray(result.status).reshape(-1) > 0.5
             displacement_error = np.linalg.norm(returned[:, [0, 3]] - truth[:, [0, 3]], axis=1)
             correct = visible & status & (displacement_error < 2.0)
+            propagated = None
+            if args.propagation == "frontier":
+                propagated = _frontier_propagation(
+                    solver, target, native_centres, returned, status
+                )
+                propagated_error = np.linalg.norm(
+                    propagated["parameters"][:, [0, 3]] - truth[:, [0, 3]], axis=1
+                )
+                propagated_correct = (
+                    visible & propagated["status"] & (propagated_error < 2.0)
+                )
             zero_parameters = np.asarray(zero_result.parameters).reshape(-1, 6)
             zero_status = np.asarray(zero_result.status).reshape(-1) > 0.5
             zero_error = np.linalg.norm(zero_parameters[:, [0, 3]] - truth[:, [0, 3]], axis=1)
@@ -1548,15 +1938,36 @@ def main():
                     diagnostics_path,
                     centres_xy_native=native_centres.astype(np.float32),
                     visible=visible.astype(np.uint8),
+                    truth_available=np.array(truth_available),
                     initial_parameters=initial_parameters.astype(np.float32),
-                    truth_parameters=truth.astype(np.float32),
+                    **({"pre_ncc_initial_parameters": pre_ncc_initial,
+                        "pre_ncc_icgn_parameters": np.asarray(pre_ncc_result.parameters).reshape(-1, 6).astype(np.float32),
+                        "pre_ncc_icgn_status": (np.asarray(pre_ncc_result.status).reshape(-1) > 0.5).astype(np.uint8)}
+                       if pre_ncc_result is not None else {}),
+                    **({"hard_match_pairs": hard_match_pairs} if hard_match_pairs is not None else {}),
+                    truth_parameters=(truth.astype(np.float32) if truth_available else np.full_like(truth, np.nan, dtype=np.float32)),
                     icgn_parameters=returned.astype(np.float32),
                     icgn_status=status.astype(np.uint8),
-                    icgn_displacement_error_px=displacement_error.astype(np.float32),
+                    icgn_displacement_error_px=(displacement_error.astype(np.float32) if truth_available else np.full_like(displacement_error, np.nan, dtype=np.float32)),
                     icgn_correct_lt2px=correct.astype(np.uint8),
                     zero_icgn_correct_lt2px=(zero_status & visible & (zero_error < 2.0)).astype(np.uint8),
                     oracle_icgn_correct_lt2px=(oracle_status & visible & (oracle_error < 2.0)).astype(np.uint8),
+                    **({
+                        "propagated_parameters": propagated["parameters"].astype(np.float32),
+                        "propagated_status": propagated["status"].astype(np.uint8),
+                        "propagated_seed_mask": propagated["seed_mask"].astype(np.uint8),
+                        "propagated_ring": propagated["ring"],
+                        "propagated_attempts": propagated["attempts"],
+                        "propagated_displacement_error_px": propagated_error.astype(np.float32),
+                        "propagated_correct_lt2px": propagated_correct.astype(np.uint8),
+                    } if propagated is not None else {}),
                 )
+                if args.solver_image_cache_dir:
+                    from solver_image_cache import write_solver_images
+
+                    sources = (args.external_reference, args.external_target) if args.external_reference else None
+                    write_solver_images(args.solver_image_cache_dir, diagnostics_path, reference, target,
+                                        source_files=sources)
             report["cases"].append(
                 {
                     "mode": mode,
@@ -1564,23 +1975,25 @@ def main():
                     "texture_seed": texture_seed,
                     "warp_seed": warp_seed,
                     "window_diagnostics": str(diagnostics_path) if diagnostics_path else None,
-                    "visible_windows": int(visible.sum()),
+                    "visible_windows": int(visible.sum()) if truth_available else None,
                     "initialized_windows": len(native_centres),
-                    "initial_translation_rmse_px": float(np.sqrt(np.mean(init_translation**2))),
-                    "initial_gradient_rmse": float(np.sqrt(np.mean(init_gradient**2))),
+                    "initial_translation_rmse_px": float(np.sqrt(np.mean(init_translation**2))) if truth_available else None,
+                    "initial_gradient_rmse": float(np.sqrt(np.mean(init_gradient**2))) if truth_available else None,
                     "local_consensus_usable_fraction": consensus_usable_fraction,
                     "rotation_bank_selected_angle_rad": (
                         selected_rotation if args.rotation_bank_steps else None
                     ),
+                    "forced_rotation_angle_rad": args.forced_rotation_angle_rad,
                     "rotation_bank_consensus_support": rotation_bank_support,
                     "rotation_bank_mean_confidence_on_support": rotation_bank_mean_confidence,
                     "rotation_bank_candidate_scores": rotation_bank_candidate_scores,
+                    "coarse_matcher_diagnostics": coarse_matcher_diagnostics,
                     "rotation_bank_score_gain_over_identity": score_gain_over_identity,
                     "rotation_bank_probe_encoder_s": rotation_probe_encoder_s,
                     "rotation_bank_probe_matching_s": rotation_probe_matching_s,
                     "rotation_bank_probe_consensus_s": rotation_probe_consensus_s,
                     "rotation_bank_truth_angle_rad_for_diagnostic_only": (
-                        float(pair.metadata["angle_rad"]) if args.rotation_bank_steps else None
+                        float(pair.metadata["angle_rad"]) if args.rotation_bank_steps and truth_available else None
                     ),
                     "global_affine_prefit_used": affine_prefit_coefficients is not None,
                     "nonlinear_field_residual": args.field_residual,
@@ -1597,14 +2010,26 @@ def main():
                     **local_ncc_metrics,
                     **local_feature_metrics,
                     **local_final_metrics,
-                    "solver_accepted_visible": int((status & visible).sum()),
-                    "correct_converged_lt2px": int(correct.sum()),
-                    "zero_correct_converged_lt2px": int((zero_status & visible & (zero_error < 2.0)).sum()),
-                    "analytic_oracle_correct_converged_lt2px": int((oracle_status & visible & (oracle_error < 2.0)).sum()),
-                    "coverage_correct": float(correct.sum() / max(int(visible.sum()), 1)),
-                    "correct_windows_per_second": float(correct.sum() / max(inference_s + projection_s + solve_s, 1e-12)),
+                    "solver_accepted_visible": int((status & visible).sum()) if truth_available else None,
+                    "solver_accepted_active": int(status.sum()),
+                    "solver_active_window_count": int(active.sum()),
+                    "correct_converged_lt2px": int(correct.sum()) if truth_available else None,
+                    "zero_correct_converged_lt2px": int((zero_status & visible & (zero_error < 2.0)).sum()) if truth_available else None,
+                    "analytic_oracle_correct_converged_lt2px": int((oracle_status & visible & (oracle_error < 2.0)).sum()) if truth_available else None,
+                    "propagation_mode": args.propagation,
+                    "propagation_seed_windows": int(propagated["seed_mask"].sum()) if propagated else None,
+                    "propagation_correct_lt2px": int(propagated_correct.sum()) if propagated else None,
+                    "propagation_oracle_correct_lt2px": int((oracle_status & visible & (oracle_error < 2.0)).sum()) if propagated else None,
+                    "propagation_accepted_error_ge_2px": int((propagated["status"] & visible & (propagated_error >= 2.0)).sum()) if propagated else None,
+                    "propagation_accepted_invisible": int((propagated["status"] & ~visible).sum()) if propagated else None,
+                    "propagation_rings": propagated["rings"] if propagated else None,
+                    "propagation_extra_accepted": propagated["extra_accepted"] if propagated else None,
+                    "propagation_wall_s": propagated["wall_s"] if propagated else None,
+                    "coverage_correct": float(correct.sum() / max(int(visible.sum()), 1)) if truth_available else None,
+                    "correct_windows_per_second": float(correct.sum() / max(inference_s + projection_s + solve_s, 1e-12)) if truth_available else None,
                     "inference_s_cpu": inference_s,
-                    "model_inference_s_cpu": model_inference_s,
+                    "model_inference_s_cpu": None if args.ndf_onnx_webgpu_cache else model_inference_s,
+                    "model_inference_s_wall": model_inference_s,
                     "local_refinement_s_wall": local_refinement_s,
                     "field_projection_s_cpu": projection_s,
                     "icgn_s": solve_s,
@@ -1616,6 +2041,12 @@ def main():
             print(json.dumps(report["cases"][-1]), flush=True)
     for mode in args.families:
         cases = [case for case in report["cases"] if case["mode"] == mode]
+        if any(case["visible_windows"] is None for case in cases):
+            report.setdefault("summary", {})[mode] = {
+                "cases": len(cases), "truth_available": False,
+                "solver_accepted_active": sum(case["solver_accepted_active"] for case in cases),
+            }
+            continue
         report.setdefault("summary", {})[mode] = {
             "cases": len(cases),
             "visible_windows": int(sum(case["visible_windows"] for case in cases)),
@@ -1628,8 +2059,12 @@ def main():
                 np.median([case["correct_windows_per_second"] for case in cases])
             ),
         }
+    if args.ndf_onnx_profile:
+        report["protocol"]["ndf_onnx_profiles"] = model.finish_profiles()
     if ndf_wgpu is not None:
         ndf_wgpu.close()
+    if external_matcher_wgpu is not None:
+        external_matcher_wgpu.close()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {args.output}")

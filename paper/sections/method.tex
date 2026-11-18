@@ -1,0 +1,103 @@
+\section{From two images to solver-accepted states}
+\label{sec:method}
+\subsection{Objects and scope of the retained workflow}
+A \emph{requested centre} is fixed by the DIC sampling grid. A \emph{correspondence candidate} is a pair of coordinates proposed by image matching. A fitted affine map predicts a position; it does not observe that position independently. A local correlation maximum is a \emph{photometric proposal}; its six-parameter conversion is an \emph{initial state}. A \emph{solver-accepted seed} has completed a local solve with acceptable numerical status. In the confirmatory workflow, an \emph{anchor} additionally passes neighbour confirmation. None of these definitions implies independently established correctness.
+
+Figure~\ref{fig:pipeline} describes the confirmatory workflow. The historical causal ablation uses the same proposal family but a simpler propagation rule, explicitly distinguished below. Analytical displacement and visibility are excluded from operational selection. They enter training/calibration on their own data, or scoring after inference on test data. A supplied material mask, unlike analytical visibility, may be an operational input.
+
+\begin{figure}[tb]\centering\includegraphics[width=\linewidth]{figures/pipeline.pdf}
+\caption{Confirmatory operational chain. Boxes distinguish proposals from solved states. Reduced-raster matching and local correlation initialize native-pixel solves. The feedback loop transports accepted states only to initialize new solves. Analytical truth belongs to the separate evaluation block. Conditional regional retries use image-derived hypotheses, never analytical error.}\label{fig:pipeline}\end{figure}
+
+\subsection{Learned coarse correspondence generator}
+The main campaigns use the project's \texttt{NDFPairMatcher}. Here NDF names the research neural deformation field model. Its shared convolutional encoder describes the frames independently; it is not a cross-attention Transformer. Each frame is centred and divided by its root-mean-square intensity variation (floor $10^{-4}$). Two stride-two convolutions and a final convolution form a stride-four feature map. The tested contextual option adds spatial convolutions, including a dilated layer, \emph{within each image}. Each output has 32 components normalized to unit Euclidean norm.
+
+For the $192\times108$ input, there are $48\times27=1296$ feature locations. With source feature $\mathbf f_i$ and target feature $\mathbf h_j$, the model calculates
+\begin{equation}
+s_{ij}=\mathbf f_i^T\mathbf h_j,\quad
+\pi_{ij}=\frac{\exp(s_{ij}/T)}{\sum_k\exp(s_{ik}/T)},\quad
+j_i=\arg\max_j\pi_{ij}.\label{eq:coarse}
+\end{equation}
+The learned temperature is clamped to $[0.025,0.5]$. Matching is global on this reduced grid. Hard target coordinates feed the affine fit. The model also returns confidence $\max_j\pi_{ij}$ and a soft expected position. A separate residual head combines source features, probability-weighted target features, soft displacement and confidence. It is used in the residual ablation, not in the retained zero-residual field. Omitting the NDF residual does not remove the trained encoder or temperature.
+
+The checkpoint comes from the local 60-epoch experiment with 128 training pairs, seed 20261114, contextual features and physical-loss weight 0.02. Its 32 validation pairs use distinct texture identities according to the training manifest. The checkpoint path, present-file fingerprint and training protocol accompany the supplement. Validation accuracy of this network alone is not the performance of the complete initializer.
+
+\subsection{Orientation hypotheses and affine preconditioning}
+The archived reference bank has ten angles: $-180,-140,-100,-60,-20,0,20,60,100,140$ degrees. It is a nine-angle uniform circle with identity inserted, not a ten-angle uniform circle. For centre $\mathbf c=((W-1)/2,(H-1)/2)$ in reduced-raster pixels, the tested target is
+\begin{equation}
+I_{1,\alpha}(\mathbf z)=I_1\bigl(\mathbf c+R_\alpha(\mathbf z-\mathbf c)\bigr).\label{eq:rotation}
+\end{equation}
+Coordinates increase rightward and downward; the equation fixes the sign. Bilinear sampling fills missing weight with intensity 0.5. Matched target locations are mapped through the same coordinate map before fitting source-to-original-target geometry.
+
+An image-derived probe uses a spatial grid with budget 256 queries (252 actual queries at this aspect ratio) against all 1296 target candidates. Mutual maxima are checked within this probe matrix. Global affine consensus ranks each angle by supported-query fraction times mean supported confidence; the fraction uses the nominal budget 256. It makes 32 random triplet trials, rejects determinant magnitudes below $10^{-7}$, uses a five-pixel residual threshold in the reduced raster, and refits when at least six points support the best model. A non-identity winner requires at least 24 supported queries and a relative score gain of 0.1 over identity. The diagnostic true angle is never a selection input.
+
+For the selected orientation, all 1296 hard matches are mapped back and fitted by a separate global affine estimator: 128 triplet trials, a five-pixel threshold, at least 24 inliers, then eight Huber-type reweighted least-squares steps. The fitted map $A\mathbf z+\mathbf t$ must cover four cells of a $3\times3$ source partition, have $0.05<\det A<20$, smallest singular value above $10^{-6}$ and condition number below 20. The historical ablation also rejects $\|A-I\|_F<0.03$. The later confirmatory campaign explicitly retains near-identity maps when the residual is disabled, retaining pure translations. This change is not attributed retroactively to the ablation.
+
+An accepted affine map defines the rectified target $J_1(\mathbf z)=I_1(A\mathbf z+\mathbf t)$. If rejected, the selected rotated target remains and the residual starts at zero in that frame. The inverse-compositional Gauss--Newton (IC-GN) solver subsequently sees the original native images, not these rectified images.
+
+\subsection{Local photometric proposals: translation at fixed geometry}
+The archive labels this component NCC (normalized cross-correlation); its cost is \emph{zero-mean} normalized cross-correlation (ZNCC). At each stride-four location $\mathbf z$, the no-residual baseline compares a $9\times9$ reference support with target supports centred at $\mathbf z+\boldsymbol\delta$ in the rectified raster. Each component of $\boldsymbol\delta$ ranges from $-8$ to $8$ integer pixels. For valid samples,
+\begin{equation}
+c(\boldsymbol\delta)=\frac{\sum_k(f_k-\bar f)(g_k(\boldsymbol\delta)-\bar g)}
+{\sqrt{\sum_k(f_k-\bar f)^2\sum_k(g_k(\boldsymbol\delta)-\bar g)^2}},\quad
+\boldsymbol\delta_* = \arg\max_{\boldsymbol\delta\in\{-8,\ldots,8\}^2}c(\boldsymbol\delta).
+\label{eq:localncc}
+\end{equation}
+Only translation is searched. Local geometry is identity \emph{in the globally rectified raster}; there is no joint optimization of six affine parameters. Bilinear sampling is used; candidates extending beyond the raster receive score $-2$. The shader floors variances and denominator. A constant patch therefore has a numerical score rather than a trustworthy correspondence: there is no independent contrast-confidence gate here. A deterministic maximum is selected, followed by a parabolic correction along each axis, limited to half a pixel when the maximum is interior. Scores, margins and validity are returned, but the qualifier uses the displacement without an additional score or margin rejection. The native solver supplies acceptance.
+
+The residual is recomposed in the original target frame:
+\begin{equation}
+\widehat{\boldsymbol\varphi}(\mathbf z)=A[\mathbf z+\boldsymbol\delta_*(\mathbf z)]+\mathbf t.
+\label{eq:composition}
+\end{equation}
+A bilinear field evaluates displacement and derivatives at native centres after half-pixel-aware conversion. At isotropic scale 20, one reduced residual pixel corresponds to 20 native pixels; this is a unit conversion, not an accuracy claim. Appendix~\ref{sec:coordinates} gives the anisotropic formula. Neither interpolation nor a correlation maximum is reported as a new DIC measurement.
+
+\subsection{Native solve, hypothesis selection and anchor confirmation}
+Confirmatory settings are a 64-pixel square support, 64-pixel centre spacing, affine motion, linear interpolation, at most 30 iterations, tolerance $10^{-3}$ and minimum solver ZNCC 0.65. The optional outlier policy is disabled. States with status greater than 0.5 and finite parameters are confirmation candidates. Current solver inspection shows convergence judged by incremental corner change, then correlation threshold; contrast, singular updates and invalid supports can also cause rejection. The archives do not fingerprint the complete external solver build. Recorded settings are verified; the exact historical low-level rejection sequence cannot be asserted to equal today's external source.
+
+The confirmatory hypothesis list is ordered: zero displacement, three separately generated ranked-rotation hypotheses, global affine, and affine plus local correlation. Each is solved on every second row and column of the requested grid, restricted to the operational mask. The winner has the most finite solver-accepted states; ties retain the earlier list entry. This native sparse test is distinct from coarse orientation ranking and has no fixed 128-window cap in this campaign.
+
+Confirmation visits selected sparse candidates in deterministic order. A candidate and an already verified neighbour are confirmed when affine transport predicts the neighbour within 8 native pixels in displacement and 0.25 in gradient norm. Still-unverified valid neighbours are also solved from transported states: at least two consistent accepted solves confirm the parent and those children. Thus an existing consistent pair can be confirmed without two newly solved neighbours. The variable ``confirmed seeds'' includes children solved in this stage; it is not an initial match count. Thresholds were selected on development data and frozen before confirmation.
+
+\subsection{Two archived propagation policies}\label{sec:policies}
+For accepted parent $j$ and neighbouring centre $i$, transport supplies
+\begin{equation}
+\mathbf d^{0}_{i\leftarrow j}=\mathbf d_j+\mathbf G_j(\mathbf x_i-\mathbf x_j),\qquad
+\mathbf G^{0}_{i\leftarrow j}=\mathbf G_j.\label{eq:transport}
+\end{equation}
+The neighbour is then solved on the images. For a pedagogical example, $\mathbf G_j=\operatorname{diag}(0.1,0)$ and a 64-pixel horizontal separation add 6.4 pixels to horizontal displacement. Copying translation misses this increment even if the original displacement is hundreds of pixels. This is an analytical illustration, not a benchmark.
+
+In the \textbf{historical causal ablation}, every one-pass solver-accepted state seeds a synchronous frontier. Each unresolved centre receives the componentwise median of states transported from the accepted eight-neighbour snapshot. It is attempted at most three times. Stop occurs when the eligible frontier is empty, not necessarily at the first pass with no acceptance. Accepted states are immutable; there is no extra consistency threshold.
+
+In the \textbf{confirmatory workflow}, confirmed anchors seed the frontier. For each unresolved valid centre, the first two accepted neighbours in stable order (up, left, right, down, then diagonals) are available from a fixed pass snapshot. The first is tried, then the second only if that centre was not added. A finite solver-accepted result must remain within 8 pixels and 0.25 gradient norm of the proposal. New states become sources next pass. Stop occurs on an empty frontier or a pass with no additions. There is \emph{no three-attempt lifetime cap} and no median aggregation. Accepted states remain immutable. Algorithm~\ref{alg:frontier} specifies this retained policy.
+
+For a smooth true field, Taylor expansion gives
+\begin{equation}
+\mathbf u(\mathbf x_j+\boldsymbol\eta)-[\mathbf d_j+\mathbf G_j\boldsymbol\eta]
+=\mathbf e_j+E_j\boldsymbol\eta+O(\|\nabla^2\mathbf u\|\|\boldsymbol\eta\|^2),\label{eq:taylor}
+\end{equation}
+where $\mathbf e_j$ and $E_j$ are the parent's displacement and gradient errors. Transport removes the leading variation missed by translation copying, but not seed error, curvature or jumps. It is neither final interpolation nor a mechanical-equilibrium solution. It differs from PatchMatch candidate propagation and temporal prediction.
+
+\begin{table}[p]\small\centering
+\caption{Complete confirmatory workflow. Every solve uses native images and unchanged local solver settings.}\label{alg:chain}
+\begin{minipage}{.95\linewidth}\begin{enumerate}
+\item Fix centres, support and supplied mask. Reduce images; extract coarse features.
+\item Rank ten image-derived orientations. Fit global affine geometry; construct affine and local-correlation states. Load three separately ranked rotation proposals.
+\item Solve each hypothesis on the same sparse valid grid. Select largest finite accepted count, breaking ties by list order.
+\item Confirm anchors by neighbour consistency. Run Algorithm~\ref{alg:frontier}; record parents, generations and attempts.
+\item If an operational-mask component has fewer than three anchors, retry unresolved components of at least 16 centres using the same hypothesis list. Merge only new acceptances; stop retries if no progress.
+\item If the minimum-anchor condition still fails, fit local affine hypotheses from archived hard matches around unresolved centres: 192-pixel radius, four-pixel residual threshold, six inliers, eight candidates, inlier fraction 0.15, 256 trials. Repeat selection/confirmation, preserving accepted states. This branch is conditional.
+\item Return accepted states and unresolved/rejected states separately. Only now score synthetic correctness and analytical visibility.
+\end{enumerate}\end{minipage}\end{table}
+
+\begin{table}[p]\small\centering
+\caption{Snapshot frontier in the confirmatory workflow, corresponding to \texttt{seed\_propagation.propagate}. The historical median/three-attempt rule is separate.}\label{alg:frontier}
+\begin{minipage}{.95\linewidth}\begin{enumerate}
+\item Set $S$ to confirmed anchors; initialize attempts and provenance.
+\item Copy $S$ to source snapshot $S_0$. For each valid $i\notin S_0$, select at most two neighbours in $S_0$ in fixed order. Stop if no centre has a source.
+\item For source rank 1 then 2, batch centres not added earlier this pass. Transport sources by equation~\eqref{eq:transport}; increment attempted-centre counters; call the solver.
+\item Add a state only if solver status is accepted, parameters finite, and displacement/gradient changes from its proposal do not exceed the frozen limits. Record parent and pass. Never replace a previously accepted state.
+\item Stop if this pass added no state; otherwise repeat step 2. Return unresolved states and rejection reasons, never treating a filled prediction as a measurement.
+\end{enumerate}\end{minipage}\end{table}
+
+\subsection{Operational masks are not analytical visibility}
+The real-image mask restricts solves through the solver's region-of-interest selection. Without a mask all requested centres enter initialization; synthetic visibility is used only for scoring. Host-side neighbours check grid adjacency and valid endpoint states, not the pixel segment between centres or the solver's prepared region links. Diagonals can bridge narrow masked separations. Fracture-safe connectivity is therefore not claimed for these archives. Analytical interface labels in the support study are post-hoc diagnostics, not an operational crack detector. Later solver changes do not retroactively alter these measurements.
