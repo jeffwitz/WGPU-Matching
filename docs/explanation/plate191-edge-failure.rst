@@ -126,3 +126,25 @@ The adjacent cross-specimen displacement files are not truth for this plate.
 
 The scripts execute processor-side research orchestration and existing WebGPU
 solver calls. The complete experimental pipeline has not been ported to WebGPU.
+
+
+Oracle control for edge thinning
+--------------------------------
+
+A synthetic endpoint pair now tests the affine solver with exact local seeds
+under a prescribed lateral thinning profile. Across the original speckle and
+its horizontal mirror, the solver accepts 166 of 424 lateral windows (39.2%);
+143 end within two pixels of the known synthetic displacement. The source and
+mirrored texture give different left/right counts, and the pooled right-side
+acceptance is 62.7%. These results support a resolution-related failure for the
+chosen rendering profile. They do not identify the unknown generator of the
+experimental plate or set a universal upper bound.
+
+The test uses the known local affine Jacobian at each window centre. The map
+varies within a 12-pixel subset, so this control retains within-subset curvature.
+The material mask accepts every tested support at a 75% threshold, even where
+the lateral speckle is compressed to about one target pixel. This mask alone
+cannot measure whether the texture remains resolvable. Full parameters,
+per-distance results, reproduction commands and GIFs are in
+``results/hudge_flank_twin_20261118/README.md``. The external Live-DIC checkout
+is still required to rerun the GPU solve.
