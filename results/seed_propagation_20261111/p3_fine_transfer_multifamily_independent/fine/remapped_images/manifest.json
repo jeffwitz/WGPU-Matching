@@ -1,0 +1,230 @@
+{
+  "description": "Image remaps use accepted IC-GN states only; analytical truth, visible, correct, and support-crossing labels are not read by the renderer. These are visual dense interpolations of sparse window solutions, not independent pixelwise DIC measurements.",
+  "coordinate_convention": "native pixel-centre coordinates; half-pixel resize mapping",
+  "parameter_order": [
+    "u",
+    "du/dx",
+    "du/dy",
+    "v",
+    "dv/dx",
+    "dv/dy"
+  ],
+  "support_threshold": 0.5,
+  "families": {
+    "translation": {
+      "pair": "translation_texture62051006_warp62091006",
+      "native_size": [
+        3840,
+        2160
+      ],
+      "preview_size": [
+        1920,
+        1080
+      ],
+      "reference": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/translation_texture62051006_warp62091006_reference.png",
+      "target": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/translation_texture62051006_warp62091006_target.png",
+      "reference_sha256": "0ae05fe83ea6b5228ceec6eeea6620a8df4344023dfe7ca7c5190bfcc19a14a1",
+      "target_sha256": "e2a138ab12b440ea7241f3c40057b68b1b399763d0f86419d43670c8ee59a171",
+      "reference_preview": "image1_ref_translation.png",
+      "accepted_windows": {
+        "64 px IC-GN": 1080,
+        "32 px IC-GN": 1080
+      },
+      "states": [
+        {
+          "label": "64 px IC-GN",
+          "accepted_windows": 1080,
+          "preview_covered_pixels": 1140381,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_translation_64px.png",
+          "coverage_mask": "coverage_translation_64px.png",
+          "state_sha256": "bda1f642a0c5cb3c44b85667c553490bc8b647b458b662ee3856c9eeeee68f6c"
+        },
+        {
+          "label": "32 px IC-GN",
+          "accepted_windows": 1080,
+          "preview_covered_pixels": 1140381,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_translation_32px.png",
+          "coverage_mask": "coverage_translation_32px.png",
+          "state_sha256": "a0232f8988d9c21618afe7278cf4ba4674c021afa210b451e05dd888f10bb03c"
+        }
+      ],
+      "gif": "translation_reference_and_remapped.gif",
+      "remap_method": "bilinear interpolation of accepted local affine IC-GN states on the regular window-centre grid, followed by bilinear backward sampling of native target pixels",
+      "unsupported_fill": "neutral gray (128); see corresponding coverage mask"
+    },
+    "rigid": {
+      "pair": "rigid_texture62051006_warp62091006",
+      "native_size": [
+        3840,
+        2160
+      ],
+      "preview_size": [
+        1920,
+        1080
+      ],
+      "reference": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/rigid_texture62051006_warp62091006_reference.png",
+      "target": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/rigid_texture62051006_warp62091006_target.png",
+      "reference_sha256": "0ae05fe83ea6b5228ceec6eeea6620a8df4344023dfe7ca7c5190bfcc19a14a1",
+      "target_sha256": "c8dc823401aa40d75012ff2a7530432e1edeb9760555e28033d8db5a14f2ee3e",
+      "reference_preview": "image1_ref_rigid.png",
+      "accepted_windows": {
+        "64 px IC-GN": 971,
+        "32 px IC-GN": 998
+      },
+      "states": [
+        {
+          "label": "64 px IC-GN",
+          "accepted_windows": 971,
+          "preview_covered_pixels": 995860,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_rigid_64px.png",
+          "coverage_mask": "coverage_rigid_64px.png",
+          "state_sha256": "3e7536bc33df295c7f8c3684e142f397862d5200217cd1a956c54ebea17df051"
+        },
+        {
+          "label": "32 px IC-GN",
+          "accepted_windows": 998,
+          "preview_covered_pixels": 1023905,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_rigid_32px.png",
+          "coverage_mask": "coverage_rigid_32px.png",
+          "state_sha256": "68e932de66bcc136adee91c8db03b030706af7a390afda11936ed6cc61144100"
+        }
+      ],
+      "gif": "rigid_reference_and_remapped.gif",
+      "remap_method": "bilinear interpolation of accepted local affine IC-GN states on the regular window-centre grid, followed by bilinear backward sampling of native target pixels",
+      "unsupported_fill": "neutral gray (128); see corresponding coverage mask"
+    },
+    "affine": {
+      "pair": "affine_texture62051003_warp62091003",
+      "native_size": [
+        3840,
+        2160
+      ],
+      "preview_size": [
+        1920,
+        1080
+      ],
+      "reference": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/affine_texture62051003_warp62091003_reference.png",
+      "target": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/affine_texture62051003_warp62091003_target.png",
+      "reference_sha256": "6908d6849b1f24bce7e787f34bf81509955142e3302a8fc4308eb1cc1170b7c6",
+      "target_sha256": "d2097f0751c205357d20116e563e019e262f60df67efa3b7a0a0e130a957d468",
+      "reference_preview": "image1_ref_affine.png",
+      "accepted_windows": {
+        "64 px IC-GN": 761,
+        "32 px IC-GN": 787
+      },
+      "states": [
+        {
+          "label": "64 px IC-GN",
+          "accepted_windows": 761,
+          "preview_covered_pixels": 811297,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_affine_64px.png",
+          "coverage_mask": "coverage_affine_64px.png",
+          "state_sha256": "7601b121268c08b164b80a02fd616827faf94e4e6db43860947e3ef8ea0d3fb4"
+        },
+        {
+          "label": "32 px IC-GN",
+          "accepted_windows": 787,
+          "preview_covered_pixels": 837994,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_affine_32px.png",
+          "coverage_mask": "coverage_affine_32px.png",
+          "state_sha256": "3f12361ec5c7ebaee089e7b46793a40bb3fd70aca4497432d5790b1e1acc3e78"
+        }
+      ],
+      "gif": "affine_reference_and_remapped.gif",
+      "remap_method": "bilinear interpolation of accepted local affine IC-GN states on the regular window-centre grid, followed by bilinear backward sampling of native target pixels",
+      "unsupported_fill": "neutral gray (128); see corresponding coverage mask"
+    },
+    "heterogeneous": {
+      "pair": "heterogeneous_texture62051003_warp62091003",
+      "native_size": [
+        3840,
+        2160
+      ],
+      "preview_size": [
+        1920,
+        1080
+      ],
+      "reference": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/heterogeneous_texture62051003_warp62091003_reference.png",
+      "target": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/heterogeneous_texture62051003_warp62091003_target.png",
+      "reference_sha256": "6908d6849b1f24bce7e787f34bf81509955142e3302a8fc4308eb1cc1170b7c6",
+      "target_sha256": "fc2a6e8f3d7990bbb5ce810a87f99c486ff5b50994ec762d4fda4f00d9989882",
+      "reference_preview": "image1_ref_heterogeneous.png",
+      "accepted_windows": {
+        "64 px IC-GN": 766,
+        "32 px IC-GN": 793
+      },
+      "states": [
+        {
+          "label": "64 px IC-GN",
+          "accepted_windows": 766,
+          "preview_covered_pixels": 815489,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_heterogeneous_64px.png",
+          "coverage_mask": "coverage_heterogeneous_64px.png",
+          "state_sha256": "3125b831ec9d51af6da51391bca834176f0c1fa1bcde4007a68a7200d669653e"
+        },
+        {
+          "label": "32 px IC-GN",
+          "accepted_windows": 793,
+          "preview_covered_pixels": 843098,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_heterogeneous_32px.png",
+          "coverage_mask": "coverage_heterogeneous_32px.png",
+          "state_sha256": "dfbfa7f1e440efe271103a11071ac62188f255517819d7578417b1f66e5ae001"
+        }
+      ],
+      "gif": "heterogeneous_reference_and_remapped.gif",
+      "remap_method": "bilinear interpolation of accepted local affine IC-GN states on the regular window-centre grid, followed by bilinear backward sampling of native target pixels",
+      "unsupported_fill": "neutral gray (128); see corresponding coverage mask"
+    },
+    "discontinuous": {
+      "pair": "discontinuous_texture62051006_warp62091006",
+      "native_size": [
+        3840,
+        2160
+      ],
+      "preview_size": [
+        1920,
+        1080
+      ],
+      "reference": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/discontinuous_texture62051006_warp62091006_reference.png",
+      "target": "results/seed_propagation_20261111/p3_fine_transfer_multifamily_independent/inputs/affine_ncc/solver_images_seed62000000/discontinuous_texture62051006_warp62091006_target.png",
+      "reference_sha256": "0ae05fe83ea6b5228ceec6eeea6620a8df4344023dfe7ca7c5190bfcc19a14a1",
+      "target_sha256": "cf2222cab44002e5936966fddb4458af01c26973c47861468d7399918e31c0ab",
+      "reference_preview": "image1_ref_discontinuous.png",
+      "accepted_windows": {
+        "64 px IC-GN": 1056,
+        "32 px IC-GN": 1056
+      },
+      "states": [
+        {
+          "label": "64 px IC-GN",
+          "accepted_windows": 1056,
+          "preview_covered_pixels": 1115037,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_discontinuous_64px.png",
+          "coverage_mask": "coverage_discontinuous_64px.png",
+          "state_sha256": "0ac68606df59dd298942a692f12c2331c9cbf9f785378de66b26e67adcd110dd"
+        },
+        {
+          "label": "32 px IC-GN",
+          "accepted_windows": 1056,
+          "preview_covered_pixels": 1115037,
+          "preview_pixels": 2073600,
+          "remapped_image": "image1_def_cor_discontinuous_32px.png",
+          "coverage_mask": "coverage_discontinuous_32px.png",
+          "state_sha256": "d6fcecb60e2121706c3c82e80eb345ce0baf8bfd65b13d76ea35470aa327f52d"
+        }
+      ],
+      "gif": "discontinuous_reference_and_remapped.gif",
+      "remap_method": "bilinear interpolation of accepted local affine IC-GN states on the regular window-centre grid, followed by bilinear backward sampling of native target pixels",
+      "unsupported_fill": "neutral gray (128); see corresponding coverage mask"
+    }
+  }
+}

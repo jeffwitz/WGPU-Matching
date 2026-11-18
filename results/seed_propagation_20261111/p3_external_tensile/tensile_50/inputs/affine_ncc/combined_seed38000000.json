@@ -1,0 +1,225 @@
+{
+  "protocol": {
+    "model_input_px": [
+      192,
+      108
+    ],
+    "speckle_size_px_at_model_input": 0.35,
+    "discontinuity_boundary_fraction": 0.5,
+    "speckle_noise_std": 0.025,
+    "target_gain": 1.0,
+    "target_offset": 0.0,
+    "target_blur_sigma": 0.0,
+    "target_noise_std": 0.0,
+    "periodic_strength": 0.0,
+    "periodic_period_px": 128.0,
+    "external_reference": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/reference.png",
+    "external_target": "/home/jeff/Code/WGPU-Matching/results/uniaxial/tensile_60pct/frame_172_eng_50pct.png",
+    "truth_available": true,
+    "external_stretch_x": 1.498303340865625,
+    "external_stretch_y": 0.8174204251753675,
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      20.0,
+      20.0
+    ],
+    "candidates_per_query": 1296,
+    "families": [
+      "heterogeneous"
+    ],
+    "training_weights": "/home/jeff/Code/WGPU-Matching/results/ndf_dic_20261109/p3_multiscale_physics_weight002_levels3_128pairs_seed20261114/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "oracle_rotation_rectification": false,
+    "rotation_bank_steps": 9,
+    "rotation_bank_orientation_count": 10,
+    "rotation_bank_selection": "maximum confidence_support with global affine consensus on predicted hard matches",
+    "rotation_bank_batch_size": 1,
+    "rotation_bank_min_score_gain": 0.1,
+    "rotation_bank_probe_query_budget": 256,
+    "rotation_bank_refine_topk": 0,
+    "rotation_bank_consensus": "global",
+    "rotation_bank_min_consensus_support": 24,
+    "rotation_bank_min_angle_deg": 0.0,
+    "forced_rotation_angle_rad": null,
+    "solver_window_budget": 0,
+    "global_affine_prefit": true,
+    "nonlinear_field_residual": "none",
+    "local_bspline_prefit": false,
+    "local_bspline_prefit_min_support": 96,
+    "local_bspline_prefit_bending": 0.1,
+    "affine_prefit_min_inliers": 24,
+    "affine_prefit_min_linear_deviation": 0.03,
+    "retain_translation_affine": true,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and 64 px stride",
+    "field_projection": "raw_bilinear",
+    "local_ncc_search_radius_px": 8,
+    "local_ncc_geometry": "translation",
+    "local_ncc_jacobian_damping": 1.0,
+    "local_ncc_backend": "wgpu",
+    "local_ncc_implementation": "parallel",
+    "coarse_estimate": "soft",
+    "coarse_matcher": "learned",
+    "contextual_features": true,
+    "local_ncc_adapter": "Vulkan (Intel(R) Graphics (LNL))",
+    "local_ncc_patch_radius_px": 4,
+    "local_consensus_radius_px": 40.0,
+    "local_consensus_threshold_px": 5.0,
+    "local_feature_search_radius_cells": 0
+  },
+  "cases": [
+    {
+      "mode": "heterogeneous",
+      "projection": "raw_bilinear",
+      "texture_seed": 38051001,
+      "warp_seed": 38091001,
+      "window_diagnostics": "results/seed_propagation_20261111/p3_external_tensile/tensile_50/inputs/affine_ncc/windows_seed38000000/heterogeneous_texture38051001_warp38091001.npz",
+      "visible_windows": 1320,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 84.35261535644531,
+      "initial_gradient_rmse": 1.705414056777954,
+      "local_consensus_usable_fraction": null,
+      "rotation_bank_selected_angle_rad": 0.0,
+      "forced_rotation_angle_rad": null,
+      "rotation_bank_consensus_support": 86,
+      "rotation_bank_mean_confidence_on_support": 0.6256396770477295,
+      "rotation_bank_candidate_scores": [
+        {
+          "angle_rad": -3.141592653589793,
+          "consensus_support": 7,
+          "mean_confidence_on_support": 0.405129611492157,
+          "reciprocal_queries": 169,
+          "ranking_score": 0.011077762814238667
+        },
+        {
+          "angle_rad": -2.443460952792061,
+          "consensus_support": 6,
+          "mean_confidence_on_support": 0.467970609664917,
+          "reciprocal_queries": 141,
+          "ranking_score": 0.010968061164021492
+        },
+        {
+          "angle_rad": -1.7453292519943295,
+          "consensus_support": 0,
+          "mean_confidence_on_support": 0.0,
+          "reciprocal_queries": 123,
+          "ranking_score": 0.0
+        },
+        {
+          "angle_rad": -1.0471975511965979,
+          "consensus_support": 0,
+          "mean_confidence_on_support": 0.0,
+          "reciprocal_queries": 126,
+          "ranking_score": 0.0
+        },
+        {
+          "angle_rad": -0.34906585039886595,
+          "consensus_support": 74,
+          "mean_confidence_on_support": 0.5488318800926208,
+          "reciprocal_queries": 179,
+          "ranking_score": 0.15864671533927321
+        },
+        {
+          "angle_rad": 0.0,
+          "consensus_support": 86,
+          "mean_confidence_on_support": 0.6256396770477295,
+          "reciprocal_queries": 192,
+          "ranking_score": 0.21017582900822163
+        },
+        {
+          "angle_rad": 0.34906585039886595,
+          "consensus_support": 54,
+          "mean_confidence_on_support": 0.6243730187416077,
+          "reciprocal_queries": 181,
+          "ranking_score": 0.13170368364080787
+        },
+        {
+          "angle_rad": 1.0471975511965974,
+          "consensus_support": 9,
+          "mean_confidence_on_support": 0.5134807229042053,
+          "reciprocal_queries": 138,
+          "ranking_score": 0.01805205666460097
+        },
+        {
+          "angle_rad": 1.7453292519943293,
+          "consensus_support": 9,
+          "mean_confidence_on_support": 0.49544110894203186,
+          "reciprocal_queries": 129,
+          "ranking_score": 0.017417851486243308
+        },
+        {
+          "angle_rad": 2.443460952792061,
+          "consensus_support": 6,
+          "mean_confidence_on_support": 0.5185671448707581,
+          "reciprocal_queries": 147,
+          "ranking_score": 0.012153917457908392
+        }
+      ],
+      "coarse_matcher_diagnostics": null,
+      "rotation_bank_score_gain_over_identity": 0.0,
+      "rotation_bank_probe_encoder_s": 0.01178990420885384,
+      "rotation_bank_probe_matching_s": 0.007962257135659456,
+      "rotation_bank_probe_consensus_s": 0.014457399025559425,
+      "rotation_bank_truth_angle_rad_for_diagnostic_only": 0.0,
+      "global_affine_prefit_used": true,
+      "nonlinear_field_residual": "none",
+      "global_affine_prefit_coefficients": [
+        [
+          -49.99037246876778,
+          9.784649541095407
+        ],
+        [
+          1.51431490093684,
+          0.0011481403768889842
+        ],
+        [
+          0.015460713232981482,
+          0.8171267294846534
+        ]
+      ],
+      "global_affine_prefit_inliers": 546,
+      "global_affine_prefit_median_residual_px": 1.886263803721382,
+      "global_affine_prefit_spatial_bins": 9,
+      "global_affine_prefit_linear_deviation": 0.5460794834771292,
+      "local_bspline_prefit_used": false,
+      "local_bspline_prefit_diagnostics": null,
+      "solver_accepted_visible": 1166,
+      "solver_accepted_active": 1166,
+      "solver_active_window_count": 1980,
+      "correct_converged_lt2px": 1166,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1320,
+      "propagation_mode": "none",
+      "propagation_seed_windows": null,
+      "propagation_correct_lt2px": null,
+      "propagation_oracle_correct_lt2px": null,
+      "propagation_accepted_error_ge_2px": null,
+      "propagation_accepted_invisible": null,
+      "propagation_rings": null,
+      "propagation_extra_accepted": null,
+      "propagation_wall_s": null,
+      "coverage_correct": 0.8833333333333333,
+      "correct_windows_per_second": 7196.0897317926265,
+      "inference_s_cpu": 0.14803923200815916,
+      "model_inference_s_cpu": 0.06094053806737065,
+      "local_refinement_s_wall": 0.08707029593642801,
+      "field_projection_s_cpu": 0.000799100031144917,
+      "icgn_s": 0.01319411105941981,
+      "zero_icgn_s": 0.07609280792530626,
+      "oracle_icgn_s": 0.0052688539726659656,
+      "mean_iterations_accepted": 5.740137100219727
+    }
+  ],
+  "summary": {
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 1320,
+      "correct_converged_lt2px": 1166,
+      "coverage_correct": 0.8833333333333333,
+      "median_correct_windows_per_second": 7196.0897317926265
+    }
+  }
+}
