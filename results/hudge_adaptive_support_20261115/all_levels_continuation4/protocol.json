@@ -1,0 +1,37 @@
+{
+  "baseline": "hudge_rbf_restart_20261115/all_levels/rbf_gradient_g0.50",
+  "models": [
+    "affine32",
+    "quadratic32_zero",
+    "quadratic32_rbf",
+    "affine16_dense"
+  ],
+  "subset_stride": {
+    "affine32": [
+      32,
+      32
+    ],
+    "quadratic32_zero": [
+      32,
+      32
+    ],
+    "quadratic32_rbf": [
+      32,
+      32
+    ],
+    "affine16_dense": [
+      16,
+      8
+    ]
+  },
+  "rounds": 3,
+  "iterations": 30,
+  "continuations": 4,
+  "tolerance": 0.001,
+  "zncc_min": 0.65,
+  "gradient_veto": false,
+  "acceptance": "solver status 1 AND final correlation>=0.65 AND in bounds AND positive determinant over support",
+  "truth": "unavailable; accepted candidates, not proven correct seeds",
+  "area": "same union of originally failed 32px supports; fine supports fully contained",
+  "initialization": "same Gaussian field fitted on archived accepted states; update with accepted retries"
+}

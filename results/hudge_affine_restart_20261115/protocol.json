@@ -1,0 +1,26 @@
+{
+  "levels": [
+    25,
+    50,
+    100,
+    150,
+    191
+  ],
+  "baseline": "archived silhouette32; same 36 eligible centres",
+  "variants": [
+    "native_retry",
+    "native_two_pass",
+    "rectified_native"
+  ],
+  "maximum_rounds": 5,
+  "stop": "no new accepted window or invalid affine",
+  "fit": "accepted centre positions only; normalized weighted least squares, 10 Huber iterations cutoff max(1 px,2.5 median residual)",
+  "rectification": "J(z)=original_target(A z+t), bilinear uint8; original sampled each round, no chained image resampling",
+  "composition": "u=A(x+r)+t-x; F=A(I+grad r)",
+  "selection": "existing sparse verification and native-coordinate confirmation; thresholds unchanged",
+  "native_validation": "all new rectified states resolved on original image before acceptance",
+  "old_states": "immutable; no temporal sequence",
+  "truth": "none; photometric/status evaluation only",
+  "runtime": "WGSL solves; host affine fit and rectification; experimental, not GPU resident",
+  "followup": "After fixed five-level pilot, evaluate same frozen protocol on all 191 targets; no threshold changes"
+}
