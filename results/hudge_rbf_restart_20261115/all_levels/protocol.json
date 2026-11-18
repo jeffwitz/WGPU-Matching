@@ -1,0 +1,31 @@
+{
+  "stage1": "archived rectified_native affine restart, identical for every variant",
+  "methods": [
+    "affine",
+    "rbf_position",
+    "rbf_gradient"
+  ],
+  "tau_g": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "tau_u": 8.0,
+  "subset": 32,
+  "stride": 32,
+  "iterations": 30,
+  "tolerance": 0.001,
+  "zncc_min": 0.65,
+  "rounds_max": 5,
+  "sparse_stride": 1,
+  "length_px": 64.0,
+  "gradient_length_px": 16.0,
+  "ridge": 0.0001,
+  "notes": [
+    "No truth used; no temporal sequence; archived accepted states immutable",
+    "Every variant proposes at all eligible centres, unlike former sparse stride 2",
+    "RBF coefficients fitted on CPU; all IC-GN calls on WebGPU",
+    "Only positive determinant and condition <=100 proposals enter sparse trials",
+    "No claims of correctness without associated displacement truth"
+  ]
+}

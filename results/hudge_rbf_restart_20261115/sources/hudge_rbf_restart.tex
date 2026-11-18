@@ -1,0 +1,189 @@
+\documentclass[11pt,a4paper,landscape]{article}
+\usepackage[T1]{fontenc}\usepackage[utf8]{inputenc}\usepackage[french]{babel}
+\usepackage{lmodern,amsmath,amssymb,graphicx,booktabs,xcolor,hyperref,fancyhdr}
+\usepackage[margin=16mm]{geometry}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,pdftitle={Reprise affine puis RBF contrainte par les gradients}}
+\graphicspath{{../results/hudge_rbf_restart_20261115/figures/}}
+\pagestyle{fancy}\fancyhf{}\fancyhead[L]{WGPU-Matching — Reprise affine puis champ non affine}
+\fancyhead[R]{15 novembre 2026}\fancyfoot[R]{\thepage}\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\newcommand{\fig}[2]{\begin{center}\includegraphics[width=\linewidth,height=#2,keepaspectratio]{#1}\end{center}}
+\begin{document}
+{\LARGE\bfseries Affine puis fonctions de base radiale :\par
+apport des gradients et du contrôle de cohérence\par}
+\vspace{4mm}
+\textbf{Expérience exécutée :} 191 paires indépendantes référence/cible de la plaque
+trouée, trois représentations du champ, trois seuils de cohérence, soit 1\,719 configurations.
+Chaque paire comporte 36 fenêtres de $32\times32$ pixels. Les cibles successives ne sont
+jamais utilisées comme références intermédiaires.
+
+Les fonctions de base radiale (RBF) donnent effectivement une meilleure représentation
+non affine des observations disponibles. Utiliser les gradients des fenêtres comme
+contraintes souples améliore aussi la prédiction des observations laissées hors ajustement.
+\textbf{Mais ce gain ne crée pas de fenêtre retenue supplémentaire par rapport aux RBF
+ajustées aux seuls déplacements dans cette campagne.} Le seuil de cohérence du gradient
+est ici le facteur dominant.
+
+\begin{center}\begin{tabular}{lrrr}
+\toprule
+Champ proposé après la phase affine & Seuil 0,25 & Seuil 0,50 & Seuil 1,00\\\midrule
+Nouvelle affine, essais sur tous les centres &6\,035&6\,549&6\,762\\
+RBF sur déplacements &6\,056&6\,549&6\,772\\
+RBF sur déplacements et gradients &6\,056&6\,549&6\,772\\\bottomrule
+\end{tabular}\end{center}
+Nombres de fenêtres \emph{retenues}, sur 6\,876. La phase affine archivée commune en
+retient 5\,804. Les différences au seuil strict sont donc : +231 par la nouvelle reprise
+affine, puis +21 supplémentaires par les RBF. Ce ne sont pas 252 gains propres aux RBF.
+
+\textbf{Au niveau 191 :} 18 fenêtres au départ, puis 25 avec la nouvelle affine au seuil
+strict, 27 avec les RBF ; les trois représentations atteignent 31 au seuil 0,50 et 34 au
+seuil 1,00. Les deux dernières fenêtres restent refusées par le solveur.
+
+\textbf{Limite scientifique :} les fichiers de déplacements disponibles de l'éprouvette
+en croix ne correspondent pas à cette plaque. Ces résultats mesurent l'acceptation
+numérique et photométrique, pas une exactitude mécanique vérifiée. Les 191 niveaux
+d'une même plaque ne constituent pas 191 réalisations indépendantes de matériau.
+
+\newpage
+\section*{1. Un seul champ dont on dérive les gradients}
+Soient les centres validés $\mathbf x_i$, leurs déplacements $\mathbf d_i$ et leurs
+gradients $G_i=F_i-I$. L'affine globale $A\mathbf x+\mathbf t$ est ajustée de façon robuste
+aux positions cibles $\mathbf x_i+\mathbf d_i$. On la complète par des gaussiennes :
+\[
+ \widehat{\mathbf u}(\mathbf x)=(A-I)\mathbf x+\mathbf t+
+ \sum_{j=1}^{n}\mathbf c_j\,b_j(\mathbf x),\qquad
+ b_j(\mathbf x)=\exp\!\left[-\frac{\|\mathbf x-\mathbf x_j\|^2}{2\ell^2}\right],\quad \ell=64\ \mathrm{pixels}.
+\]
+La jacobienne est calculée analytiquement à partir de cette même fonction :
+\[
+ \widehat G(\mathbf x)=A-I-\sum_j\mathbf c_j\otimes
+ \frac{\mathbf x-\mathbf x_j}{\ell^2}\,b_j(\mathbf x),\qquad
+ \widehat F=I+\widehat G.
+\]
+Les composantes du gradient ne sont donc pas interpolées indépendamment du déplacement.
+Pour ajuster les coefficients $\mathbf c_j$, on minimise :
+\[
+ \sum_i\|\widehat{\mathbf u}(\mathbf x_i)-\mathbf d_i\|_2^2
+ +L_g^2\sum_i\|\widehat G(\mathbf x_i)-G_i\|_F^2
+ +\lambda\sum_j\|\mathbf c_j\|_2^2,
+ \qquad L_g=16\ \mathrm{pixels},\quad\lambda=10^{-4}.
+\]
+Le terme de gradient est absent dans la variante RBF déplacements. $L_g$ donne aux
+écarts de gradient une échelle de déplacement sur un demi-support. Les contraintes
+sont \textbf{souples}, car les gradients résolus ne sont pas exempts d'erreur. La
+pénalisation des coefficients stabilise le système ; l'affine est fixée avant l'ajustement
+du résidu RBF. Les valeurs sont fixées avant la campagne, sans optimisation sur les résultats.
+
+\textbf{Boucle.} Ajuster sur les seules fenêtres retenues ; proposer les six paramètres
+locaux aux centres ; résoudre sur les pixels originaux ; confirmer et propager ; ajouter
+les nouvelles fenêtres ; réajuster. Arrêt sans gain ou après cinq tours. Aucun cas n'a
+atteint la limite avec un gain encore en cours. Les observations déjà retenues ne sont
+jamais remplacées par le champ lissé.
+
+L'ajustement de ces petits systèmes est réalisé sur le processeur central. Le solveur
+Gauss--Newton à composition inverse (IC-GN), utilisé pour la corrélation d'images
+numériques (DIC), s'exécute sur WebGPU. Ce prototype expérimental n'est pas une chaîne
+entièrement résidente sur le processeur graphique.
+
+\newpage
+\section*{2. Comparaison contrôlée et contribution réelle des gradients}
+\fig{coverage.pdf}{75mm}
+La phase initiale est identique pour toutes les variantes : résultats archivés de la
+reprise affine avec rectification. La nouvelle étape essaie les propositions sur
+\textbf{tous les centres éligibles}, contre une sous-grille dans l'expérience précédente.
+La reprise affine de contrôle emploie exactement la même densité d'essais : elle isole
+ce changement du choix de représentation.
+
+\textbf{Contrôle hors ajustement.} Pour chacune des 5\,804 observations déjà retenues,
+on retire à la fois son déplacement et son gradient, puis on les prédit avec les autres
+observations. Il s'agit d'une cohérence avec les sorties du solveur, pas d'une vérité mécanique.
+
+\begin{center}\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{Écart de déplacement [pixels]} & \multicolumn{2}{c}{Écart de gradient, norme de Frobenius}\\
+Champ & Médiane & Moyenne quadratique & Médiane & Moyenne quadratique\\\midrule
+Affine &2,847&4,774&0,1875&0,2410\\
+RBF déplacements &0,947&2,092&0,0900&0,1465\\
+RBF déplacements et gradients &0,955&1,755&0,0778&0,1393\\\bottomrule
+\end{tabular}\end{center}
+Les gradients améliorent les erreurs quadratiques de prédiction, sans améliorer la
+médiane du déplacement. Les deux RBF produisent néanmoins \textbf{exactement les mêmes
+masques retenus} aux trois seuils sur les 191 paires. Il faut distinguer qualité du champ
+proposé et nombre final de fenêtres acceptées.
+
+\newpage
+\section*{3. Où se trouvent les gains ? Exemple du niveau 191}
+\fig{map_191.pdf}{125mm}
+Au seuil 0,25, les RBF apportent deux fenêtres de plus que l'affine. Aux seuils 0,50 et
+1,00, le choix de représentation ne change plus la couverture de ce cas. Le relâchement
+ouvre des branches de propagation. Les fenêtres orange restantes au seuil 1,00 sont
+65, centre $(47,5;79,5)$, et 164, centre $(143,5;175,5)$.
+
+Les seuils photométrique (0,65), de déplacement (8 pixels), le maximum de 30 itérations,
+la tolérance $10^{-3}$, l'interpolation bilinéaire et les supports restent inchangés.
+Le seuil de gradient intervient dans la confirmation et dans la propagation, pas dans
+l'acceptation numérique interne du solveur.
+
+\newpage
+\section*{4. Les images remappées expliquent l'intérêt du champ non affine}
+\fig{remap_191.pdf}{70mm}
+Les vues montrent $I_1(\mathbf x+\widehat{\mathbf u}(\mathbf x))$ dans le même rectangle
+de référence de $440\times225$ pixels. Chaque vue repart de la cible originale. Ce
+remappage est un \textbf{diagnostic visuel} : l'expérience numérique fournit directement
+les six paramètres au solveur natif, sans résoudre sur une image RBF rééchantillonnée.
+\fig{patch_191_102.pdf}{60mm}
+Fenêtre 102 : l'affine donne une corrélation de 0,492 ; la première proposition RBF avec
+gradients, 0,746 ; la dernière, 0,799 ; le solveur atteint 0,889. Le champ RBF rapproche
+les structures avant résolution. Son rôle reste une initialisation ; la sortie retenue
+provient du solveur, pas de l'interpolation du champ.
+
+\newpage
+\section*{5. Les deux échecs restants ne disparaissent pas avec le seuil de gradient}
+\fig{patch_191_65.pdf}{60mm}
+\textbf{Fenêtre 65.} La dernière sortie atteint une corrélation recalculée de 0,765,
+mais garde le statut 0 : le critère de convergence n'est pas atteint dans la configuration
+fixée. Une corrélation suffisante seule ne permet pas de la déclarer convergée. Le
+rejet n'est plus celui du seuil de cohérence du gradient.
+\fig{patch_191_164.pdf}{60mm}
+\textbf{Fenêtre 164.} La proposition RBF reste très éloignée photométriquement de la
+référence ; la dernière sortie n'atteint que 0,338 et le statut reste 0. Le nouveau
+champ ne suffit donc pas à fournir toutes les graines. Ces images ne départagent pas
+encore un mauvais bassin d'initialisation et une limite du modèle affine sur 32 pixels.
+
+\newpage
+\section*{6. Faut-il relâcher la cohérence du gradient ?}
+\textbf{Oui pour l'expérimentation contrôlée :} le seuil absolu de 0,25 bloque ici de
+nombreuses sorties que le solveur accepte. Au niveau 191, le seuil 0,50 récupère 13 fenêtres
+au-delà de la phase affine et le seuil 1,00 en récupère 16. Une erreur de gradient est
+sans dimension ; avec un étirement global voisin de 4,9, un seuil absolu n'a pas la même
+signification relative que dans une transformation proche de l'identité.
+
+\textbf{Pas comme nouveau défaut qualifié :} les 1\,719 configurations ne présentent
+aucune fenêtre retenue hors image, sous 0,65 de corrélation finale ou à déterminant de
+jacobienne non positif. Ces contrôles n'excluent pas tous les faux appariements. Aucun
+changement des seuils par défaut du projet ou du solveur externe n'est effectué.
+Le seuil 0,50 constitue un compromis à qualifier ; 1,00 reste une variante plus permissive.
+
+\textbf{Ce que je retiens de la RBF contrainte par gradients.} Elle est préférable à
+une affine comme représentation des observations non affines de cette plaque, et
+la validation par retrait d'une observation confirme un intérêt des gradients. Mais
+son avantage final sur les seules positions n'est pas démontré en nombre de fenêtres.
+Les gaussiennes n'utilisent pas une distance suivant la matière : elles peuvent coupler
+des observations de part et d'autre d'un trou. Ce modèle n'est pas qualifié pour transmettre
+des graines à travers une fissure.
+
+\textbf{Prochaine vérification ciblée :} qualifier les nouvelles acceptations à seuil
+0,50 puis 1,00 sur des transformations connues à géométrie et hétérogénéité comparables,
+avant de modifier une politique de production. Pour les deux fenêtres persistantes,
+séparer un essai à support plus petit d'un essai disposant d'une meilleure initialisation,
+sans modifier simultanément les critères de convergence.
+
+\textbf{Coût et reproductibilité.} Les médianes de la seule nouvelle étape varient entre
+0,044 et 0,120 seconde dans cette exécution, hors phase affine initiale. L'ordre fixe des
+variantes, les caches et les écritures des traces interdisent d'en tirer un facteur
+d'accélération général. Les scripts, paramètres, sorties par fenêtre, appels, contrôles
+et empreintes sont conservés dans
+\texttt{results/hudge\_rbf\_restart\_20261115/}. Dix tests ciblés et le contrôle de style
+passent. Les dérivées analytiques sont vérifiées par différences finies, l'exactitude
+affine et l'exclusion des fenêtres non retenues sont testées.
+\end{document}

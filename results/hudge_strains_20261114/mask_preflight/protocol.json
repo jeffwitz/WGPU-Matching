@@ -1,0 +1,70 @@
+{
+  "status": "predeclared before evaluating coverage",
+  "pairing": "Img_F against each target independently; no previous target solution or temporal state",
+  "families": {
+    "FEA": {
+      "levels": [
+        1,
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        191
+      ],
+      "native": [
+        1024,
+        1024
+      ],
+      "model": [
+        192,
+        192
+      ]
+    },
+    "ClosedFormExpression": {
+      "levels": [
+        1,
+        10,
+        25,
+        50,
+        100,
+        150,
+        200,
+        250,
+        300,
+        400,
+        500
+      ],
+      "native": [
+        1024,
+        5632
+      ],
+      "model": [
+        128,
+        704
+      ]
+    }
+  },
+  "solver": {
+    "subset": 64,
+    "stride": 64,
+    "iterations": 30,
+    "tolerance": 0.001,
+    "zncc_min": 0.65,
+    "interpolation": "linear",
+    "motion": "affine"
+  },
+  "pipeline": "frozen image-only confirmation and propagation; no learned residual; local zero-mean normalized cross correlation; shared prefit; deferred rotations; batched confirmation",
+  "mask": "reference pixels different from bottom-right background intensity; binary closing 3x3 once; no target or displacement field involved",
+  "acceptance_interpretation": "numerical only until exact matching displacement data and coordinate map validated",
+  "operational_coverage_levels": [
+    0.5,
+    0.9,
+    0.95
+  ],
+  "max_interpretation": "largest tested target satisfying coverage, separately contiguous tested prefix; not strain percentage and not accuracy proof",
+  "followup": "denser independent target testing near loss of acceptance; no changes to solver thresholds",
+  "truth_problem": "51 quarter-cross mesh states vs 191 perforated-plate image states; no formula for ClosedFormExpression; no index/unit/map inferred"
+}

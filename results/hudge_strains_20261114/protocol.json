@@ -1,0 +1,148 @@
+{
+  "status": "predeclared before evaluating coverage",
+  "pairing": "Img_F against each target independently; no previous target solution or temporal state",
+  "families": {
+    "FEA": {
+      "levels": [
+        1,
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        191
+      ],
+      "native": [
+        1024,
+        1024
+      ],
+      "model": [
+        192,
+        192
+      ]
+    },
+    "ClosedFormExpression": {
+      "levels": [
+        1,
+        10,
+        25,
+        50,
+        100,
+        150,
+        200,
+        250,
+        300,
+        400,
+        500
+      ],
+      "native": [
+        1024,
+        5632
+      ],
+      "model": [
+        128,
+        704
+      ]
+    }
+  },
+  "solver": {
+    "subset": 64,
+    "stride": 64,
+    "iterations": 30,
+    "tolerance": 0.001,
+    "zncc_min": 0.65,
+    "interpolation": "linear",
+    "motion": "affine"
+  },
+  "pipeline": "frozen image-only confirmation and propagation; no learned residual; local zero-mean normalized cross correlation; shared prefit; deferred rotations; batched confirmation",
+  "mask": "Exclude 4-connected components of exact background intensity of at least 128 pixels, from reference only. Smaller islands at this quantized speckle intensity are not holes.",
+  "acceptance_interpretation": "numerical only until exact matching displacement data and coordinate map validated",
+  "operational_coverage_levels": [
+    0.5,
+    0.9,
+    0.95
+  ],
+  "max_interpretation": "largest tested target satisfying coverage, separately contiguous tested prefix; not strain percentage and not accuracy proof",
+  "followup": "denser independent target testing near loss of acceptance; no changes to solver thresholds",
+  "truth_problem": "51 quarter-cross mesh states vs 191 perforated-plate image states; no formula for ClosedFormExpression; no index/unit/map inferred",
+  "preflight": "Initial exact-intensity closing left one admissible FEA support because speckle quantization creates isolated background-valued pixels; aborted, retained in mask_preflight, excluded from qualification.",
+  "secondary_comparator": {
+    "method": "axis-aligned material silhouette extent ratios, no learned matcher, followed by same solver confirmation and propagation",
+    "levels": "all 191 FEA and all 500 ClosedFormExpression targets independently",
+    "specific_assumption": "complete constant-background object with axis-aligned deformation envelope; not valid for arbitrary occlusion, rotation or cropping",
+    "timing": "reference preprocessing reused; target states reset; no previous pair parameters",
+    "decision": "compare with learned proposal failure without retuning its weights or acceptance thresholds",
+    "truth": "image-derived bounding box is never used as ground truth or to score displacement error",
+    "supports": [
+      64,
+      32
+    ],
+    "support_rationale": "64 px full-support ROI leaves 3 material windows in FEA. Separate 32 px supports with 32 px stride evaluate spatial detail; never pool their denominators or change 64 px results."
+  },
+  "followup_levels": {
+    "FEA": [
+      0,
+      2,
+      3,
+      5,
+      10,
+      15,
+      20
+    ],
+    "ClosedFormExpression": [
+      0,
+      30,
+      35,
+      40,
+      45
+    ]
+  },
+  "identity_control": "level 0 means reference compared with itself; zero truth is known only for this diagnostic",
+  "dense_transition_levels": {
+    "FEA": [
+      4,
+      6,
+      7,
+      8,
+      9,
+      11,
+      12,
+      13,
+      14
+    ],
+    "ClosedFormExpression": [
+      31,
+      32,
+      33,
+      34
+    ]
+  },
+  "identity_border_observation": "64 px strip identity control accepts 98/128 mask-admissible windows. Not an accuracy ceiling for other transforms, which move image-edge supports differently.",
+  "nonmonotone_followup": {
+    "FEA": [
+      16,
+      17,
+      18,
+      19
+    ],
+    "ClosedFormExpression": [
+      36,
+      37,
+      38,
+      39,
+      41,
+      42,
+      43,
+      44,
+      46,
+      47,
+      48,
+      49,
+      60,
+      75
+    ]
+  },
+  "followup_reason": "Level 34 rejected but 35 and 40 accepted: do not use bisection or assume monotonicity."
+}

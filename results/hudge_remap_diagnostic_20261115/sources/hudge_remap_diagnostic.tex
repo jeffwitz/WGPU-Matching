@@ -1,0 +1,224 @@
+\documentclass[11pt,a4paper,landscape]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern,amsmath,amssymb,graphicx,booktabs,xcolor}
+\usepackage[margin=16mm]{geometry}
+\usepackage{hyperref,fancyhdr}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=blue,pdftitle={Plaque trouée : diagnostic des remappages successifs}}
+\graphicspath{{../results/hudge_remap_diagnostic_20261115/figures/}}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{WGPU-Matching — Diagnostic visuel de l'initialisation}
+\fancyhead[R]{15 novembre 2026}\fancyfoot[R]{\thepage}
+\setlength{\headheight}{14pt}
+\setlength{\parindent}{0pt}\setlength{\parskip}{6pt}
+\newcommand{\fullfig}[2]{\begin{center}\includegraphics[width=\linewidth,height=#2,keepaspectratio]{#1}\end{center}}
+\begin{document}
+{\LARGE\bfseries Plaque trouée : voir ce que le remappage corrige,\par
+et ce qui empêche la propagation de continuer\par}
+\vspace{5mm}
+{\large Diagnostic sur trois paires indépendantes : niveaux 50, 150 et 191}
+
+\textbf{Constat principal.} Une fenêtre non retenue n'est pas nécessairement une fenêtre
+que le solveur n'arrive pas à recaler. Les images et les traces révèlent trois situations :
+un recalage accepté par le solveur mais refusé par la cohérence avec le voisin,
+un essai qui ne converge pas, et une fenêtre que la frontière de propagation n'atteint pas.
+Les cartes de couverture seules mélangeaient ces situations.
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+ & Niveau 50 & Niveau 150 & Niveau 191\\\midrule
+Fenêtres éligibles (supports complets de $32\times32$ pixels) &36&36&36\\
+Retenues avant la reprise affine &26&21&18\\
+Retenues après la reprise et la propagation &34&27&18\\
+Restantes non retenues &2&9&18\\
+Parmi celles-ci, au moins un essai natif accepté par le solveur &2&8&13\\
+Dernier rejet de propagation explicitement lié au gradient &2&7&7\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Exemple décisif : fenêtre 102, niveau 191.} Le dernier essai fait passer la
+corrélation de 0,713 à 0,889. Le solveur accepte sa sortie. La correction du déplacement
+est de 4,96 pixels, inférieure au seuil de 8 pixels, mais la correction du gradient vaut
+0,403, supérieure au seuil de 0,25 : la propagation ne la retient pas.
+Les agrandissements de la page~\pageref{page:191patch} montrent le mouchetis correspondant.
+
+\textbf{Portée.} Il s'agit d'un diagnostic d'initialisation de la corrélation d'images
+numériques (DIC), avec le solveur Gauss--Newton à composition inverse (IC-GN).
+Une bonne corrélation et un statut accepté ne prouvent pas l'exactitude mécanique.
+Aucun champ de déplacement de référence associé à ces images n'a été identifié ;
+le fichier de déplacements de l'éprouvette en croix n'est pas utilisé.
+
+\newpage
+\section*{1. Ce qui a été remappé et enregistré}
+Chaque cible est comparée directement à \texttt{Img\_F.tif}. Les niveaux 50, 150 et 191
+sont trois expériences séparées, sans exploitation des images intermédiaires.
+Les fichiers source sont les images \texttt{Img\_wa\_g050.tif},
+\texttt{Img\_wa\_g150.tif} et \texttt{Img\_wa\_g191.tif} du dossier
+\texttt{HudgeStrains/FEA}. Ce sont des indices de fichier, pas des pourcentages de traction.
+
+À chaque tour $k$, une transformation globale $A_k\mathbf x+\mathbf t_k$ est ajustée
+sur les centres déjà retenus. La cible originale $I_1$ est ramenée dans le repère de
+la référence $I_0$ :
+\[
+ J_k(\mathbf z)=I_1(A_k\mathbf z+\mathbf t_k),\qquad
+ \boldsymbol\varphi(\mathbf x)=A_k\bigl(\mathbf x+\mathbf r_k(\mathbf x)\bigr)+\mathbf t_k,
+ \qquad F=A_k(I+\nabla\mathbf r_k).
+\]
+Le solveur recherche un résidu local $\mathbf r_k$ dans l'image rectifiée. Une sortie
+acceptable est recomposée, puis résolue à nouveau sur les pixels de la cible originale.
+La confirmation des graines et la propagation appliquent ensuite leurs critères existants.
+\textbf{Chaque image rectifiée repart de la cible originale}, pas de l'image rectifiée
+du tour précédent : on ne cumule pas les interpolations d'image entre les tours.
+
+\begin{minipage}[t]{.48\linewidth}
+\textbf{Paramètres inchangés}\par
+Supports et pas de 32 pixels ; interpolation bilinéaire ; 30 itérations au maximum ;
+tolérance $10^{-3}$ ; corrélation normalisée centrée minimale de 0,65.
+La cohérence en propagation exige
+\[
+ \|\mathbf d_{\text{sortie}}-\mathbf d_{\text{proposée}}\|_2\leq8\ {\rm pixels},\quad
+ \|G_{\text{sortie}}-G_{\text{proposé}}\|_F\leq0,25.
+\]
+Ici $G=F-I$ et $\|\cdot\|_F$ est la norme de Frobenius.
+Ces critères ne s'appliquent pas indistinctement à toutes les étapes : la sélection
+initiale des hypothèses utilise le statut du solveur.
+\end{minipage}\hfill
+\begin{minipage}[t]{.48\linewidth}
+\textbf{Lecture des figures}\par
+Les vues globales montrent le même rectangle de référence, $440\times225$ pixels.
+Les fichiers remappés complets restent en $1024\times1024$ pixels.
+Les agrandissements utilisent les centres exacts et les 32 pixels du support.
+Les gris sont fixes entre 0 et 255 ; les résidus absolus sont fixes entre 0 et 128,
+saturés au-delà. Les résidus ne sont pas corrigés photométriquement.
+La corrélation affichée est recalculée après l'essai, sur les pixels originaux ;
+elle n'est pas une lecture de la dernière valeur interne du solveur.
+\end{minipage}
+
+Les relances instrumentées reproduisent \textbf{exactement les masques retenus et tous
+les paramètres numériques archivés} pour les trois niveaux. Aucun seuil n'a été modifié.
+Les figures affichent aussi les propositions non validées, explicitement identifiées.
+
+\newpage
+\section*{2. Niveau 50 : la reprise récupère huit fenêtres}
+\fullfig{sequence_50.pdf}{72mm}
+\fullfig{map_50.pdf}{57mm}
+Le remappage global ne doit pas être confondu avec la solution locale : même si les
+contours sont proches, le mouchetis peut rester déphasé. Les fenêtres vertes sont les huit
+récupérations ; les deux oranges persistent après la reprise. Les nombres sont les
+identifiants de fenêtres, conservés dans les exports détaillés.
+
+\newpage
+\section*{3. Niveau 50 : une récupération et un rejet malgré un bon recalage}
+\fullfig{patch_50_35.pdf}{57mm}
+\textbf{Fenêtre 35, récupérée.} La proposition affine globale seule est mauvaise localement
+(corrélation $-0,074$). Une proposition transportée par le voisinage permet au solveur
+d'atteindre 0,953 ; cette fenêtre est finalement retenue. L'ajustement global n'explique
+donc pas à lui seul la récupération.
+\fullfig{patch_50_36.pdf}{57mm}
+\textbf{Fenêtre 36, non retenue.} Le recalage final présente un mouchetis beaucoup plus proche
+(0,937), mais sa correction du gradient vaut 0,433. Le dernier rejet est celui du seuil
+de cohérence 0,25, pas celui du seuil photométrique 0,65. Une similarité élevée ne suffit
+cependant pas à autoriser automatiquement cette sortie.
+
+\newpage
+\section*{4. Niveau 150 : le remappage global ne résout pas toute l'hétérogénéité}
+\fullfig{sequence_150.pdf}{72mm}
+\fullfig{map_150.pdf}{57mm}
+Le résultat passe de 21 à 27 fenêtres retenues. Les résidus visibles autour des régions
+locales montrent ce que l'affine globale laisse au solveur. Parmi les neuf fenêtres
+restantes, huit possèdent au moins un essai accepté par le solveur natif. Le dernier
+état de la propagation indique sept rejets de gradient, un rejet du solveur et une
+fenêtre sans motif de rejet enregistré à cette étape.
+
+\newpage
+\section*{5. Niveau 150 : séparer l'efficacité du solveur et la décision de propagation}
+\fullfig{patch_150_35.pdf}{57mm}
+\textbf{Fenêtre 35, récupérée.} La dernière proposition locale est déjà proche (0,811).
+Le solveur améliore encore le mouchetis (0,899), avec une correction du gradient 0,183.
+\fullfig{patch_150_102.pdf}{57mm}
+\textbf{Fenêtre 102, non retenue.} L'essai natif améliore la corrélation de 0,720 à 0,900.
+La correction du déplacement reste modérée (4,10 pixels), mais celle du gradient
+atteint 0,332 : le contrôle de cohérence arrête cette branche.
+Les résidus montrent qu'il existe ici une sortie photométriquement crédible à examiner,
+plutôt qu'une absence manifeste de motif correspondant.
+
+\newpage
+\section*{6. Niveau 150 : ce que nous ne pouvons pas appeler un échec du solveur}
+\fullfig{patch_150_164.pdf}{64mm}
+\textbf{Fenêtre 164, centre $(143,5;175,5)$.} Aucune tentative n'est enregistrée dans cette
+reprise pour cette fenêtre. Les deux panneaux montrent uniquement les propositions
+initiales ; ils ne montrent pas une sortie du solveur. La frontière ne l'atteint pas.
+Sa corrélation initiale faible indique que cette proposition ne suffit pas, mais ne
+démontre pas qu'une initialisation voisine adéquate échouerait.
+\fullfig{patch_150_70.pdf}{57mm}
+\textbf{Contrôle retenu : fenêtre 70.} La texture est correctement rapprochée et la corrélation
+atteint 0,934. Cette fenêtre était déjà retenue avant la reprise : son état est conservé.
+Un nouvel essai peut avoir une correction du gradient supérieure au seuil sans annuler
+une acceptation antérieure. On ne peut donc pas déduire le statut final du seul dernier essai.
+
+\newpage
+\section*{7. Niveau 191 : pourquoi répéter la même affine s'arrête}
+\fullfig{sequence_191.pdf}{72mm}
+\fullfig{map_191.pdf}{57mm}
+Le premier tour ne crée aucune fenêtre supplémentaire : l'arrêt intervient à 18/36.
+L'affine ajustée aux 18 centres retenus possède notamment $A_{22}=4,871$ ; le résidu
+médian d'ajustement des centres est de 4,18 pixels. C'est une approximation globale
+des observations retenues, pas une mesure locale uniforme de déformation.
+Réutiliser exactement le même ensemble et la même règle ne fournit pas de nouvelle
+information pour le tour suivant. Le diagnostic doit porter sur les branches bloquées.
+
+\newpage\label{page:191patch}
+\section*{8. Niveau 191 : le même motif est retrouvé, mais la branche est refusée}
+\fullfig{patch_191_102.pdf}{64mm}
+\textbf{Fenêtre 102.} Le mouchetis après résolution est visiblement plus proche de la référence.
+Le statut natif est accepté ; la corrélation vaut 0,889. Le dernier rejet de propagation
+provient de $\Delta G=0,403>0,25$. Ce constat identifie le verrou logiciel de cet essai,
+sans établir que la sortie constitue une mesure mécanique exacte.
+\fullfig{patch_191_36.pdf}{57mm}
+\textbf{Fenêtre 36.} Aucune tentative de reprise n'est enregistrée à cet endroit.
+Une région non atteinte ne doit pas être comptée comme un échec photométrique démontré.
+Il faut d'abord apporter une proposition locale qui permette réellement de la tester.
+
+\newpage
+\section*{9. Conclusions opérationnelles et limites}
+\textbf{Ce que ces images établissent.} Le remappage global rapproche la géométrie,
+mais ne garantit pas la coïncidence des mouchetis localement. Les propositions issues
+des voisins peuvent permettre à IC-GN de retrouver une texture très proche.
+Le mécanisme de cohérence arrête ensuite certaines sorties acceptées par le solveur.
+Les régions situées derrière ces arrêts peuvent ne jamais être essayées.
+
+\textbf{Ce que ces images n'établissent pas.} On ne dispose pas de vérité de déplacement
+pour ces paires. Une corrélation élevée ne garantit ni les six paramètres affines exacts,
+ni l'absence d'une erreur localisée. Le résidu seul ne permet pas de départager toutes
+les causes : erreur de géométrie, interpolation, changement de contraste, bruit ou
+inadéquation du modèle affine sur le support. Le présent diagnostic ne mesure pas
+la part de chacune.
+
+\textbf{Prochaine expérience justifiée.} Reprendre les sorties photométriquement crédibles
+mais rejetées par le gradient, telles que la fenêtre 102, comme \emph{hypothèses à vérifier}
+avec une confirmation indépendante et des supports adaptés. Mesurer si elles ouvrent
+la frontière sans introduire de faux résultats sur des cas à vérité connue. Il ne faut
+pas simplement supprimer le seuil de cohérence pour augmenter la couverture.
+Une nouvelle affine globale seule ne cible pas ce verrou.
+
+\textbf{Traçabilité.} Le dossier
+\texttt{results/hudge\_remap\_diagnostic\_20261115/} contient les remappages complets,
+les figures, les exports par fenêtre et les appels enregistrés dans
+\texttt{recorded/rectified\_native/trace\_*/}. Chaque appel fournit les indices,
+paramètres proposés et résolus, statut, étape et numéro de tour ; les appels directs
+du solveur contiennent aussi les nombres d'itérations.
+Les codes de dernier rejet de propagation sont : 0, aucun motif enregistré ;
+1, solveur non accepté ou sortie non finie ; 2, correction du déplacement ;
+3, correction du gradient. Un code nul n'est pas une preuve de réussite.
+
+\textbf{Reproduction.} Les commandes exactes, les empreintes des entrées et les contrôles
+de parité figurent dans le fichier \texttt{README.md} et le manifeste de ce dossier.
+Le script \texttt{diagnose\_hudge\_remaps.py} ne relance pas l'algorithme et n'utilise
+aucune vérité analytique : il reconstruit les vues depuis les traces enregistrées.
+Les exemples locaux sont choisis par catégorie puis proximité du centre fixe $(175;110)$,
+sans recherche du meilleur score. Les traces complètes couvrent les 36 fenêtres de chaque paire.
+
+\end{document}
