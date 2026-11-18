@@ -1,0 +1,21 @@
+{
+  "size_stride": {
+    "affine16": [
+      16,
+      8
+    ]
+  },
+  "source": "complete coarse accepted states from earlier RBF/continuation experiments",
+  "iterations_per_call": 30,
+  "continuations": 4,
+  "rounds": 3,
+  "solver_interpolation": "bspline",
+  "tolerance": 0.001,
+  "correlation_min": 0.65,
+  "gradient_veto": false,
+  "field": "24-nearest normalized Gaussian blend of solved local maps; length=0.75*subset",
+  "raw_remapping": "original target sampled bilinearly, no silhouette reshaping or mask painting",
+  "qualification": "solver status + final correlation + bounds + positive support Jacobian; no displacement truth",
+  "dense_seed_root": "results/hudge_dense_remap_20261115/bspline",
+  "initial_contour": "results/hudge_dense_remap_20261115/contour_pilot/pass_6.npz"
+}

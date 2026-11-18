@@ -1,0 +1,53 @@
+<!doctype html><html lang="fr"><meta charset="utf-8">
+<title>Plaque trouée — remappings natifs</title><style>
+body{font:17px/1.5 system-ui;max-width:1200px;margin:35px auto;padding:0 20px;color:#203040}
+img{max-width:100%;height:auto}section{margin:35px 0;border-top:1px solid #ccc}a{color:#176696}
+</style><h1>Plaque trouée : initialisation dense et remapping</h1><section id="bords-exterieurs"><h2>Nouvelle reprise : bords extérieurs</h2><p>Moins de zones perdues, sans modifier le champ près des trous. Les ajouts douteux restent en magenta.</p><a href="near_hole_propagation/outer_edge/index.html">Résultats et contrôles détaillés</a><img src="near_hole_propagation/outer_edge/before_after.gif" alt="Reprise des bords extérieurs"></section><section id="propagation-bords"><h2>Nouvel essai : propagation sur supports tronqués</h2><p>Sans correction de contour. Magenta : matière non résolue ; hachures : hors matière. Le bord immédiat reste insuffisamment recalé.</p><a href="near_hole_propagation/index.html">Ouvrir les résultats, les limites et les comparaisons</a><img src="near_hole_propagation/partial12.gif" alt="Propagation jusqu’aux bords"></section><section id="diagnostic-pres-des-trous" style="border:2px solid #a32;padding:16px;background:#fff3e8">
+<h2>Diagnostic du mouchetis près des trous — niveau 191</h2>
+<p><strong>La correction des contours n’est pas une initialisation qualifiée près des trous.</strong>
+Elle rapproche les formes mais dégrade le mouchetis entre 4 et 16 pixels des trous.
+Aucun des 825 centres de contrôle n’est situé à moins de 8 pixels d’un trou.</p>
+<table style="border-collapse:collapse;width:100%;text-align:left">
+<caption>Corrélation des intensités dans les bandes de matière de référence</caption>
+<thead><tr><th>Distance aux trous</th><th>Avant correction</th><th>Après correction</th></tr></thead>
+<tbody><tr><td>4–8 pixels</td><td>0,700</td><td><strong>0,614</strong></td></tr>
+<tr><td>8–16 pixels</td><td>0,864</td><td><strong>0,774</strong></td></tr></tbody></table>
+<p>Ces corrélations regroupent les pixels de chaque bande : ce ne sont pas des scores de fenêtres du solveur.</p>
+<a href="near_hole_audit/texture_residuals.png"><img src="near_hole_audit/texture_residuals.png"
+alt="Comparaison du mouchetis et des résidus avant et après correction des contours"></a>
+<p>En haut : référence, champ dense avant correction, puis correction des contours.
+En bas : couronne de matière examinée et écarts absolus d’intensité sur une échelle commune.
+Les trous blancs dans les cartes de résidus sont hors matière et ne sont pas évalués.</p>
+<p><a href="near_hole_audit/texture_residuals.png">Ouvrir la figure en pleine résolution</a> ·
+<a href="near_hole_audit/README.md">Diagnostic détaillé</a> ·
+<a href="near_hole_audit/summary.json">Résultats bruts</a></p></section>
+<p>Les pixels proviennent exclusivement de l'image déformée originale, échantillonnée avec le champ estimé.
+Aucun cercle ni fond n'est redessiné. Les contours observés participent à l'ajustement : leur bon accord
+n'est donc pas une validation mécanique indépendante.</p>
+<p>Au niveau 191, le contrôle sur 825 centres décalés retient 764 fenêtres avec le champ grossier,
+780 avec le champ dense et 782 avec la correction de contour. Il reste des échecs.</p>
+<p><a href="report.pdf">Document explicatif en PDF</a> · <a href="README.md">Protocole et fichiers</a></p>
+<img src="figures/remapping_stages.png" alt="Étapes des remappings"><section><h2>Niveau 50</h2>
+<p>Alternance référence / image déformée remappée. Agrandissement ×2 sans lissage d'affichage.</p>
+<img src="refined/level_050/reference_corrected_zoom.gif" alt="Alternance niveau 50">
+<p><a href="refined/level_050/image1_ref.png">Référence native</a> ·
+<a href="refined/level_050/image2_def_cor.png">Déformée corrigée native</a> ·
+<a href="refined/level_050/image0_def.png">Déformée originale</a> ·
+<a href="refined/level_050/initialization.npz">Initialisations à six paramètres</a></p></section><section><h2>Niveau 150</h2>
+<p>Alternance référence / image déformée remappée. Agrandissement ×2 sans lissage d'affichage.</p>
+<img src="refined/level_150/reference_corrected_zoom.gif" alt="Alternance niveau 150">
+<p><a href="refined/level_150/image1_ref.png">Référence native</a> ·
+<a href="refined/level_150/image2_def_cor.png">Déformée corrigée native</a> ·
+<a href="refined/level_150/image0_def.png">Déformée originale</a> ·
+<a href="refined/level_150/initialization.npz">Initialisations à six paramètres</a></p></section><section><h2>Niveau 191</h2>
+<p>Alternance référence / image déformée remappée. Agrandissement ×2 sans lissage d'affichage.</p>
+<img src="refined/level_191/reference_corrected_zoom.gif" alt="Alternance niveau 191">
+<p><a href="refined/level_191/image1_ref.png">Référence native</a> ·
+<a href="refined/level_191/image2_def_cor.png">Déformée corrigée native</a> ·
+<a href="refined/level_191/image0_def.png">Déformée originale</a> ·
+<a href="refined/level_191/initialization.npz">Initialisations à six paramètres</a></p></section>
+<section><h2>Les six trous au niveau 191</h2><img src="figures/holes_191.png" alt="Contours des trous">
+<p>Or : contour de référence. Cyan : contour après remapping. Le petit trou reste mal restitué.</p></section>
+<section><h2>Reprise du solveur</h2><img src="figures/offset_validation.png" alt="Convergence aux centres décalés">
+<p>Les supports de 24 pixels recouvrent partiellement les observations de 16 pixels : ce contrôle
+n'est pas un test sur des images indépendantes. Les statuts ne certifient pas l'exactitude du déplacement.</p></section></html>

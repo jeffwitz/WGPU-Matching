@@ -1,0 +1,48 @@
+{
+  "input_sha256": {
+    "/home/jeff/CNRS/DIC/HudgeStrains/FEA/Img_F.tif": "c76dae50b9ba6afff37a808ae417babe52d7e442ee27d9c9441204ee127d1304",
+    "/home/jeff/CNRS/DIC/HudgeStrains/FEA/Img_wa_g191.tif": "f5e5ae87e4d15319809d941235596020e388b5a2e0de9a9f280ea7427916c668"
+  },
+  "implementation_sha256": {
+    "python/benchmarks/iterate_hudge_hole_rbf.py": "f01cc42dcae6664278851d8aafd856d1c50c3acd74d05a59674c0f174ac373b3",
+    "python/benchmarks/verify_hudge_composed_seeds.py": "9f33de988991762c6bb7a8122975f7138bf784758bc78936d8511aac9adfdd0a",
+    "results/hudge_hole_rbf_20261117/local_holes/joint_angles_weak.npz": "ecdd515f0ad2d36e2443a194ab9822decf3d9e73c214d2c39c5e489231691d23"
+  },
+  "python": "3.14.2 (main, Jan 27 2026, 23:59:57) [Clang 21.1.4 ]",
+  "initial": "joint_angles_weak.npz",
+  "iterations": 4,
+  "solver": {
+    "subset": 12,
+    "stride": 4,
+    "iterations_per_call": 30,
+    "tolerance": 0.001,
+    "zncc_min": 0.65,
+    "interpolation": "bspline",
+    "roi_policy": "partial",
+    "roi_truncation": "visibility"
+  },
+  "rbf": {
+    "basis_count": 688,
+    "broad_width": 8,
+    "hole_width": 4,
+    "hole_group_weight": 0.1,
+    "gradient_length": 4,
+    "ridge": 1e-07
+  },
+  "composition": "Phi_old o (Id + residual); analytic chain rule; final resampling from original target only",
+  "numeric_check": {
+    "four_step_jacobian_fd_max_absolute_error": 2.27e-09,
+    "position_path_max_absolute_difference": 1.14e-13
+  },
+  "reproduce": [
+    "env OPENBLAS_NUM_THREADS=2 PYTHONPATH=python/src .venv/bin/python python/benchmarks/iterate_hudge_hole_rbf.py --output NEW_OUTPUT --iterations 4",
+    "env OPENBLAS_NUM_THREADS=2 PYTHONPATH=python/src .venv/bin/python python/benchmarks/verify_hudge_composed_seeds.py NEW_OUTPUT --iteration 0",
+    "env OPENBLAS_NUM_THREADS=2 PYTHONPATH=python/src .venv/bin/python python/benchmarks/verify_hudge_composed_seeds.py NEW_OUTPUT",
+    "env OPENBLAS_NUM_THREADS=2 .venv/bin/python python/benchmarks/view_hudge_composition.py NEW_OUTPUT"
+  ],
+  "limitations": [
+    "CPU research fitting/composition, WebGPU local solves. No inference performance claim.",
+    "First step compared all four step sizes; later steps use first safe improving backtracking step. Every retained step equals 1, so selection policy does not change these retained fields.",
+    "No displacement truth for this image pair; acceptance is numerical and photometric only."
+  ]
+}
