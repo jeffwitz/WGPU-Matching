@@ -1,0 +1,105 @@
+{
+  "protocol": {
+    "live_dic_source": "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/python/src",
+    "archive": "results/ndf_dic_20261109/causal_ablation_affine_ndf_ncc_20261109",
+    "output_dir": "results/seed_propagation_20261111/p2_resume_escalation_17051007_v2",
+    "sparse_stride": 4,
+    "tau_u": 8,
+    "tau_g": 0.25,
+    "limit": 0,
+    "rotation_manifest": "results/seed_propagation_20261111/p2_local_affine_development/manifest.json",
+    "textures": [
+      17051007
+    ],
+    "escalation": true,
+    "minimum_anchors": 3,
+    "local_affine_escalation": true,
+    "local_affine_validation": false,
+    "same_budget_control": true,
+    "frozen_parameters": null,
+    "subset_size": 64,
+    "subset_stride": 64,
+    "discontinuity_boundary_fraction": 0.5,
+    "speckle_noise_std": 0.025,
+    "target_gain": 1.0,
+    "target_offset": 0.0,
+    "target_blur_sigma": 0.0,
+    "target_noise_std": 0.0,
+    "periodic_strength": 0.0,
+    "periodic_period_px": 128.0,
+    "external_reference": null,
+    "external_target": null,
+    "roi_mask": null
+  },
+  "rows": [
+    {
+      "pair": "heterogeneous_texture17051007_warp17091007",
+      "selected": "zero",
+      "source_hypothesis_names": [
+        "zero",
+        "rotation_rank1",
+        "rotation_rank2",
+        "rotation_rank3",
+        "affine",
+        "affine_ncc",
+        "local_rotation_rank1",
+        "local_rotation_rank2",
+        "local_rotation_rank3"
+      ],
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 0
+        },
+        {
+          "name": "rotation_rank1",
+          "accepted": 0
+        },
+        {
+          "name": "rotation_rank2",
+          "accepted": 0
+        },
+        {
+          "name": "rotation_rank3",
+          "accepted": 0
+        },
+        {
+          "name": "affine",
+          "accepted": 0
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 0
+        }
+      ],
+      "confirmed_seeds": 15,
+      "truth_available": true,
+      "visible": 787,
+      "accepted": 736,
+      "accepted_invisible": 0,
+      "correct": 736,
+      "false_accepted": 0,
+      "oracle": 735,
+      "baseline_correct": 6,
+      "passes": 21,
+      "propagation_solver_calls": 41,
+      "control_correct": 6,
+      "control_solver_calls": 64,
+      "wall_s_excluding_hypothesis_generation": 0.5456076470436528,
+      "escalation_history": [
+        {
+          "region_windows": 1980,
+          "accepted": 0,
+          "hypothesis": "zero",
+          "anchors": 0
+        },
+        {
+          "region_windows": 1980,
+          "accepted": 736,
+          "hypothesis": "local_rotation_rank2",
+          "anchors": 15
+        }
+      ]
+    }
+  ]
+}

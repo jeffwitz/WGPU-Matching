@@ -1,0 +1,292 @@
+{
+  "startup_from_main_s": 0.37992658594157547,
+  "protocol": {
+    "live_dic_source": "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/python/src",
+    "archive": "results/seed_propagation_20261111/p2_anchor_batch_new_pairs/inputs",
+    "output_dir": "results/seed_propagation_20261111/p2_gpu_anchor_frontier_four",
+    "sparse_stride": 2,
+    "tau_u": 8,
+    "tau_g": 0.25,
+    "limit": 0,
+    "rotation_manifest": null,
+    "lazy_rotation_weights": "results/ndf_dic_20261109/p3_multiscale_physics_weight002_levels3_128pairs_seed20261114/ndf_pair_matcher.pt",
+    "lazy_rotation_output": "results/seed_propagation_20261111/p2_gpu_anchor_frontier_four/rotations",
+    "textures": null,
+    "families": null,
+    "seed_offsets": null,
+    "escalation": true,
+    "batch_anchor_confirmation": false,
+    "gpu_frontier": true,
+    "gpu_anchor_frontier": true,
+    "minimum_anchors": 3,
+    "local_affine_escalation": true,
+    "escalate_unresolved": false,
+    "local_affine_validation": false,
+    "same_budget_control": false,
+    "frozen_parameters": "results/seed_propagation_20261111/p2_calibration/frozen_parameters.json",
+    "subset_size": 64,
+    "subset_stride": 64,
+    "discontinuity_boundary_fraction": 0.5,
+    "speckle_noise_std": 0.025,
+    "target_gain": 1.0,
+    "target_offset": 0.0,
+    "target_blur_sigma": 0.0,
+    "target_noise_std": 0.0,
+    "periodic_strength": 0.0,
+    "periodic_period_px": 128.0,
+    "external_reference": null,
+    "external_target": null,
+    "roi_mask": null,
+    "use_cached_solver_images": true
+  },
+  "rows": [
+    {
+      "pair": "heterogeneous_texture55051001_warp55091001",
+      "selected": "affine_ncc",
+      "minimum_anchors_met": true,
+      "lazy_rotation_requested": false,
+      "lazy_rotation_cache_hit": false,
+      "lazy_rotation_hypotheses_generated": 0,
+      "lazy_rotation_wall_s": 0.0,
+      "source_hypothesis_names": [
+        "zero",
+        "affine",
+        "affine_ncc"
+      ],
+      "local_affine_fit_window_count_per_rotation": 0,
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 0
+        },
+        {
+          "name": "affine",
+          "accepted": 16
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 328
+        }
+      ],
+      "confirmed_seeds": 1379,
+      "truth_available": true,
+      "visible": 1545,
+      "accepted": 1492,
+      "accepted_invisible": 0,
+      "correct": 1492,
+      "false_accepted": 0,
+      "oracle": 1492,
+      "baseline_correct": 1307,
+      "passes": 3,
+      "propagation_solver_calls": 14,
+      "total_solver_calls_before_control": 17,
+      "total_active_windows_before_control": null,
+      "gpu_frontier_stages": [
+        {
+          "passes": 3,
+          "active_windows": 521,
+          "counter_readbacks": 3,
+          "counter_readback_bytes": 24,
+          "final_readback_bytes": 126720,
+          "anchor_solver_dispatches": 8,
+          "wall_s": 0.033643477014265954
+        }
+      ],
+      "control_correct": null,
+      "control_solver_calls": 0,
+      "wall_s_excluding_hypothesis_generation": 0.1387253280263394,
+      "wall_s_including_lazy_rotation": 0.1387253280263394,
+      "image_prepare_s": 0.17152871296275407,
+      "solver_reference_and_target_s": 0.9494181260233745,
+      "same_budget_control_s": 5.334604065865278e-05,
+      "case_wall_s_before_output": 1.2673391910502687,
+      "escalation_history": []
+    },
+    {
+      "pair": "rigid_texture55051002_warp55091002",
+      "selected": "affine_ncc",
+      "minimum_anchors_met": true,
+      "lazy_rotation_requested": false,
+      "lazy_rotation_cache_hit": false,
+      "lazy_rotation_hypotheses_generated": 0,
+      "lazy_rotation_wall_s": 0.0,
+      "source_hypothesis_names": [
+        "zero",
+        "affine",
+        "affine_ncc"
+      ],
+      "local_affine_fit_window_count_per_rotation": 0,
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 0
+        },
+        {
+          "name": "affine",
+          "accepted": 284
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 299
+        }
+      ],
+      "confirmed_seeds": 1233,
+      "truth_available": true,
+      "visible": 1356,
+      "accepted": 1299,
+      "accepted_invisible": 0,
+      "correct": 1299,
+      "false_accepted": 0,
+      "oracle": 1299,
+      "baseline_correct": 1197,
+      "passes": 2,
+      "propagation_solver_calls": 12,
+      "total_solver_calls_before_control": 15,
+      "total_active_windows_before_control": null,
+      "gpu_frontier_stages": [
+        {
+          "passes": 2,
+          "active_windows": 360,
+          "counter_readbacks": 2,
+          "counter_readback_bytes": 16,
+          "final_readback_bytes": 126720,
+          "anchor_solver_dispatches": 8,
+          "wall_s": 0.02023268409539014
+        }
+      ],
+      "control_correct": null,
+      "control_solver_calls": 0,
+      "wall_s_excluding_hypothesis_generation": 0.06655548408161849,
+      "wall_s_including_lazy_rotation": 0.06655548408161849,
+      "image_prepare_s": 0.15186209394596517,
+      "solver_reference_and_target_s": 0.8315185509854928,
+      "same_budget_control_s": 3.8670958019793034e-05,
+      "case_wall_s_before_output": 1.052249698084779,
+      "escalation_history": []
+    },
+    {
+      "pair": "heterogeneous_texture56051001_warp56091001",
+      "selected": "affine_ncc",
+      "minimum_anchors_met": true,
+      "lazy_rotation_requested": false,
+      "lazy_rotation_cache_hit": false,
+      "lazy_rotation_hypotheses_generated": 0,
+      "lazy_rotation_wall_s": 0.0,
+      "source_hypothesis_names": [
+        "zero",
+        "affine",
+        "affine_ncc"
+      ],
+      "local_affine_fit_window_count_per_rotation": 0,
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 0
+        },
+        {
+          "name": "affine",
+          "accepted": 54
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 174
+        }
+      ],
+      "confirmed_seeds": 741,
+      "truth_available": true,
+      "visible": 865,
+      "accepted": 808,
+      "accepted_invisible": 0,
+      "correct": 808,
+      "false_accepted": 0,
+      "oracle": 808,
+      "baseline_correct": 711,
+      "passes": 3,
+      "propagation_solver_calls": 14,
+      "total_solver_calls_before_control": 17,
+      "total_active_windows_before_control": null,
+      "gpu_frontier_stages": [
+        {
+          "passes": 3,
+          "active_windows": 533,
+          "counter_readbacks": 3,
+          "counter_readback_bytes": 24,
+          "final_readback_bytes": 126720,
+          "anchor_solver_dispatches": 8,
+          "wall_s": 0.019067549030296504
+        }
+      ],
+      "control_correct": null,
+      "control_solver_calls": 0,
+      "wall_s_excluding_hypothesis_generation": 0.06887554901186377,
+      "wall_s_including_lazy_rotation": 0.06887554901186377,
+      "image_prepare_s": 0.14817565504927188,
+      "solver_reference_and_target_s": 0.795752570964396,
+      "same_budget_control_s": 4.077900666743517e-05,
+      "case_wall_s_before_output": 1.0150821110000834,
+      "escalation_history": []
+    },
+    {
+      "pair": "rigid_texture56051002_warp56091002",
+      "selected": "affine_ncc",
+      "minimum_anchors_met": true,
+      "lazy_rotation_requested": false,
+      "lazy_rotation_cache_hit": false,
+      "lazy_rotation_hypotheses_generated": 0,
+      "lazy_rotation_wall_s": 0.0,
+      "source_hypothesis_names": [
+        "zero",
+        "affine",
+        "affine_ncc"
+      ],
+      "local_affine_fit_window_count_per_rotation": 0,
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 0
+        },
+        {
+          "name": "affine",
+          "accepted": 37
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 236
+        }
+      ],
+      "confirmed_seeds": 1002,
+      "truth_available": true,
+      "visible": 1134,
+      "accepted": 1096,
+      "accepted_invisible": 0,
+      "correct": 1096,
+      "false_accepted": 0,
+      "oracle": 1096,
+      "baseline_correct": 949,
+      "passes": 2,
+      "propagation_solver_calls": 12,
+      "total_solver_calls_before_control": 15,
+      "total_active_windows_before_control": null,
+      "gpu_frontier_stages": [
+        {
+          "passes": 2,
+          "active_windows": 326,
+          "counter_readbacks": 2,
+          "counter_readback_bytes": 16,
+          "final_readback_bytes": 126720,
+          "anchor_solver_dispatches": 8,
+          "wall_s": 0.019758963957428932
+        }
+      ],
+      "control_correct": null,
+      "control_solver_calls": 0,
+      "wall_s_excluding_hypothesis_generation": 0.06387897906824946,
+      "wall_s_including_lazy_rotation": 0.06387897906824946,
+      "image_prepare_s": 0.13789495697710663,
+      "solver_reference_and_target_s": 0.974403831991367,
+      "same_budget_control_s": 4.0790997445583344e-05,
+      "case_wall_s_before_output": 1.1788155499380082,
+      "escalation_history": []
+    }
+  ]
+}

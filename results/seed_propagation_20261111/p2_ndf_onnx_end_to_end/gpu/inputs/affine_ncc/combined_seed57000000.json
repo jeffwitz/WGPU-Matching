@@ -1,0 +1,431 @@
+{
+  "protocol": {
+    "model_input_px": [
+      192,
+      108
+    ],
+    "speckle_size_px_at_model_input": 0.35,
+    "discontinuity_boundary_fraction": 0.5,
+    "speckle_noise_std": 0.025,
+    "target_gain": 1.0,
+    "target_offset": 0.0,
+    "target_blur_sigma": 0.0,
+    "target_noise_std": 0.0,
+    "periodic_strength": 0.0,
+    "periodic_period_px": 128.0,
+    "external_reference": null,
+    "external_target": null,
+    "truth_available": true,
+    "external_stretch_x": null,
+    "external_stretch_y": null,
+    "generated_native_px": [
+      3840,
+      2160
+    ],
+    "scale_xy": [
+      20.0,
+      20.0
+    ],
+    "candidates_per_query": 1296,
+    "families": [
+      "heterogeneous",
+      "rigid"
+    ],
+    "training_weights": "/home/jeff/Code/WGPU-Matching/results/ndf_dic_20261109/p3_multiscale_physics_weight002_levels3_128pairs_seed20261114/ndf_pair_matcher.pt",
+    "analytic_truth_used_by_inference": false,
+    "oracle_rotation_rectification": false,
+    "rotation_bank_steps": 9,
+    "rotation_bank_orientation_count": 10,
+    "rotation_bank_selection": "maximum confidence_support with global affine consensus on predicted hard matches",
+    "rotation_bank_batch_size": 1,
+    "rotation_bank_min_score_gain": 0.1,
+    "rotation_bank_probe_query_budget": 256,
+    "rotation_bank_refine_topk": 0,
+    "rotation_bank_consensus": "global",
+    "rotation_bank_min_consensus_support": 24,
+    "rotation_bank_min_angle_deg": 0.0,
+    "forced_rotation_angle_rad": null,
+    "solver_window_budget": 0,
+    "global_affine_prefit": true,
+    "nonlinear_field_residual": "none",
+    "local_bspline_prefit": false,
+    "local_bspline_prefit_min_support": 96,
+    "local_bspline_prefit_bending": 0.1,
+    "affine_prefit_min_inliers": 24,
+    "affine_prefit_min_linear_deviation": 0.03,
+    "retain_translation_affine": true,
+    "visibility_mask_used_to_activate_windows": false,
+    "solver": "WebGPU IC-GN, affine, 64 px subset and 64 px stride",
+    "field_projection": "raw_bilinear",
+    "local_ncc_search_radius_px": 8,
+    "export_pre_ncc": true,
+    "local_ncc_geometry": "translation",
+    "local_ncc_jacobian_damping": 1.0,
+    "local_ncc_backend": "wgpu",
+    "local_ncc_implementation": "parallel",
+    "coarse_estimate": "soft",
+    "coarse_matcher": "learned",
+    "contextual_features": true,
+    "local_ncc_adapter": "Vulkan (Intel(R) Graphics (LNL))",
+    "local_ncc_patch_radius_px": 4,
+    "local_consensus_radius_px": 40.0,
+    "local_consensus_threshold_px": 5.0,
+    "local_feature_search_radius_cells": 0,
+    "ndf_onnx_webgpu": {
+      "backend": "onnxruntime-webgpu",
+      "checkpoint_sha256": "150acb9437463034ff879750d2ea8b2d675667ea533a22633a4b56e3dc15cfaf",
+      "export_fingerprint_sha256": "ca0736a10bf371d4a9139b6d8a46eee797e18fb4f542a7b7648860af3e8a2823",
+      "shape": [
+        1,
+        1,
+        108,
+        192
+      ],
+      "graphs": {
+        "encoder": "results/seed_propagation_20261111/p2_ndf_onnx_end_to_end/graphs/ndf_encoder_192x108_ca0736a10bf371d4.onnx",
+        "pair": "results/seed_propagation_20261111/p2_ndf_onnx_end_to_end/graphs/ndf_pair_192x108_ca0736a10bf371d4.onnx"
+      },
+      "providers": {
+        "encoder": [
+          "WebGpuExecutionProvider",
+          "CPUExecutionProvider"
+        ],
+        "pair": [
+          "WebGpuExecutionProvider",
+          "CPUExecutionProvider"
+        ]
+      },
+      "devices": [
+        {
+          "type": "OrtHardwareDeviceType.GPU",
+          "vendor": "",
+          "vendor_id": 32902,
+          "provider": "WebGpuExecutionProvider",
+          "provider_metadata": {
+            "library_path": "/home/jeff/Code/WGPU-Matching/.venv/lib/python3.14/site-packages/onnxruntime_ep_webgpu/libonnxruntime_providers_webgpu.so",
+            "version": "0.5.0"
+          }
+        }
+      ],
+      "intermediate_buffers_shared_with_wgpu_py": false
+    }
+  },
+  "cases": [
+    {
+      "mode": "heterogeneous",
+      "projection": "raw_bilinear",
+      "texture_seed": 57051001,
+      "warp_seed": 57091001,
+      "window_diagnostics": "results/seed_propagation_20261111/p2_ndf_onnx_end_to_end/gpu/inputs/affine_ncc/windows_seed57000000/heterogeneous_texture57051001_warp57091001.npz",
+      "visible_windows": 1038,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 116.98869323730469,
+      "initial_gradient_rmse": 2.0381133556365967,
+      "local_consensus_usable_fraction": null,
+      "rotation_bank_selected_angle_rad": -1.0471975511965979,
+      "forced_rotation_angle_rad": null,
+      "rotation_bank_consensus_support": 73,
+      "rotation_bank_mean_confidence_on_support": 0.7288824319839478,
+      "rotation_bank_candidate_scores": [
+        {
+          "angle_rad": -3.141592653589793,
+          "consensus_support": 7,
+          "mean_confidence_on_support": 0.628132164478302,
+          "reciprocal_queries": 102,
+          "ranking_score": 0.01717548887245357
+        },
+        {
+          "angle_rad": -2.443460952792061,
+          "consensus_support": 7,
+          "mean_confidence_on_support": 0.577055811882019,
+          "reciprocal_queries": 85,
+          "ranking_score": 0.015778869856148958
+        },
+        {
+          "angle_rad": -1.7453292519943295,
+          "consensus_support": 10,
+          "mean_confidence_on_support": 0.5410745143890381,
+          "reciprocal_queries": 114,
+          "ranking_score": 0.0211357232183218
+        },
+        {
+          "angle_rad": -1.0471975511965979,
+          "consensus_support": 73,
+          "mean_confidence_on_support": 0.7288824319839478,
+          "reciprocal_queries": 134,
+          "ranking_score": 0.2078453809954226
+        },
+        {
+          "angle_rad": -0.34906585039886595,
+          "consensus_support": 20,
+          "mean_confidence_on_support": 0.5584441423416138,
+          "reciprocal_queries": 144,
+          "ranking_score": 0.043628448620438576
+        },
+        {
+          "angle_rad": 0.0,
+          "consensus_support": 22,
+          "mean_confidence_on_support": 0.5413568019866943,
+          "reciprocal_queries": 125,
+          "ranking_score": 0.046522850170731544
+        },
+        {
+          "angle_rad": 0.34906585039886595,
+          "consensus_support": 10,
+          "mean_confidence_on_support": 0.4977986216545105,
+          "reciprocal_queries": 113,
+          "ranking_score": 0.019445258658379316
+        },
+        {
+          "angle_rad": 1.0471975511965974,
+          "consensus_support": 6,
+          "mean_confidence_on_support": 0.5658332705497742,
+          "reciprocal_queries": 95,
+          "ranking_score": 0.013261717278510332
+        },
+        {
+          "angle_rad": 1.7453292519943293,
+          "consensus_support": 10,
+          "mean_confidence_on_support": 0.5710684657096863,
+          "reciprocal_queries": 104,
+          "ranking_score": 0.02230736194178462
+        },
+        {
+          "angle_rad": 2.443460952792061,
+          "consensus_support": 8,
+          "mean_confidence_on_support": 0.6535129547119141,
+          "reciprocal_queries": 116,
+          "ranking_score": 0.020422279834747314
+        }
+      ],
+      "coarse_matcher_diagnostics": null,
+      "rotation_bank_score_gain_over_identity": 3.4675977553538258,
+      "rotation_bank_probe_encoder_s": 0.027847601915709674,
+      "rotation_bank_probe_matching_s": 0.0083887770306319,
+      "rotation_bank_probe_consensus_s": 0.017048391862772405,
+      "rotation_bank_truth_angle_rad_for_diagnostic_only": -0.9409310888241016,
+      "global_affine_prefit_used": true,
+      "nonlinear_field_residual": "none",
+      "global_affine_prefit_coefficients": [
+        [
+          -15.45119058330018,
+          150.09208884925513
+        ],
+        [
+          0.7634663305581872,
+          -1.0437281507158538
+        ],
+        [
+          0.9335504621804978,
+          0.24618175974050294
+        ]
+      ],
+      "global_affine_prefit_inliers": 468,
+      "global_affine_prefit_median_residual_px": 2.0078989678658337,
+      "global_affine_prefit_spatial_bins": 9,
+      "global_affine_prefit_linear_deviation": 1.607816853426313,
+      "local_bspline_prefit_used": false,
+      "local_bspline_prefit_diagnostics": null,
+      "local_ncc_valid_visible_nodes": 635,
+      "local_ncc_node_median_error_native_px": 3.093442440032959,
+      "local_ncc_node_fraction_within_2_native_px": 0.28188976645469666,
+      "local_ncc_score_median": 0.8211814165115356,
+      "local_ncc_margin_median": 0.11130940914154053,
+      "final_local_valid_visible_nodes": 635,
+      "final_local_node_median_error_native_px": 3.093442440032959,
+      "final_local_node_fraction_within_2_native_px": 0.28188976645469666,
+      "solver_accepted_visible": 850,
+      "solver_accepted_active": 850,
+      "solver_active_window_count": 1980,
+      "correct_converged_lt2px": 850,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 993,
+      "propagation_mode": "none",
+      "propagation_seed_windows": null,
+      "propagation_correct_lt2px": null,
+      "propagation_oracle_correct_lt2px": null,
+      "propagation_accepted_error_ge_2px": null,
+      "propagation_accepted_invisible": null,
+      "propagation_rings": null,
+      "propagation_extra_accepted": null,
+      "propagation_wall_s": null,
+      "coverage_correct": 0.8188824662813102,
+      "correct_windows_per_second": 3494.20749483003,
+      "inference_s_cpu": 0.23043149698060006,
+      "model_inference_s_cpu": null,
+      "model_inference_s_wall": 0.1381777609931305,
+      "local_refinement_s_wall": 0.09222661796957254,
+      "field_projection_s_cpu": 0.0007844800129532814,
+      "icgn_s": 0.01204376108944416,
+      "zero_icgn_s": 0.07544222695287317,
+      "oracle_icgn_s": 0.006284023984335363,
+      "mean_iterations_accepted": 5.837646961212158
+    },
+    {
+      "mode": "rigid",
+      "projection": "raw_bilinear",
+      "texture_seed": 57051002,
+      "warp_seed": 57091002,
+      "window_diagnostics": "results/seed_propagation_20261111/p2_ndf_onnx_end_to_end/gpu/inputs/affine_ncc/windows_seed57000000/rigid_texture57051002_warp57091002.npz",
+      "visible_windows": 1474,
+      "initialized_windows": 1980,
+      "initial_translation_rmse_px": 58.589813232421875,
+      "initial_gradient_rmse": 1.2320115566253662,
+      "local_consensus_usable_fraction": null,
+      "rotation_bank_selected_angle_rad": 0.0,
+      "forced_rotation_angle_rad": null,
+      "rotation_bank_consensus_support": 169,
+      "rotation_bank_mean_confidence_on_support": 0.7809244394302368,
+      "rotation_bank_candidate_scores": [
+        {
+          "angle_rad": -3.141592653589793,
+          "consensus_support": 8,
+          "mean_confidence_on_support": 0.43655169010162354,
+          "reciprocal_queries": 121,
+          "ranking_score": 0.013642240315675735
+        },
+        {
+          "angle_rad": -2.443460952792061,
+          "consensus_support": 6,
+          "mean_confidence_on_support": 0.4725787937641144,
+          "reciprocal_queries": 122,
+          "ranking_score": 0.01107606547884643
+        },
+        {
+          "angle_rad": -1.7453292519943295,
+          "consensus_support": 7,
+          "mean_confidence_on_support": 0.5619748830795288,
+          "reciprocal_queries": 115,
+          "ranking_score": 0.015366500709205866
+        },
+        {
+          "angle_rad": -1.0471975511965979,
+          "consensus_support": 10,
+          "mean_confidence_on_support": 0.44073495268821716,
+          "reciprocal_queries": 112,
+          "ranking_score": 0.017216209089383483
+        },
+        {
+          "angle_rad": -0.34906585039886595,
+          "consensus_support": 128,
+          "mean_confidence_on_support": 0.6890114545822144,
+          "reciprocal_queries": 172,
+          "ranking_score": 0.3445057272911072
+        },
+        {
+          "angle_rad": 0.0,
+          "consensus_support": 169,
+          "mean_confidence_on_support": 0.7809244394302368,
+          "reciprocal_queries": 195,
+          "ranking_score": 0.5155321494676173
+        },
+        {
+          "angle_rad": 0.34906585039886595,
+          "consensus_support": 153,
+          "mean_confidence_on_support": 0.7940551042556763,
+          "reciprocal_queries": 193,
+          "ranking_score": 0.4745719959028065
+        },
+        {
+          "angle_rad": 1.0471975511965974,
+          "consensus_support": 70,
+          "mean_confidence_on_support": 0.6044291257858276,
+          "reciprocal_queries": 140,
+          "ranking_score": 0.16527358908206224
+        },
+        {
+          "angle_rad": 1.7453292519943293,
+          "consensus_support": 7,
+          "mean_confidence_on_support": 0.5721396803855896,
+          "reciprocal_queries": 116,
+          "ranking_score": 0.015644444385543466
+        },
+        {
+          "angle_rad": 2.443460952792061,
+          "consensus_support": 6,
+          "mean_confidence_on_support": 0.5869666934013367,
+          "reciprocal_queries": 127,
+          "ranking_score": 0.013757031876593828
+        }
+      ],
+      "coarse_matcher_diagnostics": null,
+      "rotation_bank_score_gain_over_identity": 0.0,
+      "rotation_bank_probe_encoder_s": 0.027129298076033592,
+      "rotation_bank_probe_matching_s": 0.008186381892301142,
+      "rotation_bank_probe_consensus_s": 0.01504615624435246,
+      "rotation_bank_truth_angle_rad_for_diagnostic_only": 0.2065838276487839,
+      "global_affine_prefit_used": true,
+      "nonlinear_field_residual": "none",
+      "global_affine_prefit_coefficients": [
+        [
+          51.146664193524266,
+          -8.389632147203887
+        ],
+        [
+          0.9793552286729386,
+          0.20625445554673394
+        ],
+        [
+          -0.20011369418644886,
+          0.9811660532146667
+        ]
+      ],
+      "global_affine_prefit_inliers": 907,
+      "global_affine_prefit_median_residual_px": 1.6313666493100896,
+      "global_affine_prefit_spatial_bins": 9,
+      "global_affine_prefit_linear_deviation": 0.2887339868607204,
+      "local_bspline_prefit_used": false,
+      "local_bspline_prefit_diagnostics": null,
+      "local_ncc_valid_visible_nodes": 903,
+      "local_ncc_node_median_error_native_px": 1.6540759801864624,
+      "local_ncc_node_fraction_within_2_native_px": 0.6367663145065308,
+      "local_ncc_score_median": 0.9053027033805847,
+      "local_ncc_margin_median": 0.24924147129058838,
+      "final_local_valid_visible_nodes": 903,
+      "final_local_node_median_error_native_px": 1.6540759801864624,
+      "final_local_node_fraction_within_2_native_px": 0.6367663145065308,
+      "solver_accepted_visible": 1377,
+      "solver_accepted_active": 1377,
+      "solver_active_window_count": 1980,
+      "correct_converged_lt2px": 1377,
+      "zero_correct_converged_lt2px": 0,
+      "analytic_oracle_correct_converged_lt2px": 1429,
+      "propagation_mode": "none",
+      "propagation_seed_windows": null,
+      "propagation_correct_lt2px": null,
+      "propagation_oracle_correct_lt2px": null,
+      "propagation_accepted_error_ge_2px": null,
+      "propagation_accepted_invisible": null,
+      "propagation_rings": null,
+      "propagation_extra_accepted": null,
+      "propagation_wall_s": null,
+      "coverage_correct": 0.9341926729986432,
+      "correct_windows_per_second": 14275.641646225959,
+      "inference_s_cpu": 0.08538571500685066,
+      "model_inference_s_cpu": null,
+      "model_inference_s_wall": 0.08003621094394475,
+      "local_refinement_s_wall": 0.005324783967807889,
+      "field_projection_s_cpu": 0.0004211990162730217,
+      "icgn_s": 0.010651097050867975,
+      "zero_icgn_s": 0.05127125501167029,
+      "oracle_icgn_s": 0.005952239967882633,
+      "mean_iterations_accepted": 4.804647922515869
+    }
+  ],
+  "summary": {
+    "heterogeneous": {
+      "cases": 1,
+      "visible_windows": 1038,
+      "correct_converged_lt2px": 850,
+      "coverage_correct": 0.8188824662813102,
+      "median_correct_windows_per_second": 3494.20749483003
+    },
+    "rigid": {
+      "cases": 1,
+      "visible_windows": 1474,
+      "correct_converged_lt2px": 1377,
+      "coverage_correct": 0.9341926729986432,
+      "median_correct_windows_per_second": 14275.641646225959
+    }
+  }
+}

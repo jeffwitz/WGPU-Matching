@@ -1,0 +1,115 @@
+{
+  "startup_from_main_s": 0.40555114997550845,
+  "protocol": {
+    "live_dic_source": "/home/jeff/Code/tests_gpuio/DIC/LucasKanadeICGN/python/src",
+    "archive": "results/seed_propagation_20261111/p2_solver_images_adrien/inputs",
+    "output_dir": "results/seed_propagation_20261111/p2_resident_selection_adrien/run2/gpu",
+    "sparse_stride": 2,
+    "tau_u": 8.0,
+    "tau_g": 0.25,
+    "limit": 0,
+    "rotation_manifest": null,
+    "lazy_rotation_weights": "results/ndf_dic_20261109/p3_multiscale_physics_weight002_levels3_128pairs_seed20261114/ndf_pair_matcher.pt",
+    "lazy_rotation_output": "results/seed_propagation_20261111/p2_resident_selection_adrien/run2/gpu/rotations",
+    "textures": null,
+    "families": null,
+    "seed_offsets": null,
+    "escalation": true,
+    "batch_anchor_confirmation": true,
+    "gpu_frontier": true,
+    "gpu_resident_selection": true,
+    "gpu_hypothesis_selection": true,
+    "gpu_anchor_frontier": true,
+    "minimum_anchors": 3,
+    "local_affine_escalation": true,
+    "escalate_unresolved": false,
+    "local_affine_validation": false,
+    "same_budget_control": false,
+    "frozen_parameters": "results/seed_propagation_20261111/p2_calibration/frozen_parameters.json",
+    "subset_size": 64,
+    "subset_stride": 64,
+    "discontinuity_boundary_fraction": 0.5,
+    "speckle_noise_std": 0.025,
+    "target_gain": 1.0,
+    "target_offset": 0.0,
+    "target_blur_sigma": 0.0,
+    "target_noise_std": 0.0,
+    "periodic_strength": 0.0,
+    "periodic_period_px": 128.0,
+    "external_reference": "/home/jeff/CNRS/DIC/AdrienVariational/img_000000_0.09422.tiff",
+    "external_target": "/home/jeff/CNRS/DIC/AdrienVariational/img_000075_1608.88508.tiff",
+    "roi_mask": "/home/jeff/CNRS/DIC/AdrienVariational/Mask.tiff",
+    "use_cached_solver_images": true
+  },
+  "rows": [
+    {
+      "pair": "heterogeneous_texture34051001_warp34091001",
+      "selected": "affine_ncc",
+      "minimum_anchors_met": true,
+      "lazy_rotation_requested": false,
+      "lazy_rotation_cache_hit": false,
+      "lazy_rotation_hypotheses_generated": 0,
+      "lazy_rotation_wall_s": 0.0,
+      "source_hypothesis_names": [
+        "zero",
+        "affine",
+        "affine_ncc"
+      ],
+      "local_affine_fit_window_count_per_rotation": 0,
+      "hypotheses": [
+        {
+          "name": "zero",
+          "accepted": 9
+        },
+        {
+          "name": "affine",
+          "accepted": 515
+        },
+        {
+          "name": "affine_ncc",
+          "accepted": 1519
+        }
+      ],
+      "confirmed_seeds": 6321,
+      "truth_available": false,
+      "visible": null,
+      "accepted": 7097,
+      "accepted_invisible": null,
+      "correct": null,
+      "false_accepted": null,
+      "oracle": null,
+      "baseline_correct": null,
+      "passes": 8,
+      "propagation_solver_calls": 24,
+      "total_solver_calls_before_control": 27,
+      "total_active_windows_before_control": null,
+      "gpu_frontier_stages": [
+        {
+          "passes": 8,
+          "active_windows": 3118,
+          "counter_readbacks": 8,
+          "counter_readback_bytes": 64,
+          "final_readback_bytes": 732096,
+          "anchor_solver_dispatches": 8,
+          "wall_s": 0.3811421518912539
+        }
+      ],
+      "gpu_hypothesis_stages": [
+        {
+          "readback_bytes": 16,
+          "solver_dispatches": 3,
+          "wall_s": 0.2676533079938963
+        }
+      ],
+      "control_correct": null,
+      "control_solver_calls": 0,
+      "wall_s_excluding_hypothesis_generation": 0.7042678410653025,
+      "wall_s_including_lazy_rotation": 0.7042678410653025,
+      "image_prepare_s": 0.938549593091011,
+      "solver_reference_and_target_s": 6.469435075996444,
+      "same_budget_control_s": 0.00019084499217569828,
+      "case_wall_s_before_output": 8.310312830028124,
+      "escalation_history": []
+    }
+  ]
+}
