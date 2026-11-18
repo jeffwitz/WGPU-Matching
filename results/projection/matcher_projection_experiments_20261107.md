@@ -8,6 +8,55 @@ For the tested analytic traction series, **affine projection is the most reliabl
 
 This conclusion is specific to these traction images and seeds. The Adrien pair has no analytic displacement truth; its RBF residuals and appearance cannot establish which field is physically more accurate.
 
+## Update, 13 November 2026: initialization through IC-GN
+
+This page keeps the original affine/RBF comparison and its reference-versus-corrected animations. The subsequent work moved from projecting a sparse matcher field to initializing the inverse-compositional Gauss–Newton (IC-GN) solver from image-derived anchors, then propagating only accepted solver states. The results below are separate campaigns and must not be substituted for the 2026-11-07 matcher measurements.
+
+| Test case | Current result | Scope |
+|---|---:|---|
+| Analytic tensile images, 10–60% | RaCo affine: 136/136 visible requested centres below 5 px; at 60%, 16/16 and 2.03 px RMSE. | Original matcher-projection test; full images 3840 × 2160. |
+| Fresh heterogeneous speckle fields, image-only propagation | 23,570/24,641 visible windows correct (95.65%); no false accepted visible window. | Twenty pairs. Pair-bootstrap gain over the repaired matched baseline: +23.65 percentage points, 95% interval [14.78, 35.19]. |
+| Fresh translation speckle fields, image-only propagation | 28,641/29,459 visible windows correct; no false accepted visible window. | Twenty pairs; +3,468 correct windows against the repaired baseline, with no pair regression. |
+| Independent 64-to-32 px transfer | 30,620/31,207 correct versus 30,164/31,207 at 64 px; zero false accepted visible windows in the 32 px solves. | Twenty-five pairs: five each for translation, rigid rotation, affine, heterogeneous, and grid-aligned discontinuous motion. Same requested centres, not a dense 32 px field. |
+| Frozen extreme localized shear, peak displacement gradient 2.0 | 57/4,080 accepted visible windows are wrong by at least 2 px (1.40%). | The P3 false-acceptance gate fails. The opt-in smaller-support retry does not change that verdict. |
+| Masked Adrien experimental pair | 7,097 accepted of 7,280 region-valid windows; 86 weighted/interpolated values are listed separately. | Counts and maps only. No analytic displacement truth is available, so accuracy is unknown. |
+
+The heterogeneous and translation trials use synthetic textures with known analytic displacement. Correctness means the estimated displacement at the window centre is within the stated tolerance; it does not by itself certify all six affine parameters or guarantee IC-GN success at a later stage. The fine-transfer result is an actual 32 px IC-GN re-solve seeded from accepted 64 px states. It does not measure the full initialization pipeline time and does not establish a dense fine-grid field.
+
+The representative 64-to-32 px maps below compare accepted/correct windows by location: green means correct, yellow unresolved, gray invisible; red would mark a false accepted result. This visual diagnostic complements the reference/corrected-image GIFs later on this page; it is not another image-correction animation.
+
+![Representative 64-to-32 px transfer maps across five motion families](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/representative_maps.png)
+
+### Remapped images from accepted IC-GN windows
+
+The following flicker views alternate the reference with the target remapped by the accepted 64 px and 32 px IC-GN states. They use the same five diagnostic pairs as the transfer maps. The solver states are interpolated over their regular window-centre grid, and native target pixels are then bilinearly sampled at the resulting coordinates. Gray pixels are outside the region supported by accepted states or outside the target image; they are not filled with an identity warp. These are visual dense interpolations of sparse window solutions, not independent pixelwise DIC measurements. Rendering reads only each solver's accepted status and six estimated affine parameters; analytic truth and correctness labels are not used.
+
+| Motion family | Reference ↔ remapped target (64 px, then 32 px) | PNG previews and support masks |
+|---|---|---|
+| Translation | ![Translation reference and IC-GN remaps](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/translation_reference_and_remapped.gif) | [reference](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_ref_translation.png) · [64 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_translation_64px.png) · [32 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_translation_32px.png) · [64 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_translation_64px.png) · [32 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_translation_32px.png) |
+| Rigid rotation | ![Rigid reference and IC-GN remaps](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/rigid_reference_and_remapped.gif) | [reference](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_ref_rigid.png) · [64 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_rigid_64px.png) · [32 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_rigid_32px.png) · [64 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_rigid_64px.png) · [32 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_rigid_32px.png) |
+| Affine | ![Affine reference and IC-GN remaps](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/affine_reference_and_remapped.gif) | [reference](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_ref_affine.png) · [64 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_affine_64px.png) · [32 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_affine_32px.png) · [64 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_affine_64px.png) · [32 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_affine_32px.png) |
+| Heterogeneous | ![Heterogeneous reference and IC-GN remaps](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/heterogeneous_reference_and_remapped.gif) | [reference](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_ref_heterogeneous.png) · [64 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_heterogeneous_64px.png) · [32 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_heterogeneous_32px.png) · [64 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_heterogeneous_64px.png) · [32 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_heterogeneous_32px.png) |
+| Discontinuous | ![Discontinuous reference and IC-GN remaps](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/discontinuous_reference_and_remapped.gif) | [reference](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_ref_discontinuous.png) · [64 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_discontinuous_64px.png) · [32 px](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/image1_def_cor_discontinuous_32px.png) · [64 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_discontinuous_64px.png) · [32 support](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/coverage_discontinuous_32px.png) |
+
+[Open the five-family comparison sheet](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/remapped_images/remapped_images_overview.png). The source/checksum manifest is stored alongside the previews.
+
+Rebuild these visualizations with `python3 python/benchmarks/render_fine_transfer_remaps.py`.
+
+The current operating choice for ordinary random speckle is affine preconditioning plus local normalized cross-correlation (NCC), accepted 64 px IC-GN seeds, and status-driven neighbour propagation. A 32-to-16 px same-centre retry remains opt-in. The neural deformation-field residual is not part of the selected baseline. Periodic textures are outside the intended application and are not used as an acceptance gate.
+
+### Detailed follow-up reports
+
+- [P2 image-only initializer and confirmatory per-pair results](../seed_propagation_20261111/p2_confirmatory/evaluation/README.md), including the [campaign status](../seed_propagation_20261111/p2_status.md).
+- [P3 decision and limits](../seed_propagation_20261111/p3_decision_20261111.md), including the [full family status](../seed_propagation_20261111/p3_status.md).
+- [Independent 64-to-32 px transfer across five motion families](../seed_propagation_20261111/p3_fine_transfer_multifamily_independent/fine/README.md).
+- [Frozen extreme-shear qualification and exact-centre scoring](../seed_propagation_20261111/p3_shear_band_frozen_protocol/exact_center_analysis/README.md).
+- [Experimental Adrien acceptance counts](../seed_propagation_20261111/p3_external_experimental/README.md).
+
+### WebGPU execution boundary
+
+The local IC-GN solves and selected correlation/residual kernels execute through WebGPU. Image preparation, hypothesis selection, seed/frontier orchestration, and some readback/upload boundaries still involve the host; the linked campaigns do not establish a fully GPU-resident end-to-end pipeline. The confirmatory image-only initializer also lacks complete end-to-end timing. Therefore the quality gains above are not presented as a measured throughput gain.
+
 ## Flicker GIFs
 
 Each GIF alternates between the reference and the deformed image sampled through the projected displacement field (850 ms per frame). PNG source previews are capped at 1920 px wide; GIFs are 1280 px wide. Matching and field fitting used native image coordinates.
